@@ -35,7 +35,7 @@ Patchlife collects those statements in one place, with a quote and a link for ev
 ## Status
 As of 21 October 2026:
 - **Done:** M0, the foundation: CI, labels, branch protection and the daily build scheduled task.
-- **In progress:** M1, the evidence engine and the first 50 verified records. Status computation and the evidence checker for HTML pages are built. PDF support, archive snapshots and a checked format for the source registry are still to do. Next comes running the checker against manufacturer pages in the `Crawl` environment.
+- **In progress:** M1, the evidence engine and the first 50 verified records. Status computation and the evidence checker for HTML pages are built. PDF support and archive snapshots are still to do. Next comes running the checker against manufacturer pages in the `Crawl` environment.
 - **Data:** 2 seed records (Ring), both `unverified`.
 - **Site:** not live yet. The public site is M2.
 
@@ -161,7 +161,7 @@ Patchlife doesn't publish reviews, ratings or brand rankings without a published
 | Path | What |
 | --- | --- |
 | [`data/devices/`](data/devices/) | Device records, one YAML file per model |
-| [`data/schema/`](data/schema/) | JSON Schema for a record |
+| [`data/schema/`](data/schema/) | JSON Schemas for a device record and a source registry file |
 | [`data/sources/`](data/sources/) | Starting URLs per brand (leads, not evidence) |
 | [`scripts/`](scripts/) | Validator, status computation, evidence checker and polite fetcher |
 | [`tests/`](tests/) | Unit tests and saved fixtures |

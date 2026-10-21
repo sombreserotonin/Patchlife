@@ -1,0 +1,32 @@
+id: ring-video-doorbell-1st-generation
+brand: Ring
+brand_slug: ring
+model: "Video Doorbell (1st Generation)"
+aliases:
+  - "Ring Video Doorbell (1st Generation)"
+  - "Video Doorbell (1st Generation) - Satin Nickel, Venetian Bronze (discontinued)"
+category: doorbell
+regions: [UK, US]
+support:
+  rule: fixed_date
+  end_date: "2024-12-31"
+  years: null
+  anchor_date: null
+  at_least: true
+  conditions: "If bought new on ring.com, or on amazon.com where Amazon is the seller, at least four years from purchase or this date, whichever is later."
+evidence:
+  - url: https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "Ring Video Doorbell (1st Generation) 31 December 2024"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "Video Doorbell (1st Generation) - Satin Nickel, Venetian Bronze (discontinued) 31 December 2024"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+verification:
+  status: verified
+  checked: "2026-10-21"
+  text_sha256: ef68204108474bd4dea7e01262a208022ed2bb45aa2e1e8ce4bbd873c2b7214b
+notes: null

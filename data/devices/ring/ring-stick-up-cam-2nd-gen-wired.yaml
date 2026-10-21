@@ -1,0 +1,26 @@
+id: ring-stick-up-cam-2nd-gen-wired
+brand: Ring
+brand_slug: ring
+model: "Stick Up Cam (2nd Gen), Wired"
+aliases:
+  - "Ring Stick Up Cam (2nd Gen), Wired"
+category: camera
+regions: [US]
+support:
+  rule: fixed_date
+  end_date: "2024-12-31"
+  years: null
+  anchor_date: null
+  at_least: true
+  conditions: "If bought new on ring.com, or on amazon.com where Amazon is the seller, at least four years from purchase or this date, whichever is later."
+evidence:
+  - url: https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "Stick Up Cam (2nd Gen), Wired 31 December 2024"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+verification:
+  status: verified
+  checked: "2026-10-21"
+  text_sha256: 2a8b9a5c31241b1bf4662453914d9bc00ce48cd2c5ec7dcd114e91637a2fb7c6
+notes: null
