@@ -24,6 +24,19 @@ test("the 12-month boundary from 29 February falls on 28 February", () => {
   assert.equal(computeStatus(fixed("2025-03-01"), "2024-02-29"), "supported");
 });
 
+test("a month-only date has ended only after the month's last day (D38)", () => {
+  assert.equal(computeStatus(fixed("2026-10"), "2026-10-31"), "ending_soon");
+  assert.equal(computeStatus(fixed("2026-10"), "2026-11-01"), "ended");
+  assert.equal(computeStatus(fixed("2028-02"), "2028-02-29"), "ending_soon");
+  assert.equal(computeStatus(fixed("2028-02"), "2028-03-01"), "ended");
+});
+
+test("a month-only date is ending soon once the month's first day is within a year (D38)", () => {
+  assert.equal(computeStatus(fixed("2027-10"), TODAY), "ending_soon");
+  assert.equal(computeStatus(fixed("2027-11"), TODAY), "supported");
+  assert.equal(computeStatus(fixed("2027-11"), "2026-11-01"), "ending_soon");
+});
+
 test("a relative rule with a published anchor uses its end date", () => {
   const anchored = record({ rule: "years_after_eol", years: 3, anchor_date: "2025-03-31", end_date: "2028-03-31" });
   assert.equal(computeStatus(anchored, TODAY), "supported");

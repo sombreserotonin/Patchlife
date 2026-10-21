@@ -44,6 +44,11 @@
   },
   "$defs": {
     "date": { "type": "string", "format": "date" },
+    "month": {
+      "description": "A month and year (YYYY-MM), for a source that states no day (D38).",
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$"
+    },
     "support": {
       "type": "object",
       "additionalProperties": false,
@@ -54,7 +59,7 @@
             "fixed_date", "years_after_eol", "years_after_launch", "years_after_manufacture", "years_after_purchase", "none_published"
           ]
         },
-        "end_date": { "anyOf": [{ "$ref": "#/$defs/date" }, { "type": "null" }] },
+        "end_date": { "anyOf": [{ "$ref": "#/$defs/date" }, { "$ref": "#/$defs/month" }, { "type": "null" }] },
         "years": { "anyOf": [{ "type": "integer", "minimum": 1, "maximum": 30 }, { "type": "null" }] },
         "anchor_date": { "anyOf": [{ "$ref": "#/$defs/date" }, { "type": "null" }] },
         "at_least": { "type": "boolean" },
@@ -66,7 +71,11 @@
           "then": {
             "type": "object",
             "required": ["end_date"],
-            "properties": { "end_date": { "$ref": "#/$defs/date" }, "years": { "type": "null" }, "anchor_date": { "type": "null" } }
+            "properties": {
+              "end_date": { "anyOf": [{ "$ref": "#/$defs/date" }, { "$ref": "#/$defs/month" }] },
+              "years": { "type": "null" },
+              "anchor_date": { "type": "null" }
+            }
           }
         },
         {

@@ -150,7 +150,7 @@ All dates in records and logs are UTC (`date -u +%F`). Scheduled runs at 06:08 S
    - The quote must contain the record's end date, anchor date and number of years (`npm run validate` checks this).
    - Regions come only from what the page states. Every region needs evidence from a page that covers it.
    - Aliases come only from the maker's pages.
-   - Skip a model whose date has no day (month or year only) and list it in the PR; never round.
+   - A date with a month and year but no day goes in as `end_date: "YYYY-MM"` (D38); never pick a day. Skip a model whose date gives only a year, and list it in the PR.
 5. Run A1 on the new ids until every one is `verified`.
 6. One source per PR. Commit as `data(<brand_slug>): add <n> <category> records`.
    - Add a session note.

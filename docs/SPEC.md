@@ -5,7 +5,7 @@ One YAML file per model at `data/devices/<brand_slug>/<id>.yaml`. The contract i
 
 | `support.rule` | Meaning | Required |
 | --- | --- | --- |
-| `fixed_date` | The source gives a date | `end_date` |
+| `fixed_date` | The source gives a date | `end_date` (`YYYY-MM` when the source gives only a month and year, D38) |
 | `years_after_eol` | N years after the maker ends sale or declares end of life | `years`; `anchor_date` and `end_date` only once the EOL date is published |
 | `years_after_launch` | N years after launch or first availability | as above |
 | `years_after_manufacture` | N years after manufacture (varies by batch) | `years` |
@@ -17,7 +17,7 @@ One YAML file per model at `data/devices/<brand_slug>/<id>.yaml`. The contract i
 Source registry: `data/sources/*.yaml` lists starting URLs per brand. Each file is a list of entries with `brand`, `brand_slug`, `kind` (how the pages state support), `urls` (one or more `https` links), an optional `date_order` (`dmy` or `mdy`: how the pages write numeric dates such as 3/4/2027), an optional `note` and `last_checked` (the date the data refresh last fetched them, or null). The contract is `data/schema/source.schema.json`; `npm run validate` enforces it and also rejects a `brand_slug` listed twice or a `last_checked` date in the future. It reads numeric dates in quotes from an evidence URL that starts with one of an entry's `urls` in that entry's `date_order` only.
 
 ## 2. Status (computed at build time, never stored)
-Against today's date: `supported` (more than 12 months left), `ending_soon` (12 months or less), `ended`, `unknown` (no computable date). A relative rule without an anchor is `unknown` and shown in words, for example "3 years after Acme ends sales of this model (date not yet published)".
+Against today's date: `supported` (more than 12 months left), `ending_soon` (12 months or less), `ended`, `unknown` (no computable date). A month-only end date has ended only after the month's last day, and is `ending_soon` once the month's first day is 12 months away or less; the site shows the month and year with no day. A relative rule without an anchor is `unknown` and shown in words, for example "3 years after Acme ends sales of this model (date not yet published)".
 
 ## 3. Evidence verifier (M1): `npm run verify:evidence`
 - Fetch each evidence URL (HTML or PDF) and extract the text.
