@@ -9,7 +9,6 @@ Rules for the daily build:
 - Never mark M1 done or write M2 tasks. Only the `Crawl` session that runs the M1 exit check may do that, and only if it passes.
 
 Next for the daily build (`Default`), in order:
-- [ ] Verifier: when the final URL after redirects has a different origin or path from the cited URL, report `error (redirected to <final url>)` instead of checking the quote, so a homepage redirect is not read as "quote not found". Ignore a trailing slash and any change to the query string. Test both cases with the fake fetcher in `tests/verify-evidence.test.mjs`, and add the outcome to the RUNBOOKS A1 table.
 - [ ] Update `data/sources/seed.yaml` with the research leads from 21 Oct 2026 (leads, not evidence):
   - Google: add `https://support.google.com/product-documentation/answer/10231940?hl=en` (the URL the Google records cite) and change the entry's kind to `per_model_dates`.
   - TP-Link: add `https://www.tp-link.com/au/landing/au-cyber-compliance/` to the existing entry and change its kind to `per_model_dates`. In its note, say the UK pages give 3 years after end of life, with the UK per-model periods only in a PDF.

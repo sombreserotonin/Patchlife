@@ -165,6 +165,27 @@ test("verifyDevices marks a verified record stale when its page is gone, but not
   assert.equal(down.read("acme-cam-1"), before);
 });
 
+// acme-cam-1 is verified and its quote is not on the page, so reading the redirected page would mark it stale.
+test("verifyDevices reports a redirect to another origin or path as an error and leaves the record unchanged", async () => {
+  for (const to of ["https://example.com/", "https://www.example.com/acme/security"]) {
+    const { dir, get, read } = setupDevices();
+    const moved = async (url) => ({ ...(await get(url)), url: to });
+    const before = read("acme-cam-1");
+    const results = await verifyDevices(dir, { get: moved, today: TODAY, ids: ["acme-cam-1"] });
+    assert.deepEqual(results, [{ id: "acme-cam-1", outcome: "error", reason: `redirected to ${to}` }]);
+    assert.equal(read("acme-cam-1"), before);
+  }
+});
+
+test("verifyDevices still verifies after a redirect that changes only a trailing slash, query string or fragment", async () => {
+  for (const suffix of ["/", "?hl=en", "#top", "/?ref=home"]) {
+    const { dir, get } = setupDevices();
+    const moved = async (url) => ({ ...(await get(url)), url: url + suffix });
+    const results = await verifyDevices(dir, { get: moved, today: TODAY, ids: ["acme-leap-5"] });
+    assert.deepEqual(results, [{ id: "acme-leap-5", outcome: "verified" }]);
+  }
+});
+
 test("verifyDevices skips disputed records and reports unknown ids", async () => {
   const { dir, get, file, read } = setupDevices();
   writeFileSync(file("acme-cam-1"), read("acme-cam-1").replace("status: verified", "status: disputed"));

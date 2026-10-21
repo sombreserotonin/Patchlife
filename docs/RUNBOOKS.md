@@ -108,6 +108,7 @@ All dates in records and logs are UTC (`date -u +%F`). Scheduled runs at 06:08 S
 | `error (HTTP 429 ...)`, `(HTTP 5xx ...)`, `(<host> asked us to back off)` | Temporary | Retry in a later run; change nothing |
 | `error (unsupported content type "application/pdf" ...)` | PDF source | Leave unverified until PDF support lands |
 | `error (HTTP 404 for <url>)` on an unverified record | Wrong URL | Re-check the URL on the maker's site (A2 step 1) |
+| `error (redirected to <url>)` | The cited page now redirects to another site or page, such as the homepage | Find where the statement moved (A4). A login page or bot challenge: A5 |
 | `error (no record with this id)` | Typo in the ids | Re-run with the right id |
 | `error (more than 5 redirects ...)`, a timeout or `fetch failed` | Network or site problem | Retry in a later run; change nothing |
 | `skipped (none_published)` or `skipped (disputed)` | Not checked by design | None |
