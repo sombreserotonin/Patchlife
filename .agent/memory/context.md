@@ -1,10 +1,14 @@
 # Context (current state)
 
-- 2026-10-21: Repo created from the starter kit. Nothing deployed; no accounts, domain or secrets.
-- 2026-10-21: M0 done. Labels exist; `needs-human` issues open for H1 #2, H2 #3, H3 #4, H4 #5, H8 #6, H11 #7.
-- Active milestone: M1. Status computation done (`scripts/status.mjs`). The networked verifier waits on #9 (`crawl` environment) and #10 (crawler contact URL).
-- `main` has no ruleset or branch protection. GitHub Free blocks both on private repos (API 403); H3 #4 asks the owner to go public or buy GitHub Pro.
-- Cloud session network (Default environment): the shell cannot reach manufacturer sites (ring.com, tp-link.com, arlo.com, gl-inet.com), web.archive.org, registry RDAP or docs.github.com. `gh api` works for `repos/sombreserotonin/Patchlife/...` paths only.
+- 2026-10-21: Repo created from the starter kit. Nothing deployed.
+- 2026-10-21: M0 done. M1 active: status computation and the HTML verifier core are merged.
+- Repo is public. Ruleset `main` is active: pull request required (0 approvals), `test` check required, force pushes and deletion blocked, no bypass actors.
+- Domain `patchlife.tech` bought by the owner (#2). No DNS or hosting yet (M2, H6).
+- Claude GitHub App installed (#3). `@claude` workflow not planned (#6): `claude.yml` stays but has no secret.
+- Scheduled task `Patchlife daily build` runs daily at 06:08 Australia/Sydney in the Default environment (#5). Its first run merged PR #12.
+- Cloud environments: `Default` (Trusted network) and `Crawl` (Custom allowlist, #9). Scripts that fetch manufacturer pages run only in `Crawl` (D12).
+- Crawler contact URL: `https://github.com/sombreserotonin/Patchlife/blob/main/docs/CRAWLER.md` (#10).
+- Usage credits: #7 closed without a recorded decision.
+- Default environment network: the shell cannot reach manufacturer sites, web.archive.org, registry RDAP or docs.github.com. `gh api` works for `repos/sombreserotonin/Patchlife/...` paths only.
 - Data: 2 seed records (Ring), both `unverified`. Seed sources in `data/sources/seed.yaml`, none checked yet.
-- Name: Patchlife (repo `sombreserotonin/patchlife`, private). Domain and trade mark checks are still gate H1.
 - Licences: code AGPL-3.0-or-later, data ODbL-1.0.

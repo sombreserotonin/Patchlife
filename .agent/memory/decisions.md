@@ -15,3 +15,4 @@ One line each: the rule, then why. Newest last; the newest wins on conflict.
 - D11 Call GitHub through `gh api` on `repos/{owner}/{repo}/...` paths only. Why: cloud sessions block `/user/...` paths and `gh auth status` reports the token invalid even though repo-scoped REST calls work.
 - D12 In the Default environment, research sources with Claude Code's fetch tool; run scripts that fetch manufacturer pages only in the `crawl` environment. Why: the Default network blocks those hosts from the shell, and DATA-POLICY requires a contact URL for script crawling.
 - D13 A support end date is the last supported day: `ended` only after it, `ending_soon` when it falls on or before today plus one year (29 February plus one year is 28 February). Why: sources say "until <date>" and SPEC 2 says "12 months or less".
+- D14 Never write the literal `@claude` in issue or PR titles and bodies. Why: it triggers `claude.yml`, which ran and failed on #6.
