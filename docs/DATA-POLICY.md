@@ -24,6 +24,7 @@ News, forums, retailers, distributors and AI answers are leads only, never evide
 
 ## Display
 - Always show "as published by <brand>", the date checked and a link to the source.
+- Lists and search results show "as published by <brand>" and the date checked, and link to the model page, which shows the quote and the source link.
 - Neutral language. No rankings or "worst" lists without a published methodology.
 - Disclaimer (final wording is a human gate): information as published by manufacturers, may change, not advice.
 

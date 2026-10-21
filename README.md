@@ -30,7 +30,7 @@ Claude Code builds and runs the project end to end. A human owner handles the ga
 - **But it's scattered.** The information sits in thousands of separate support pages and PDFs, often as a rule ("3 years after end of life") rather than a date.
 - **And often missing.** US FTC staff found that 163 of 184 smart products (88.6%) gave no support duration or end date on the product page ([FTC, 2024](https://www.ftc.gov/system/files/ftc_gov/pdf/smart-device-makers-failure-to-provide-software-updates-may-leave-you-smarting.pdf)).
 
-Patchlife collects those statements in one place, with a quote and a link for every answer. The full case is in [`docs/BRIEF.md`](docs/BRIEF.md).
+Patchlife collects those statements in one place, with a quote and a link for every date. The full case is in [`docs/BRIEF.md`](docs/BRIEF.md).
 
 ## Status
 As of 21 October 2026:
