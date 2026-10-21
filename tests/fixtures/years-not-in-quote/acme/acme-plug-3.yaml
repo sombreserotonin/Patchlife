@@ -1,0 +1,19 @@
+id: acme-plug-3
+brand: Acme
+brand_slug: acme
+model: Plug 3
+category: smart-plug
+regions: [UK]
+support:
+  rule: years_after_eol
+  years: 2
+  anchor_date: null
+  end_date: null
+  at_least: false
+evidence:
+  - url: https://example.com/acme/psti
+    quote: The defined support period will end 3 years after the product's end-of-life date.
+    retrieved: "2026-10-01"
+    regime: uk_psti
+verification:
+  status: unverified
