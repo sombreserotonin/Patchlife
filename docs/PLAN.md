@@ -76,8 +76,7 @@ Targets are estimates. Each milestone closes only when its exit checks in ROADMA
   - 120 verified records from three brands, each audited and fixed before merge: Ring 48 (#24), Google Nest 12 (#21), TP-Link Tapo 60 (#22).
 - **To do:**
   1. Fourth brand: EZVIZ once you add its hosts (#23). Then a `Crawl` session adds the records (O1, A2) and a second one audits them (A8). None of the other camera brands checked so far has an HTML statement on a reachable, bot-friendly host: Arlo's robots.txt disallows all bots, and Aqara, Reolink and GoPro publish PDFs.
-  2. Update `data/sources/seed.yaml` with what the research found (a daily build task).
-  3. Exit check (a `Crawl` session): a full `npm run verify:evidence`, with at least 50 verified records from at least four brands. Then ROADMAP is updated.
+  2. Exit check (a `Crawl` session): a full `npm run verify:evidence`, with at least 50 verified records from at least four brands. Then ROADMAP is updated.
 - **If EZVIZ fails:** the fourth brand waits for PDF support (Aqara, Reolink or GoPro), which pulls P3 back into M1. TP-Link's UK PDF adds UK records, not a new brand.
 
 ### M2 Public site, search only

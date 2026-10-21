@@ -46,3 +46,8 @@ Two critic agents reviewed the first draft of the plan and found 52 issues, 19 o
 ## Update: data merged
 - #21 (Google Nest, 12) and #22 (TP-Link Tapo, 60) merged after their audit fixes, each with an audit comment and the `audited` label.
 - `main` now holds 120 verified records from three brands. M1 needs a fourth brand (EZVIZ, #23) before its exit check.
+
+## Update: review and merge round
+- Merged #36 (Google AU statements, audited), #37 (`--due`/`--limit`), #35 (data report) and #33 (redirect check), each after a multi-agent review and fixes.
+- Draft #34 (site generator) is being fixed after 28 confirmed findings; held for P2.
+- Every `Default` task is done. M1 waits on EZVIZ (#23) and `Crawl` sessions.
