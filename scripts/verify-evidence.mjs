@@ -94,15 +94,26 @@ export function selectRecords(records, { ids = [], due, limit, today = new Date(
 
 const quoted = (doc, value) => Object.assign(doc.createNode(value), { type: "QUOTE_DOUBLE" });
 
+// A redirect to another origin or path, such as a homepage, means the cited page has moved, so its text is not checked.
+// A trailing slash, query string or fragment does not count.
+function samePage(cited, final) {
+  const [a, b] = [new URL(cited), new URL(final)];
+  return a.origin === b.origin && a.pathname.replace(/\/$/, "") === b.pathname.replace(/\/$/, "");
+}
+
 // Updates records in place: verified when every quote matches, stale when a verified record's quote no longer
-// matches or its page is gone (404 or 410). Any other fetch failure leaves the file unchanged. Returns one { id, outcome, reason } per record checked.
+// matches or the cited page itself is gone (404 or 410). Any other fetch failure leaves the file unchanged. Returns one { id, outcome, reason } per record checked.
 export async function verifyDevices(devicesDir, { ids = [], due, limit, get = createFetcher(), today = new Date().toISOString().slice(0, 10) } = {}) {
   const pages = new Map();
   const page = (url) => {
     if (!pages.has(url)) {
-      pages.set(url, get(url).then(({ contentType, text }) => {
+      pages.set(url, get(url).then(({ url: finalUrl, contentType, text }) => {
+        if (!samePage(url, finalUrl)) throw new Error(`redirected to ${finalUrl}`);
         if (!TEXT_TYPES.has(contentType)) throw new Error(`unsupported content type "${contentType}" at ${url}`);
         return text;
+      }, (err) => {
+        // An HTTP error from the page redirected to says nothing about the cited page, so it never marks a record stale.
+        throw err.url && !samePage(url, err.url) ? new Error(`redirected to ${err.url}, HTTP ${err.status}`) : err;
       }));
     }
     return pages.get(url);

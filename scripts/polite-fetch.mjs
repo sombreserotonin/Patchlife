@@ -48,7 +48,7 @@ export function robotsAllows(robotsTxt, path) {
   return best ? best.allow : true;
 }
 
-// Returns get(url) -> { url, contentType, text }, or throws with the reason (and `status` for HTTP errors).
+// Returns get(url) -> { url, contentType, text }, or throws with the reason (and `status` and the final `url` for HTTP errors).
 // State (robots cache, per-host timing, hosts that asked us to back off) lasts for the fetcher's lifetime.
 export function createFetcher({ fetch = globalThis.fetch, now = Date.now, sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
   const lastRequest = new Map();
@@ -123,7 +123,7 @@ export function createFetcher({ fetch = globalThis.fetch, now = Date.now, sleep 
     const { url: finalUrl, res } = await follow(url, checkRobots);
     if (res.status !== 200) {
       await res.body?.cancel();
-      throw Object.assign(new Error(`HTTP ${res.status} for ${finalUrl}`), { status: res.status });
+      throw Object.assign(new Error(`HTTP ${res.status} for ${finalUrl}`), { status: res.status, url: finalUrl });
     }
     return { url: finalUrl, contentType: (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase(), text: await res.text() };
   };

@@ -173,3 +173,8 @@ test("an error status throws with the status", async () => {
   const { get } = setup({});
   await assert.rejects(get("https://a.test/missing"), (err) => err.status === 404 && /HTTP 404 for https:\/\/a.test\/missing/.test(err.message));
 });
+
+test("an error status after a redirect throws with the final URL", async () => {
+  const { get } = setup({ "https://a.test/old": reply("", 301, { location: "/gone" }) });
+  await assert.rejects(get("https://a.test/old"), (err) => err.status === 404 && err.url === "https://a.test/gone" && err.message === "HTTP 404 for https://a.test/gone");
+});

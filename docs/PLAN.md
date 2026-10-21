@@ -76,8 +76,7 @@ Targets are estimates. Each milestone closes only when its exit checks in ROADMA
   - 120 verified records from three brands, each audited and fixed before merge: Ring 48 (#24), Google Nest 12 (#21), TP-Link Tapo 60 (#22).
 - **To do:**
   1. Fourth brand: EZVIZ once you add its hosts (#23). Then a `Crawl` session adds the records (O1, A2) and a second one audits them (A8). None of the other camera brands checked so far has an HTML statement on a reachable, bot-friendly host: Arlo's robots.txt disallows all bots, and Aqara, Reolink and GoPro publish PDFs.
-  2. Update `data/sources/seed.yaml` with what the research found (a daily build task).
-  3. Exit check (a `Crawl` session): a full `npm run verify:evidence`, with at least 50 verified records from at least four brands. Then ROADMAP is updated.
+  2. Exit check (a `Crawl` session): a full `npm run verify:evidence`, with at least 50 verified records from at least four brands. Then ROADMAP is updated.
 - **If EZVIZ fails:** the fourth brand waits for PDF support (Aqara, Reolink or GoPro), which pulls P3 back into M1. TP-Link's UK PDF adds UK records, not a new brand.
 
 ### M2 Public site, search only
@@ -209,6 +208,8 @@ Monthly report and alerts as in SPEC 7, once there's an audience.
 | Stale records | 0 | 0 | under 2% | under 2% |
 | Daily build heartbeats reporting OK (counted once the prompt fix lands) | n/a | n/a | 5 or more a week | 5 or more a week |
 | Oldest open `needs-human` item | under 1 day | under 7 days | under 7 days | under 7 days |
+
+The first four rows of **Now** are the first four lines of `node scripts/data-report.mjs`, run on 21 Oct 2026 (UTC).
 
 ## Action plan: next 14 days
 Who: **A** = agent (daily build or coordinating session), **O** = owner.
