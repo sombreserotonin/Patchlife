@@ -25,7 +25,7 @@ export function loadValidator(schemaPath = join(ROOT, "data/schema/device.schema
   return ajv.compile(JSON.parse(readFileSync(schemaPath, "utf8")));
 }
 
-function listYamlFiles(dir) {
+export function listYamlFiles(dir) {
   const files = [];
   for (const name of readdirSync(dir)) {
     const path = join(dir, name);

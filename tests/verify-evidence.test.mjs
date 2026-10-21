@@ -1,8 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { cpSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { createHash } from "node:crypto";
-import { htmlToText, normalise, quoteMatches, verifyRecord } from "../scripts/verify-evidence.mjs";
+import { htmlToText, normalise, quoteMatches, verifyDevices, verifyRecord } from "../scripts/verify-evidence.mjs";
+import { validateDevices } from "../scripts/validate-data.mjs";
 
 const html = readFileSync(new URL("./fixtures/evidence/ring-policy.html", import.meta.url), "utf8");
 const TODAY = "2026-10-21";
@@ -70,4 +73,79 @@ test("a missing page text fails", () => {
   const result = verifyRecord(record(), [null], TODAY);
   assert.equal(result.ok, false);
   assert.match(result.reason, /no text/);
+});
+
+// verifyDevices runs against a temporary copy of the valid fixtures with a fake fetcher.
+const PAGES = {
+  "https://example.com/acme/security": "<p>Acme Cam 1 31 December 2029</p>",
+  "https://example.com/acme/leap-5": "<p>Security updates for at least 3 years from launch on 29 February 2024.</p>",
+  "https://example.com/acme/psti": "<p>The defined support period will end 3 years after the product's end-of-life date.</p>",
+  "https://example.com/acme/eol": "<table><tr><td>Router 2</td><td>End of Life</td><td>31 March 2025</td></tr></table>",
+};
+
+function setupDevices(pages = PAGES) {
+  const dir = mkdtempSync(join(tmpdir(), "patchlife-"));
+  cpSync(new URL("./fixtures/valid", import.meta.url), dir, { recursive: true });
+  const fetched = [];
+  const get = async (url) => {
+    fetched.push(url);
+    if (!(url in pages)) throw new Error(`HTTP 404 for ${url}`);
+    return { url, contentType: "text/html", text: pages[url] };
+  };
+  const file = (id) => join(dir, "acme", `${id}.yaml`);
+  const read = (id) => readFileSync(file(id), "utf8");
+  return { dir, get, fetched, file, read };
+}
+
+const outcomes = (results) => Object.fromEntries(results.map((r) => [r.id, r.outcome]));
+const beforeVerification = (yaml) => yaml.slice(0, yaml.indexOf("verification:"));
+
+test("verifyDevices writes verified, marks a changed quote stale and skips none_published", async () => {
+  const { dir, get, fetched, read } = setupDevices();
+  const before = read("acme-router-2");
+  const results = await verifyDevices(dir, { get, today: TODAY });
+  assert.deepEqual(outcomes(results), {
+    "acme-cam-1": "stale",
+    "acme-hub-4": "skipped",
+    "acme-leap-5": "verified",
+    "acme-plug-3": "verified",
+    "acme-router-2": "verified",
+  });
+  assert.match(read("acme-leap-5"), /status: verified\n  checked: "2026-10-21"\n  text_sha256: [a-f0-9]{64}\n/);
+  assert.match(read("acme-cam-1"), /status: stale\n  checked: "2026-10-02"/);
+  assert.equal(beforeVerification(read("acme-router-2")), beforeVerification(before));
+  assert.equal(fetched.filter((u) => u === "https://example.com/acme/psti").length, 1);
+  assert.deepEqual(validateDevices(dir, { today: TODAY }).errors, []);
+});
+
+test("verifyDevices leaves an unverified record unchanged when its quote is missing", async () => {
+  const { dir, get, read } = setupDevices({ ...PAGES, "https://example.com/acme/leap-5": "<p>Nothing here</p>" });
+  const before = read("acme-leap-5");
+  const results = await verifyDevices(dir, { get, today: TODAY, ids: ["acme-leap-5"] });
+  assert.deepEqual(results, [{ id: "acme-leap-5", outcome: "failed", reason: "quote not found at https://example.com/acme/leap-5" }]);
+  assert.equal(read("acme-leap-5"), before);
+});
+
+test("verifyDevices leaves files unchanged when a page cannot be fetched or is not text", async () => {
+  const pages = { ...PAGES };
+  delete pages["https://example.com/acme/leap-5"];
+  const { dir, get, read } = setupDevices(pages);
+  const pdf = async (url) => (url.endsWith("/eol") ? { url, contentType: "application/pdf", text: "%PDF" } : get(url));
+  const before = { leap: read("acme-leap-5"), router: read("acme-router-2") };
+  const results = await verifyDevices(dir, { get: pdf, today: TODAY, ids: ["acme-leap-5", "acme-router-2"] });
+  assert.deepEqual(outcomes(results), { "acme-leap-5": "error", "acme-router-2": "error" });
+  assert.match(results.find((r) => r.id === "acme-router-2").reason, /unsupported content type "application\/pdf"/);
+  assert.deepEqual({ leap: read("acme-leap-5"), router: read("acme-router-2") }, before);
+});
+
+test("verifyDevices skips disputed records and reports unknown ids", async () => {
+  const { dir, get, file, read } = setupDevices();
+  writeFileSync(file("acme-cam-1"), read("acme-cam-1").replace("status: verified", "status: disputed"));
+  const before = read("acme-cam-1");
+  const results = await verifyDevices(dir, { get, today: TODAY, ids: ["acme-cam-1", "acme-nope"] });
+  assert.deepEqual(results, [
+    { id: "acme-cam-1", outcome: "skipped", reason: "disputed" },
+    { id: "acme-nope", outcome: "error", reason: "no record with this id" },
+  ]);
+  assert.equal(read("acme-cam-1"), before);
 });
