@@ -1,0 +1,31 @@
+id: gl-inet-gl-mt300n-v2
+brand: GL.iNet
+brand_slug: gl-inet
+model: "Mango (GL-MT300N-V2)"
+aliases:
+  - "GL-MT300N-V2"
+category: router
+regions: [UK]
+support:
+  rule: fixed_date
+  end_date: "2027-06-11"
+  years: null
+  anchor_date: null
+  at_least: true
+  conditions: "Pre-defined support period; the actual period is 2 years after GL.iNet announces end of life, so it can be longer."
+evidence:
+  - url: https://www.gl-inet.com/en-us/pages/psti-support-period
+    quote: "Mango (GL-MT300N-V2) June 11, 2027 or later*"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: uk_psti
+  - url: https://www.gl-inet.com/en-us/pages/psti-support-period
+    quote: "*Actual Support Periods is 2 years after announcement of EOL"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: uk_psti
+verification:
+  status: verified
+  checked: "2026-10-21"
+  text_sha256: e50090b5139b5194019d2a768c8b7e9ce9fedf10ffb88681ad5a970e5e50c249
+notes: "The page is GL.iNet's PSTI support period table and names no region; recorded as UK, the regime it is published under. The date is the pre-defined minimum, not a guaranteed end."
