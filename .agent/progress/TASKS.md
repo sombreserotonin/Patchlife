@@ -10,7 +10,6 @@ Rules for the daily build:
 
 Next for the daily build (`Default`), in order:
 - [ ] Verifier: when the final URL after redirects has a different origin or path from the cited URL, report `error (redirected to <final url>)` instead of checking the quote, so a homepage redirect is not read as "quote not found". Ignore a trailing slash and any change to the query string. Test both cases with the fake fetcher in `tests/verify-evidence.test.mjs`, and add the outcome to the RUNBOOKS A1 table.
-- [ ] Verifier: add `--due <days>` and `--limit <n>` options that select records whose `checked` is empty or older than that many days, oldest first, with tests. This is for the nightly re-verify.
 
 Waiting:
 - [ ] Google Nest Australian statements of compliance for 6 of the merged models, linked from `https://support.google.com/chromecast/answer/10367042`, per RUNBOOKS A2 with region `AU` and model-number aliases, then an A8 audit (found by the #21 audit; needs a `Crawl` session).
@@ -29,6 +28,7 @@ Done:
 - [x] `npm run validate` checks that quotes state each record's dates and years (#20).
 - [x] Source registry format, validated by `npm run validate` (#26).
 - [x] `data/sources/seed.yaml` updated with the research leads of 21 Oct 2026: Google and TP-Link URLs and kinds, the Arlo exclusion, and EZVIZ, Aqara and Reolink entries.
+- [x] Verifier options `--due <days>` and `--limit <n>` select the verified records to re-verify, oldest first (#37).
 - [x] Data, audited per RUNBOOKS A8: Ring 48 (#24), Google Nest 12 (#21), TP-Link Tapo 60 (#22). 120 verified records from three brands on `main`.
 - [x] `node scripts/data-report.mjs` prints counts by brand, category, status and verification state, plus the oldest `checked` date; the Measures table in docs/PLAN.md cites it.
 - [x] `needs-human` issues for the `Crawl` environment (#9) and the crawler contact URL (#10).
