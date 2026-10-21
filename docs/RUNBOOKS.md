@@ -59,7 +59,7 @@ All dates in records and logs are UTC (`date -u +%F`). Scheduled runs at 06:08 S
 4. **Stuck PRs:** `claude/` PRs open for more than two days.
 5. **CI:** failed Actions runs on `main`.
 6. **Progress:** skim `.agent/progress/LOG.md` for the week, and the heartbeat comments on #27.
-7. **Measures:** the first four rows of the Measures table in [`PLAN.md`](PLAN.md) come from `node scripts/data-report.mjs`. It reads only the local records, so any session can run it, including in `Default`.
+7. **Measures:** check that the date under the Measures table in [`PLAN.md`](PLAN.md) is less than a week old. If it isn't, ask an agent session to refresh the first four rows with `node scripts/data-report.mjs` (it runs in `Default`).
 8. **Public queue:**
    - open `data-correction` and `add-model` issues (start O1 with A3);
    - PRs from forks (agents never merge them; close or handle them yourself);

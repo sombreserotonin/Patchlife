@@ -30,7 +30,7 @@ Done:
 - [x] `data/sources/seed.yaml` updated with the research leads of 21 Oct 2026: Google and TP-Link URLs and kinds, the Arlo exclusion, and EZVIZ, Aqara and Reolink entries.
 - [x] Verifier options `--due <days>` and `--limit <n>` select the verified records to re-verify, oldest first (#37).
 - [x] Data, audited per RUNBOOKS A8: Ring 48 (#24), Google Nest 12 (#21), TP-Link Tapo 60 (#22). 120 verified records from three brands on `main`.
-- [x] `node scripts/data-report.mjs` prints counts by brand, category, status and verification state, plus the oldest `checked` date; the Measures table in docs/PLAN.md cites it.
+- [x] `node scripts/data-report.mjs` prints counts by brand, category, status and verification state, plus the oldest `checked` date; the Measures table in docs/PLAN.md cites it (#35).
 - [x] `needs-human` issues for the `Crawl` environment (#9) and the crawler contact URL (#10).
 
 ## Done: M0 (2026-10-21)
