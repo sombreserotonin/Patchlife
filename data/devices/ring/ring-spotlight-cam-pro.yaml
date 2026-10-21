@@ -1,0 +1,26 @@
+id: ring-spotlight-cam-pro
+brand: Ring
+brand_slug: ring
+model: "Spotlight Cam Pro"
+aliases:
+  - "Ring Spotlight Cam Pro"
+category: camera
+regions: [UK]
+support:
+  rule: fixed_date
+  end_date: "2030-12-31"
+  years: null
+  anchor_date: null
+  at_least: true
+  conditions: "If bought new on ring.com or from Amazon as the seller, at least four years from purchase or this date, whichever is later."
+evidence:
+  - url: https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "Ring Spotlight Cam Pro 31 December 2030"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+verification:
+  status: verified
+  checked: "2026-10-21"
+  text_sha256: 12cbdeafbaccb60df3d8e9b1f95596a60fbbe5ad478f90ed0c49e37c9210fc31
+notes: null

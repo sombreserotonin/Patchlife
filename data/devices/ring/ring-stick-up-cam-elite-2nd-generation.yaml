@@ -1,0 +1,37 @@
+id: ring-stick-up-cam-elite-2nd-generation
+brand: Ring
+brand_slug: ring
+model: "Stick Up Cam Elite (2nd Generation)"
+aliases:
+  - "Ring Stick Up Cam Elite (2nd Generation)"
+  - "Stick Up Cam Elite (2nd Gen)"
+category: camera
+regions: [UK, AU, US]
+support:
+  rule: fixed_date
+  end_date: "2029-12-31"
+  years: null
+  anchor_date: null
+  at_least: true
+  conditions: "If bought new on ring.com or from Amazon as the seller, at least four years from purchase or this date, whichever is later."
+evidence:
+  - url: https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "Ring Stick Up Cam Elite (2nd Generation) 31 December 2029"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://ring.com/au/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "Ring Stick Up Cam Elite (2nd Generation) 31 December 2029"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "Stick Up Cam Elite (2nd Gen) 31 December 2029"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+verification:
+  status: verified
+  checked: "2026-10-21"
+  text_sha256: 0601354d95f1e9c47d83a5e1944f713bc81cf501fc7078fe1b7fc2bcbd2ec4cf
+notes: null
