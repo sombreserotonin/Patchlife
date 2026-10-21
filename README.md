@@ -102,6 +102,8 @@ verification:
 - **Quote gone from a verified record:** the record is marked `stale` so it gets new evidence.
 - **Page unreachable:** the record is left unchanged and the run reports it.
 
+It also keeps one SHA-256 hash per evidence URL, of that page's normalised text, in `data/sources/page-hashes.json`, and reports each page it read as changed, unchanged or not seen before. Most records cite more than one page and many records share a page, so this shows which page changed.
+
 Only quotes and hashes are stored, never whole pages. The fetcher identifies itself as PatchlifeBot, honours `robots.txt`, and makes at most one request per second per host ([`docs/CRAWLER.md`](docs/CRAWLER.md)). PDF sources and archive snapshots are not supported yet.
 
 ### Support status
@@ -127,7 +129,7 @@ npm ci
 | --- | --- |
 | `npm run validate` | Checks every record against the schema and integrity rules |
 | `npm test` | Runs the unit tests offline against saved fixtures; no test touches the network |
-| `npm run verify:evidence [-- <id> ...]` | Fetches evidence URLs and marks records `verified` or `stale`. Needs network access to manufacturer sites, so in cloud sessions it runs in the `Crawl` environment |
+| `npm run verify:evidence [-- <id> ...]` | Fetches evidence URLs, marks records `verified` or `stale`, and updates the page hashes in `data/sources/page-hashes.json`. Needs network access to manufacturer sites, so in cloud sessions it runs in the `Crawl` environment |
 | `npm run build:site` | Builds the static site into `_site/`. `BASE_PATH`, `SITE_URL`, `BUILD_DATE` and `NOINDEX` set the base path, origin, status date and preview mode. Run `npm run validate` first |
 | `node scripts/data-report.mjs` | Prints the Measures rows of `docs/PLAN.md`, then counts by brand, category, status and verification state. Reads only local files, so it runs in any environment |
 
