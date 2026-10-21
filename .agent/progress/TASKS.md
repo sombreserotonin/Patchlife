@@ -18,7 +18,7 @@
 - [x] End-of-task updates (LOG, TASKS, session note).
 
 ## Human gates (the agent opens an issue; a human closes it)
-- H1 Name chosen: Patchlife. Check domain and trade mark availability before buying anything. Done (#2): owner bought `patchlife.tech`; no trade mark result reported.
+- H1 Name chosen: Patchlife. Check domain and trade mark availability before buying anything. Done (#2): owner bought `patchlife.tech`; owner reports no trade mark clashes.
 - H2 Connect GitHub to Claude Code (claude.ai/code onboarding) and install the Claude GitHub App on this repo. Done (#3).
 - H3 Ruleset on `main`: require a pull request and the `test` status check; block force pushes and deletion. Done (#4): repo made public; ruleset `main` active, no bypass actors.
 - H4 Daily build scheduled task at claude.ai/code/routines: this repo, Default environment, daily at a few minutes past the hour, prompt `Follow .agent/prompts/daily-build.md`. Done (#5): `Patchlife daily build`, 06:08 Australia/Sydney.
@@ -28,5 +28,5 @@
 - H8 Optional: `@claude` in issues. Run `/install-github-app` in Claude Code, or add a `CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY` Actions secret. Not planned (#6).
 - H9 (before launch) Legal read of the disclaimer, privacy policy and licence choice; crawler contact URL. Contact URL done (#10): a page in this repo. The legal read is still open.
 - H10 (M5 to M7) Stripe, browser store developer accounts, email provider.
-- H11 Usage: watch claude.ai/settings/usage and decide whether to allow usage credits. Closed (#7) without a recorded decision.
+- H11 Usage: watch claude.ai/settings/usage and decide whether to allow usage credits. Done (#7): usage credits off, so runs stop when usage runs out until the window resets.
 - H12 (before accepting outside contributions) A contributor licence agreement, so the owner keeps the right to relicense.
