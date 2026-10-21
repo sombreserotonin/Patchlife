@@ -16,8 +16,7 @@ _As at Wednesday 21 October 2026. Dates are Sydney dates unless they say UTC. Re
   - Ship the M2 preview site on GitHub Pages.
   - Start the nightly `Crawl` data run.
 - **What we need from you.**
-  - **This week:** decisions P1 to P4; the EZVIZ allowlist ([#23](https://github.com/sombreserotonin/Patchlife/issues/23)); the GitHub settings in G1 and G3 (TASKS.md); starting three `Crawl` sessions (O1): EZVIZ records, their audit, and the M1 exit check. The prompt fixes are merged (#29).
-  - **Later:** P5 to P8 before M2 launch and M4.
+  - **This week:** the EZVIZ allowlist ([#23](https://github.com/sombreserotonin/Patchlife/issues/23)); the GitHub settings in G1 and G3 (TASKS.md); starting three `Crawl` sessions (O1): EZVIZ records, their audit, and the M1 exit check. The prompt fixes are merged (#29).
   - **Then:** a 10-minute check each week (O5).
 
 ## Where we are
@@ -48,8 +47,8 @@ Facts that shape every plan below:
 - **Protected files** (`.github/`, `.claude/`, `.agent/prompts/`, `CLAUDE.md`, `package.json`, `package-lock.json`) always wait for you, so each batch of them goes in one PR.
 - **Usage limits:** usage credits are off, so a heavy day of sessions can push the scheduled runs past their limit until the usage window resets. Avoid long sessions between 17:00 and 19:30 UTC.
 
-## Decisions needed from you
-Comment on the decisions issue with your choice for each (action 3 opens it). Until you decide, agents follow the recommendation where it changes nothing outside the repo. P4 (a licence rule) and P8 (legal copy) wait for you either way.
+## Decisions (settled 21 Oct 2026)
+Settled in [#30](https://github.com/sombreserotonin/Patchlife/issues/30): the owner chose P1 B and approved P2 to P4, and delegated P5 to P8, which follow the recommendation. Each is now a rule in `decisions.md` (D27 to D34). P8 is still draft copy for the H9a legal read.
 
 | # | Decision | Recommendation | Why |
 | --- | --- | --- | --- |
@@ -107,7 +106,7 @@ Targets are estimates. Each milestone closes only when its exit checks in ROADMA
   - re-verify verified records checked more than 60 days ago with `npm run verify:evidence -- --due 60 --limit 40`, so a quiet night ends with nothing to change;
   - report dead sources;
   - mark `stale` records and repair them (A4).
-- **PDF and archive (if P3):** PDF text through one dependency (protected PR); archive snapshots tested in `Crawl`; then the PDF-only brands (Aqara, Reolink, TP-Link UK, GoPro).
+- **PDF and archive (P3, D29):** PDF text through one dependency (protected PR); archive snapshots tested in `Crawl`; then the PDF-only brands (Aqara, Reolink, TP-Link UK, GoPro).
 - **Decisions to make:** how to store month-only dates, which A2 currently skips. The EU Cyber Resilience Act will make many statements month and year only.
 - **Coverage for M4:** at least 150 verified records, at least 40 of them in small-office categories (routers, printers, NVRs). Seed sources: TP-Link, GL.iNet, Kyocera, ASUS, NETGEAR. Also the follow-ups found in the audits: Google's Australian statements, AU and US evidence for the Ring seed records, TP-Link's TC and TD rows.
 - **Exit:**
@@ -121,7 +120,7 @@ Targets are estimates. Each milestone closes only when its exit checks in ROADMA
 - there are 150 or more verified records, with at least 40 small-office ones and at least 60% with a computable status;
 - the sitemap is submitted and at least 70% of its URLs are indexed;
 - the business page and waitlist are live, with a privacy collection notice (H9b);
-- the gates below are approved (P5);
+- the gates below are approved (P5, D31; adjust thresholds before day 0 only);
 - you commit to two posts in MSP communities in week 1, and about 2 hours of calls in weeks 2 to 4 (contacting people is a gate).
 
 **Weekly numbers:** every Monday you paste the Search Console totals and the waitlist counts into an `M4 weekly numbers` issue, and an agent copies them into LOG.md. No Search Console credential is stored.
@@ -218,12 +217,12 @@ Who: **A** = agent (daily build or coordinating session), **O** = owner.
 | 1 | Wed 21 Oct, before 19:08 UTC | Merge #21 and #22 after their audit fixes (the authoring `Crawl` sessions re-verify; the coordinating session checks and merges under your standing approval). If not done in time, pause the daily build (O4). | A | Crawl, Default | Both merged, or the daily build paused |
 | 2 | Wed 21 Oct, before 19:08 UTC | Merge this plan, so `main`'s TASKS.md no longer starts with the PDF task (which would loop on a protected PR) | A | Default | On `main` |
 | 3 | Thu 22 Oct | Open the decisions issue (P1 to P8) and the prompt-fix PR (see the list below) | A | Default | Done 21 Oct (#30, #29) |
-| 4 | Fri 23 Oct | Add the EZVIZ hosts (#23); decide P1 to P4; review and merge the prompt-fix PR (O2) | O | claude.ai, GitHub | PR merged 21 Oct; #23 and P1 to P4 still open |
+| 4 | Fri 23 Oct | Add the EZVIZ hosts (#23); decide P1 to P4; review and merge the prompt-fix PR (O2) | O | claude.ai, GitHub | PR merged and P1 to P4 decided 21 Oct; #23 open |
 | 5 | Fri 23 Oct | GitHub settings G1 and G3, and pin #27 | O | GitHub | All on |
 | 6 | Mon 26 Oct | EZVIZ records: you start a `Crawl` session (O1, A2), then a second one for the audit (A8) | O starts, then A | Crawl | Fourth brand merged |
 | 7 | Mon 26 Oct | Weekly check (O5) | O | GitHub, claude.ai | Done |
 | 8 | Tue 27 Oct | M1 exit check: you start a `Crawl` session for a full `npm run verify:evidence`, then M1 is closed in ROADMAP and the M2 tasks written | O starts, then A | Crawl | M1 marked done |
-| 9 | Fri 30 Oct | Create the nightly `Crawl` task (O6), if P1 is B | O | claude.ai | First run reported |
+| 9 | Fri 30 Oct | Create the nightly `Crawl` task (O6); P1 is B (D27) | O | claude.ai | First run reported |
 | 10 | Mon 2 Nov | M2: site generator and search PRs (held until P2) | A | Default | Merged with tests |
 | 11 | Wed 4 Nov | M2 protected PR (scripts, Lighthouse, Pages workflow, CLAUDE.md); set Pages source to GitHub Actions | A, then O | GitHub | PR open; Pages source set (preview target 20 Nov) |
 

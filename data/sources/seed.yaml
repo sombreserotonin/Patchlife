@@ -9,7 +9,7 @@
     - https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
     - https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
   note: Per-model "at least" dates in tables; the US page adds a purchase-channel rule.
-  last_checked: null
+  last_checked: "2026-10-21"
 
 - brand: Arlo
   brand_slug: arlo
@@ -17,7 +17,7 @@
   urls:
     - https://kb.arlo.com/000063018/Arlo-Legacy-Cameras-End-of-Life
   note: End-of-life list; critical security updates for one year after the EOL date. Can't be used (D18) because kb.arlo.com's robots.txt disallows all bots and www.arlo.com serves a bot challenge.
-  last_checked: null
+  last_checked: "2026-10-21"
 
 - brand: TP-Link
   brand_slug: tp-link
@@ -27,7 +27,7 @@
     - https://www.tp-link.com/uk/support/psti/
     - https://www.tp-link.com/uk/support/faq/3562/
   note: The AU page gives a date per model and hardware version; the Tapo records (#22) cite it. The UK pages give 3 years after a product's end-of-life date; the UK per-model periods are only in a PDF.
-  last_checked: null
+  last_checked: "2026-10-21"
 
 - brand: GL.iNet
   brand_slug: gl-inet
@@ -67,7 +67,7 @@
     - https://support.google.com/product-documentation/answer/14869041?hl=en
     - https://support.google.com/chromecast/answer/10367042
   note: The first URL is the Nest table the Google records cite (#21); the second is from a 2024 list; the third links the Australian statements (#36), including some for products outside cameras.
-  last_checked: null
+  last_checked: "2026-10-21"
 
 - brand: Lenovo
   brand_slug: lenovo
