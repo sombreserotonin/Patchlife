@@ -1,0 +1,19 @@
+- brand: Initech
+  brand_slug: initech
+  kind: years_after_eol
+  urls: [https://example.com/initech/psti]
+  last_checked: "2026-01-31"
+
+- brand: Umbrella
+  brand_slug: umbrella
+  kind: unknown
+  urls: [https://example.com/umbrella/psti]
+  note: From a 2024 list.
+  last_checked: null
+
+- brand: Hooli
+  brand_slug: hooli
+  kind: lead_only
+  urls: [https://example.org/distributor/hooli]
+  note: A distributor page. Lead only.
+  last_checked: null

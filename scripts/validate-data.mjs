@@ -1,5 +1,5 @@
-// Validates every device record against the JSON Schema plus integrity rules the schema can't express.
-// Usage: node scripts/validate-data.mjs [devicesDir]
+// Validates every device record and source registry file against its JSON Schema plus integrity rules the schema can't express.
+// Usage: node scripts/validate-data.mjs [devicesDir] [sourcesDir]
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -116,10 +116,48 @@ export function validateDevices(devicesDir, { today = new Date().toISOString().s
   return { files: files.length, errors };
 }
 
+// Checks each sourcesDir/*.yaml file: a list of starting URLs per brand. A brand_slug may appear once across all files.
+export function validateSources(
+  sourcesDir,
+  { today = new Date().toISOString().slice(0, 10), validate = loadValidator(join(ROOT, "data/schema/source.schema.json")) } = {},
+) {
+  if (!existsSync(sourcesDir)) return { files: 0, sources: 0, errors: [{ file: sourcesDir, message: "directory not found" }] };
+  const errors = [];
+  const seen = new Map();
+  const files = readdirSync(sourcesDir).filter((name) => name.endsWith(".yaml")).sort();
+  let sources = 0;
+
+  for (const name of files) {
+    const fail = (message) => errors.push({ file: name, message });
+
+    let entries;
+    try {
+      entries = YAML.parse(readFileSync(join(sourcesDir, name), "utf8"));
+    } catch (err) {
+      fail(`YAML parse error: ${err.message}`);
+      continue;
+    }
+    if (Array.isArray(entries)) sources += entries.length;
+    if (!validate(entries)) {
+      for (const err of validate.errors) fail(`schema: ${err.instancePath || "/"} ${err.message}`);
+      continue;
+    }
+
+    for (const { brand_slug: slug, last_checked: checked } of entries) {
+      if (seen.has(slug)) fail(`duplicate brand_slug "${slug}", also in ${seen.get(slug)}`);
+      else seen.set(slug, name);
+      if (checked && checked > today) fail(`last_checked ${checked} for "${slug}" is in the future`);
+    }
+  }
+
+  return { files: files.length, sources, errors };
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const dir = resolve(process.argv[2] ?? join(ROOT, "data/devices"));
-  const { files, errors } = validateDevices(dir);
+  const devices = validateDevices(resolve(process.argv[2] ?? join(ROOT, "data/devices")));
+  const sources = validateSources(resolve(process.argv[3] ?? join(ROOT, "data/sources")));
+  const errors = [...devices.errors, ...sources.errors];
   for (const e of errors) console.error(`${e.file}: ${e.message}`);
-  console.log(`${files} record(s) checked, ${errors.length} error(s)`);
+  console.log(`${devices.files} record(s) and ${sources.sources} source(s) checked, ${errors.length} error(s)`);
   process.exit(errors.length ? 1 : 0);
 }

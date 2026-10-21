@@ -1,13 +1,15 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { addYears, mentionsDate, mentionsYears, validateDevices } from "../scripts/validate-data.mjs";
+import { addYears, mentionsDate, mentionsYears, validateDevices, validateSources } from "../scripts/validate-data.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FIXTURES = join(HERE, "fixtures");
 const TODAY = "2026-10-21";
 const run = (name) => validateDevices(join(FIXTURES, name), { today: TODAY });
+const runSources = (name) => validateSources(join(FIXTURES, "sources", name), { today: TODAY });
 const messages = (errors) => errors.map((e) => `${e.file}: ${e.message}`).join("\n");
 
 test("repository data passes", () => {
@@ -40,6 +42,49 @@ for (const [name, pattern] of rejected) {
     assert.ok(errors.some((e) => pattern.test(e.message)), messages(errors) || "no errors reported");
   });
 }
+
+test("repository sources pass", () => {
+  const { sources, errors } = validateSources(join(HERE, "..", "data", "sources"));
+  assert.ok(sources > 0, "expected at least one source");
+  assert.deepEqual(errors, [], messages(errors));
+});
+
+test("valid source fixtures pass, including last_checked today and no note", () => {
+  const { files, sources, errors } = runSources("valid");
+  assert.equal(files, 2);
+  assert.equal(sources, 5);
+  assert.deepEqual(errors, [], messages(errors));
+});
+
+const rejectedSources = [
+  ["unknown-field", /^schema: \/0 must NOT have additional properties$/],
+  ["non-https-url", /^schema: \/0\/urls\/0 must match pattern "\^https:\/\/"$/],
+  ["duplicate-url", /^schema: \/0\/urls must NOT have duplicate items/],
+  ["future-last-checked", /^last_checked 2026-10-22 for "acme" is in the future$/],
+];
+
+for (const [name, pattern] of rejectedSources) {
+  test(`rejects source ${name}`, () => {
+    const { errors } = runSources(name);
+    assert.ok(errors.some((e) => pattern.test(e.message)), messages(errors) || "no errors reported");
+  });
+}
+
+test("rejects a brand_slug listed twice, across files or within one", () => {
+  const { errors } = runSources("duplicate-brand-slug");
+  const text = messages(errors);
+  assert.match(text, /^b\.yaml: duplicate brand_slug "acme", also in a\.yaml$/m);
+  assert.match(text, /^b\.yaml: duplicate brand_slug "initech", also in b\.yaml$/m);
+  assert.equal(errors.length, 2, text);
+});
+
+test("the CLI checks source files as well as device records", () => {
+  const args = [join(HERE, "..", "scripts", "validate-data.mjs"), join(FIXTURES, "valid"), join(FIXTURES, "sources", "non-https-url")];
+  const { status, stdout, stderr } = spawnSync(process.execPath, args, { encoding: "utf8" });
+  assert.match(stderr, /^acme\.yaml: schema: \/0\/urls\/0 must match pattern/m);
+  assert.match(stdout, /^5 record\(s\) and 1 source\(s\) checked, 1 error\(s\)$/m);
+  assert.equal(status, 1);
+});
 
 test("addYears keeps the day and handles 29 February", () => {
   assert.equal(addYears("2025-06-11", 2), "2027-06-11");
