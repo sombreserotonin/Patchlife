@@ -1,0 +1,27 @@
+id: tp-link-tapo-c460-v1
+brand: TP-Link
+brand_slug: tp-link
+model: Tapo C460 (V1)
+aliases:
+  - Tapo C460 V1
+  - C460
+category: camera
+regions: [AU]
+support:
+  rule: fixed_date
+  end_date: "2028-12-31"
+  years: null
+  anchor_date: null
+  at_least: true
+  conditions: Hardware version V1 only.
+evidence:
+  - url: https://www.tp-link.com/au/landing/au-cyber-compliance/
+    quote: "Solar/Battery Camera Tapo C460 V1 31/12/2028 or later*"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: au_smart_device_rules
+verification:
+  status: verified
+  checked: "2026-10-21"
+  text_sha256: a4337c7ad21ccddaf8a6d352a81901ef82a2c49bba82f7a707198d5ac2d69799
+notes: Australian statement of compliance. Its footnote says the period for a product not yet at end of life may be extended.
