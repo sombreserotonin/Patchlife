@@ -16,6 +16,7 @@ If these files disagree with each other or with the code, say so in your PR rath
 - `npm run validate` schema and integrity checks for `data/devices`
 - `npm test` unit tests
 - `npm run verify:evidence [-- [--due <days>] [--limit <n>] <id> ...]` fetch each evidence URL and mark records `verified` or `stale`; `--due` and `--limit` pick the oldest verified records; needs the `Crawl` environment
+- `node scripts/data-report.mjs` counts records by brand, category, status and verification state; its first four lines are the Measures rows in `docs/PLAN.md`
 
 Add every new command here when you create it.
 
