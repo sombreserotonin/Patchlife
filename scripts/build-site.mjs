@@ -186,11 +186,16 @@ function indexEntry(record, status) {
   return Object.fromEntries(Object.entries(entry).filter(([, value]) => value !== null && value !== undefined));
 }
 
-// For an "at least" date the status describes the guaranteed minimum, not when updates stop (D23).
-function statusNote({ status, at_least: atLeast }) {
+// For an "at least" date the status describes the guaranteed minimum, not when updates stop (D23). A condition can
+// give some buyers longer (Ring's purchase rule), so with one the note only speaks of the minimum to this date.
+function statusNote({ status, at_least: atLeast }, conditions) {
   if (status === "supported") return atLeast ? "More than 12 months of the guaranteed minimum left." : "More than 12 months of security updates left.";
-  if (status === "ending_soon") return atLeast ? "12 months or less of the guaranteed minimum left." : "12 months or less of security updates left.";
-  if (status === "ended") return atLeast ? "The guaranteed minimum period has passed." : "The end date has passed.";
+  if (status === "ending_soon" && atLeast) {
+    return conditions ? draft("12 months or less of the minimum to this date left. See Conditions.") : "12 months or less of the guaranteed minimum left.";
+  }
+  if (status === "ending_soon") return "12 months or less of security updates left.";
+  if (status === "ended" && atLeast) return draft(conditions ? "The minimum period to this date has passed. See Conditions." : "The guaranteed minimum period has passed.");
+  if (status === "ended") return "The end date has passed.";
   return "No end date can be worked out from what the manufacturer has published.";
 }
 
@@ -352,7 +357,8 @@ function breadcrumbs(ctx, trail) {
   )}</ol></nav>`;
 }
 
-// Each row repeats the attribution, checked date, regions and any review flag (DATA-POLICY Display).
+// Each row gives the answer with "as published by <brand>" and the checked date, the regions and any review flag, and
+// links to the model page, which shows the quote and the source link (DATA-POLICY Display).
 function deviceList(ctx, items) {
   return html`<ul class="devices">${items.map(
     ({ record, entry }) => html`<li><a href="${link(ctx, `/devices/${record.id}/`)}">${displayName(record.brand, record.model)}</a><br>
@@ -403,7 +409,7 @@ function modelPage(ctx, { record, status, entry }) {
 ${disclaimerNote(ctx)}
 <dl>
 <dt>Status</dt>
-<dd>${statusBadge(entry)} Status as at ${shortTime(ctx.today)}. ${statusNote(entry)}</dd>
+<dd>${statusBadge(entry)} Status as at ${shortTime(ctx.today)}. ${statusNote(entry, conditions)}</dd>
 <dt>Time left</dt>
 <dd>${timeLeftText(record, status, ctx.today)}</dd>
 <dt>Support period</dt>
@@ -486,7 +492,7 @@ function methodologyPage(ctx) {
 <p>News, forums, retailers, distributors and AI answers are only leads. They are never used as evidence.</p>
 <h2>Quotes</h2>
 <ul>
-<li>Each record quotes, word for word, the shortest part of the source that states the date or rule for that model, up to 300 characters.</li>
+<li>Each record that gives a date or rule quotes, word for word, the shortest part of the source that states the date or rule for that model, up to 300 characters.</li>
 <li>When the source is a table, the quote is the row's cell texts joined by single spaces, for example "Ring Video Doorbell 3 31 December 2027".</li>
 <li>The quotes must state what the record states: the end date, any anchor date such as an end-of-life date, and the number of years in a rule.</li>
 <li>Only quotes and facts are stored, never whole pages or images.</li>
@@ -540,7 +546,7 @@ function aboutPage(ctx, { coverage }) {
     body: html`<h1>About Patchlife</h1>
 <p>Smart devices stop getting security updates long before they stop working, and buyers rarely know when. Patchlife looks up when a smart device stops getting security updates, and quotes the manufacturer's own words as evidence. So far it covers ${coverage}.</p>
 <h2>Why</h2>
-${draft(html`<p>Australia's smart device rules apply to most household smart devices made from 4 March 2026, and makers must publish how long a device gets security updates (<a href="${HOME_AFFAIRS_URL}">Department of Home Affairs</a>). The UK has required a statement of compliance since 29 April 2024 under its PSTI regulations (<a href="${PSTI_URL}">Cooley</a>). These statements are spread across many support pages and PDFs, often as a rule such as "3 years after end of life" rather than a date. Patchlife collects them in one place, with a quote and a link for every answer.</p>`)}
+${draft(html`<p>Australia's smart device rules apply to most household smart devices made from 4 March 2026, and makers must publish how long a device gets security updates (<a href="${HOME_AFFAIRS_URL}">Department of Home Affairs</a>). The UK has required a statement of compliance since 29 April 2024 under its PSTI regulations (<a href="${PSTI_URL}">Cooley</a>). These statements are spread across many support pages and PDFs, often as a rule such as "3 years after end of life" rather than a date. Patchlife collects them in one place, with a quote and a link for every date.</p>`)}
 <h2>What Patchlife doesn't do</h2>
 ${draft(html`<p>Patchlife doesn't publish reviews, ratings or brand rankings without a published methodology, give legal advice, certify compliance, or collect retailer prices or reviews.</p>`)}
 <h2>Open code and data</h2>

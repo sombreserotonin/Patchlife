@@ -249,6 +249,23 @@ test("at-least wording never overstates the minimum", (t) => {
   assert.match(text(build(t, { today: "2027-03-01" }).read("devices/acme-leap-5/index.html")), /Time left None guaranteed\. The minimum period has ended\./);
 });
 
+test("status notes hedge an at-least minimum when the record has conditions", (t) => {
+  const soon = build(t, { records: [ringStyle()], today: "2027-06-01" }).read("devices/ring-video-doorbell-3/index.html");
+  assert.match(text(soon), /Status Ending soon Status as at 1 June 2027\. 12 months or less of the minimum to this date left\. See Conditions\./);
+  assertDraftMarked(soon, "12 months or less of the minimum to this date left. See Conditions.", "ending soon");
+  const passed = build(t, { records: [ringStyle()], today: "2028-01-01" }).read("devices/ring-video-doorbell-3/index.html");
+  assert.match(text(passed), /Status Minimum passed Status as at 1 Jan 2028\. The minimum period to this date has passed\. See Conditions\./);
+  assertDraftMarked(passed, "The minimum period to this date has passed. See Conditions.", "minimum passed");
+  assert.doesNotMatch(text(passed), /guaranteed minimum period has passed/);
+});
+
+test("status notes for a date without at least say when updates end", (t) => {
+  const note = (today) => text(build(t, { today }).read("devices/acme-router-2/index.html")).match(/Status as at [^.]+\. ([^.]+\.)/)[1];
+  assert.equal(note("2026-10-21"), "More than 12 months of security updates left.");
+  assert.equal(note("2027-06-01"), "12 months or less of security updates left.");
+  assert.equal(note("2028-04-01"), "The end date has passed.");
+});
+
 test("anchors are described as the date the brand gives", (t) => {
   const site = build(t);
   assert.match(text(site.read("devices/acme-leap-5/index.html")), /Support period At least 3 years after the launch or first-sale date Acme gives for this model, 29 February 2024/);
@@ -259,6 +276,16 @@ test("the methodology says an at-least end date is the last guaranteed day", (t)
   const words = text(build(t).read("methodology/index.html"));
   assert.ok(words.includes('An end date is the last day of the stated period. When the source says "at least", it is the last guaranteed day, and updates may continue after it.'), words);
   assert.doesNotMatch(words, /An end date is the last day of support\./);
+});
+
+test("quote claims cover dates, not answers that found nothing", (t) => {
+  const site = build(t);
+  const about = text(site.read("about/index.html"));
+  assert.match(about, /with a quote and a link for every date\./);
+  assert.doesNotMatch(about, /every answer/);
+  const methodology = text(site.read("methodology/index.html"));
+  assert.match(methodology, /Each record that gives a date or rule quotes, word for word,/);
+  assert.doesNotMatch(methodology, /Each record quotes/);
 });
 
 test("both JSON files carry the licence, attribution, build date and computed status", (t) => {
@@ -396,6 +423,65 @@ test("attachSearch renders base-prefixed links and replaces results on each inpu
   assert.match(dom.count.textContent, /^No devices found\./);
   dom.type("  ");
   assert.equal(dom.count.textContent, "");
+});
+
+// Runs the home page's inline search loader with a fake document, import() and fetch(), and records what it asks for.
+function runLoader(page, { fetchOk = true } = {}) {
+  const code = page.match(/<script type="module">([\s\S]*?)<\/script>/)[1];
+  const element = (props = {}) => ({ listeners: {}, addEventListener(type, fn) { this.listeners[type] = fn; }, ...props });
+  const form = element({ dataset: { base: page.match(/data-base="([^"]*)"/)[1] } });
+  const input = element({ value: "" });
+  const count = { textContent: "" };
+  const list = {};
+  const nodes = { search: form, q: input, "search-count": count, "search-results": list };
+  const calls = { imports: [], fetches: [], attached: [] };
+  const fakeImport = async (url) => {
+    calls.imports.push(url);
+    return { attachSearch: (options) => calls.attached.push(options) };
+  };
+  const fakeFetch = async (url) => {
+    calls.fetches.push(url);
+    return fetchOk ? { ok: true, json: async () => ({ devices: ["d"] }) } : { ok: false, status: 404 };
+  };
+  new Function("document", "loadModule", "fetch", code.replace(/\bimport\(/g, "loadModule("))({ getElementById: (id) => nodes[id] }, fakeImport, fakeFetch);
+  const settle = () => new Promise((done) => setTimeout(done, 0));
+  return { form, input, count, list, calls, settle };
+}
+
+test("the home page search loader loads lazily from the base path and wires up attachSearch", async (t) => {
+  const home = build(t, { basePath: "/Patchlife" }).read("index.html");
+  for (const trigger of ["focus", "input"]) {
+    const loader = runLoader(home);
+    await loader.settle();
+    assert.deepEqual(loader.calls.imports, [], "nothing loads before the search box is used");
+    loader.input.listeners[trigger]();
+    loader.input.listeners[trigger]();
+    await loader.settle();
+    assert.deepEqual(loader.calls.imports, ["/Patchlife/search.js"], trigger);
+    assert.deepEqual(loader.calls.fetches, ["/Patchlife/search-index.json"], trigger);
+    assert.equal(loader.calls.attached.length, 1, trigger);
+    const options = loader.calls.attached[0];
+    assert.equal(options.input, loader.input);
+    assert.equal(options.count, loader.count);
+    assert.equal(options.list, loader.list);
+    assert.deepEqual(options.devices, ["d"]);
+    assert.equal(options.base, "/Patchlife");
+  }
+  const loader = runLoader(home);
+  let prevented = false;
+  loader.form.listeners.submit({ preventDefault: () => (prevented = true) });
+  assert.ok(prevented, "submitting the search form does not reload the page");
+});
+
+test("the search loader says when search cannot load, and tries again on the next focus", async (t) => {
+  const loader = runLoader(build(t).read("index.html"), { fetchOk: false });
+  loader.input.listeners.focus();
+  await loader.settle();
+  assert.equal(loader.count.textContent, "Search could not load. You can still browse by brand or category below.");
+  assert.equal(loader.calls.attached.length, 0);
+  loader.input.listeners.focus();
+  await loader.settle();
+  assert.equal(loader.calls.fetches.length, 2, "a failed load is retried");
 });
 
 test("SITE_URL is trimmed and must be a plain http or https URL", () => {
