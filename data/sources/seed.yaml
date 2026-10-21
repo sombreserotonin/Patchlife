@@ -34,8 +34,10 @@
   kind: years_after_eol
   urls:
     - https://www.gl-inet.com/en-us/pages/psti
-  note: Support period runs 2 years from a product's end-of-life date.
-  last_checked: null
+    - https://www.gl-inet.com/en-us/pages/psti-support-period
+    - https://www.gl-inet.com/en-us/pages/firmware-versions/?status=ended
+  note: Support period runs 2 years from a product's end-of-life date. The second URL is the per-model table the GL.iNet records cite (24 models, "June 11, 2027 or later"). The third URL is the End of Life table the PSTI statement links, with EOL and Supported Until dates (Beryl GL-MT1300 cites it; Velica GL-B2200 is skipped because it conflicts, see #49).
+  last_checked: "2026-10-21"
 
 - brand: Kyocera
   brand_slug: kyocera

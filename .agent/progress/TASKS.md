@@ -13,10 +13,10 @@ Next for the daily build (`Default`), in order:
 - [ ] Validator: every record's `model` or one of its `aliases` must appear in at least one evidence quote (normalised as the verifier does), and no alias or model may be shared by two records of the same brand unless they are region-date splits of one product (D33: same `model`, different regions). Tests. All 122 current records should pass; if any fails, list it in the PR instead of editing data.
 
 Waiting:
-- [ ] EZVIZ camera records per RUNBOOKS A2, then an A8 audit by a second session: the fourth brand (waiting on #23, then the owner starting `Crawl` sessions, O1).
+- [ ] EZVIZ camera records per RUNBOOKS A2, then an A8 audit by a second session: the fourth brand. Hosts added (#23); a `Crawl` session started by the coordinating session on 21 Oct is doing it.
+- [ ] Audit and merge #49 (GL.iNet, 24 router, mesh and hub records from the nightly task's first run): an A8 session started on 21 Oct. Routers don't count toward M1's camera and doorbell exit.
 - [ ] M1 exit check (waiting on the EZVIZ task, then a `Crawl` session): run a full `npm run verify:evidence`. Mark M1 done in ROADMAP.md and write the M2 tasks only if at least 50 records are `verified` across at least four brands. With fewer brands, leave M1 open and say why in the PR.
 
-- [ ] Protected M2 PR #47 (Pages workflow, Lighthouse gate, `build:site`): waiting on the owner to set Settings > Pages > Source to GitHub Actions (H6), then merge.
 
 Leads for after M1 (need `Crawl`): Google's regulatory page `https://support.google.com/chromecast/answer/10367042` also links Australian statements for Google TV Streamer (4K), Google Nest Mini, Google Nest Wifi Pro and Nest x Yale Lock (found by the #36 audit).
 
@@ -35,6 +35,7 @@ Done:
 - [x] Verifier options `--due <days>` and `--limit <n>` select the verified records to re-verify, oldest first (#37).
 - [x] Data, audited per RUNBOOKS A8: Ring 48 (#24), Google Nest 12 (#21), TP-Link Tapo 60 (#22). 120 verified records from three brands on `main`.
 - [x] Google's Australian statements added to 6 Google Nest records, audited (#36).
+- [x] M2 Pages workflow, Lighthouse gate and `npm run build:site` (#47). Preview live at https://sombreserotonin.github.io/Patchlife/ with noindex. M2's exit checks are met on the preview (Lighthouse 100 for performance, accessibility and SEO on the home page and a model page, in CI); M2 closes after M1.
 - [x] M2 site generator (`scripts/build-site.mjs`, `site/search.js`), held for P2 and merged after three review rounds and two independent pre-merge checks (#34): 131 pages for 122 records, Lighthouse 100 in every category locally.
 - [x] Ring region-date records (D33): `ring-video-doorbell-4-us` and `ring-spotlight-cam-4k-pro-au-us` (#43); missing regions added to 7 Ring records (#44); former product names from Ring's name-change article added as aliases to 14 records (#45). All audited. Not settled from Ring's own pages, so unchanged: the AU "Ring Video Doorbell" row (no generation named) and the US Battery Doorbell, Battery Doorbell Plus, Battery Doorbell Pro, Floodlight Cam Plus and Floodlight Cam Pro rows.
 - [x] `node scripts/data-report.mjs` prints counts by brand, category, status and verification state, plus the oldest `checked` date; the Measures table in docs/PLAN.md cites it (#35).
@@ -53,11 +54,11 @@ Done:
 - H2 Connect GitHub to Claude Code (claude.ai/code onboarding) and install the Claude GitHub App on this repo. Done (#3).
 - H3 Ruleset on `main`: require a pull request and the `test` status check; block force pushes and deletion. Done (#4): repo made public; ruleset `main` active, no bypass actors.
 - H4 Daily build scheduled task at claude.ai/code/routines: this repo, Default environment, daily at a few minutes past the hour, prompt `Follow .agent/prompts/daily-build.md`. Done (#5): `Patchlife daily build`, 06:08 Australia/Sydney.
-- H5 `Crawl` cloud environment with the Custom allowlist in ARCHITECTURE.md (done, #9), plus a nightly scheduled task with prompt `Follow .agent/prompts/data-refresh.md` (P1 is B, D27; steps in RUNBOOKS O6; waiting on the owner, #41). EZVIZ hosts: #23.
-- H6 (M2) P2 is GitHub Pages (D28): set Settings > Pages > Source to GitHub Actions, then verify `patchlife.tech`, set its DNS records and tick Enforce HTTPS (no account, token or secret). Steps in docs/PLAN.md M2.
+- H5 `Crawl` cloud environment with the Custom allowlist in ARCHITECTURE.md (done, #9), plus a nightly scheduled task with prompt `Follow .agent/prompts/data-refresh.md` (P1 is B, D27; done, #41: `Patchlife nightly data`, 01:17 Sydney). EZVIZ hosts: done, #23.
+- H6 (M2) P2 is GitHub Pages (D28): Pages source set to GitHub Actions (done 21 Oct; preview live, #47). After the H9a read: verify `patchlife.tech`, set its DNS records and tick Enforce HTTPS (no account, token or secret). Steps in docs/PLAN.md M2.
 - H7 (M2 launch, not M4) Google Search Console Domain property for `patchlife.tech` (DNS TXT record), then submit the sitemap. Indexing needs weeks before M4 can start.
 - H8 Optional: `@claude` in issues. Run `/install-github-app` in Claude Code, or add a `CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY` Actions secret. Not planned (#6).
-- H9 Legal, in three stages (checklists in docs/PLAN.md): H9a before the site moves to `patchlife.tech` (disclaimer next to dates, privacy policy, quote and brand use, UK GDPR); H9b before the M4 waitlist collects emails (collection notice, provider DPA, Spam Act unsubscribe, retention); H9c before charging (ABN, GST, terms and refunds, Stripe, data licence, overseas tax). Crawler contact URL done (#10).
+- H9 Legal, in three stages (checklists in docs/PLAN.md): H9a (#52) before the site moves to `patchlife.tech` (disclaimer next to dates, privacy policy, quote and brand use, UK GDPR); H9b before the M4 waitlist collects emails (collection notice, provider DPA, Spam Act unsubscribe, retention); H9c before charging (ABN, GST, terms and refunds, Stripe, data licence, overseas tax). Crawler contact URL done (#10).
 - H10 (M5 to M7) Stripe, browser store developer accounts, email provider.
 - H11 Usage: watch claude.ai/settings/usage and decide whether to allow usage credits. Done (#7): usage credits off, so runs stop when usage runs out until the window resets.
 - H12 (before accepting outside contributions) A contributor licence agreement, so the owner keeps the right to relicense.
