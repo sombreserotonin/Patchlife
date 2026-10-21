@@ -15,5 +15,9 @@ evidence:
     quote: The defined support period will end 3 years after the product's end-of-life date.
     retrieved: "2026-10-01"
     regime: uk_psti
+  - url: https://example.com/acme/psti
+    quote: This statement covers Acme Plug 3.
+    retrieved: "2026-10-01"
+    regime: uk_psti
 verification:
   status: unverified

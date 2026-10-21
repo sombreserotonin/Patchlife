@@ -92,8 +92,8 @@ test("a missing page text fails", () => {
 // verifyDevices runs against a temporary copy of the valid fixtures with a fake fetcher.
 const PAGES = {
   "https://example.com/acme/security": "<p>Acme Cam 1 31 December 2029</p>",
-  "https://example.com/acme/leap-5": "<p>Security updates for at least 3 years from launch on 29 February 2024.</p>",
-  "https://example.com/acme/psti": "<p>The defined support period will end 3 years after the product's end-of-life date.</p>",
+  "https://example.com/acme/leap-5": "<p>Acme Leap 5 gets security updates for at least 3 years from launch on 29 February 2024.</p>",
+  "https://example.com/acme/psti": "<p>The defined support period will end 3 years after the product's end-of-life date.</p><p>This statement covers Acme Plug 3.</p>",
   "https://example.com/acme/eol": "<table><tr><td>Router 2</td><td>End of Life</td><td>31 March 2025</td></tr></table>",
 };
 

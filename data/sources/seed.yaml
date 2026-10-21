@@ -1,6 +1,9 @@
 # Starting points for M1. Not evidence until a record quotes them.
 # URLs found on 2026-10-21; entries marked 2024 come from a 2024 list and may have moved.
 # last_checked: date this source was last fetched by the data refresh (null = never).
+# date_order: how the pages write numeric dates, dmy (31/12/2027) or mdy (12/31/2027). npm run validate reads
+# numeric dates in quotes from URLs starting with these in that order only, and rejects a quote whose numeric date
+# could be read either way when no entry with a date_order covers its URL. Year-first dates (2029/12/31) need none.
 
 - brand: Ring
   brand_slug: ring
@@ -26,6 +29,7 @@
     - https://www.tp-link.com/au/landing/au-cyber-compliance/
     - https://www.tp-link.com/uk/support/psti/
     - https://www.tp-link.com/uk/support/faq/3562/
+  date_order: dmy
   note: The AU page gives a date per model and hardware version; the Tapo records (#22) cite it. The UK pages give 3 years after a product's end-of-life date; the UK per-model periods are only in a PDF.
   last_checked: "2026-10-21"
 
@@ -68,6 +72,7 @@
     - https://support.google.com/product-documentation/answer/10231940?hl=en
     - https://support.google.com/product-documentation/answer/14869041?hl=en
     - https://support.google.com/chromecast/answer/10367042
+  date_order: mdy
   note: The first URL is the Nest table the Google records cite (#21); the second is from a 2024 list; the third links the Australian statements (#36), including some for products outside cameras.
   last_checked: "2026-10-21"
 

@@ -11,6 +11,9 @@ News, forums, retailers, distributors and AI answers are leads only, never evide
 - Verbatim: the shortest span that states the date or rule for that model, 300 characters at most.
 - Table rows: quote the cell texts joined by single spaces, for example `Ring Video Doorbell 3 31 December 2027`.
 - The quotes must state what the record states: a `fixed_date` record's end date, any anchor date, and the number of years in a relative rule. `npm run validate` rejects a record whose dates or years are not written in any of its quotes.
+- A numeric date such as 3/4/2027 is read in the order the source registry gives for its URL (`date_order`). Where no entry with a `date_order` covers the URL, `npm run validate` rejects a numeric date whose day and month are both 12 or under and differ. Year-first dates (2029/12/31) and month names are never ambiguous.
+- At least one quote must name the model, as its `model` or one of its `aliases` (ignoring case and spacing, as the evidence checker does). `none_published` records are exempt.
+- Within a brand, a model name or alias belongs to one record, except region-date splits of one model (D33): records with the same `model` and no region in common.
 - Store only quotes and facts, never whole pages or images.
 - When a table states the rule in one place and lists the models in another (a group table), use two evidence items from the same URL: the rule and the model's entry.
 

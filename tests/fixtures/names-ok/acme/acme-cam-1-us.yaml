@@ -1,0 +1,19 @@
+id: acme-cam-1-us
+brand: Acme
+brand_slug: acme
+model: Cam 1
+aliases: [ac-1]
+category: camera
+regions: [US]
+support:
+  rule: fixed_date
+  end_date: "2028-06-30"
+  at_least: true
+evidence:
+  - url: https://example.com/acme/us/security
+    quote: "ACME  CAM\u00a01 30 June 2028"
+    retrieved: "2026-10-01"
+    regime: vendor_policy
+verification:
+  status: unverified
+notes: A region-date split of acme-cam-1 (D33).
