@@ -13,6 +13,8 @@ Open questions:
 - Dates appear on the page in US format (for example `8/24/2026`); the planned "date appears in a quote" validator rule must accept that format.
 - The years appear as "5" on the Nest page and "five" on the PSTI page.
 - `GLOBAL` is a judgement: the Nest page names no region, only the US Google Store as the anchor.
-- No Australian statement of compliance for Nest cameras or doorbells was found on the pages followed.
+- Correction after audit: Google does publish Australian statements of compliance for 6 of these models (for example `answer/16889039`); I missed them. Adding them is a follow-up.
+
+Audit fixes (same day): row quotes now include the "Currently receiving critical security updates" cell, so a flip to "No" marks the record stale; the scope sentence is extra evidence and `conditions`; notes on region, past-minimum support and the wired doorbell; duplicate aliases removed.
 
 Inefficient: none worth noting; the PSTI page's "Security support periods" link led straight to the Nest table.
