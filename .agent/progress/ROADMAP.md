@@ -19,6 +19,8 @@ Status: done 2026-10-21. Issues #2 to #7; CI run links in the M0 PR.
 
 Exit: `npm run validate`, `npm test` and `npm run verify:evidence` pass; at least 50 records are `verified`, from at least four brands.
 
+Status: done 2026-10-21. `npm run validate`: 338 records, 0 errors. `npm test`: 137 of 137 pass. Full `npm run verify:evidence`: "338 record(s) checked, 0 problem(s)". Verified camera and doorbell records: 309 from four brands (EZVIZ 187, TP-Link 60, Ring 50, Google 12); the other 29 verified records (GL.iNet 23, EZVIZ 6: routers, hubs, smart locks and other) don't count.
+
 ## M2 Public site, search only
 - Site generator and host chosen and recorded: a plain Node build script and GitHub Pages (P2, D28).
 - Pages and JSON as in SPEC 4; sitemap; structured data.
@@ -28,6 +30,8 @@ Exit: `npm run validate`, `npm test` and `npm run verify:evidence` pass; at leas
 Exit: live preview URL; automated accessibility check passes on the home page and one model page; Lighthouse performance, accessibility and SEO at 90 or above on a model page.
 
 Exit checks met on 21 Oct 2026 on the preview (https://sombreserotonin.github.io/Patchlife/; #47's CI run scored 100 in all three categories on the home page and a model page). M2 is marked done after M1 closes.
+
+Status: done 2026-10-21, on the exit checks above, after M1 closed.
 
 ## M3 Unattended data
 - Nightly data refresh scheduled task live in the `Crawl` environment (decision P1, RUNBOOKS O6); the prompt fixes it needs are merged (#29).

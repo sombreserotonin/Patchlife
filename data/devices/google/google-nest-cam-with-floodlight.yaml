@@ -53,5 +53,5 @@ evidence:
 verification:
   status: verified
   checked: "2026-10-21"
-  text_sha256: 8a0e2948bbf4f5d7d78969ffb54a2ff7d977a88404bb513890777f0e6d043af9
+  text_sha256: d6a59cd962b3cccde798fccb4a7ac31d638a41f8689dfbbae16485083d68aa34
 notes: "Google's table gives the US Google Store release date and the release date plus 5 years (minimum), in US month/day/year format. Also listed in Google's UK PSTI (April 2024) and Australian Cyber Security Rules (February 2026) statements of compliance, each applying where sold in that country. Google's page names no region; dates are anchored to the US Google Store. Google's table lists this model as currently receiving critical security updates (checked 2026-10-21); the 5-year minimum has passed."
