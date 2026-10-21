@@ -23,7 +23,7 @@ const MONTHS = ["january", "february", "march", "april", "may", "june", "july", 
 const NUMBER_WORDS = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
 
 // True when the text writes this YYYY-MM-DD date in a common form: 31 December 2027, 31st Dec 2027,
-// December 31, 2027, 2027-12-31, 31/12/2027 or 12/31/2027. Catches a date retyped wrongly from its quote.
+// December 31, 2027, 2027-12-31, 2027/12/31, 31/12/2027 or 12/31/2027. Catches a date retyped wrongly from its quote.
 export function mentionsDate(text, isoDate) {
   const [y, m, d] = isoDate.split("-").map(Number);
   const month = MONTHS[m - 1];
@@ -33,6 +33,7 @@ export function mentionsDate(text, isoDate) {
     `${day}\\s+(?:of\\s+)?${names},?\\s+${y}`,
     `${names}\\s+${day},?\\s+${y}`,
     `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`,
+    `${y}/0?${m}/0?${d}`,
     `0?${d}[/.]0?${m}[/.]${y}`,
     `0?${m}/0?${d}/${y}`,
   ];

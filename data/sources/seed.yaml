@@ -109,9 +109,9 @@
 - brand: EZVIZ
   brand_slug: ezviz
   kind: eol_list
-  urls: [https://support.ezviz.com/faq/article/EZVIZ-EOL-Product-List]
-  note: End-of-life product list. Hosts not allowlisted yet (#23).
-  last_checked: null
+  urls: [https://support.ezviz.com/faq/article/EZVIZ-EOL-Product-List, https://www.ezviz.com/inter/trust-center/security/upgrade-policy]
+  note: Per-model day of firmware update cessation for Europe; the page says EOL means no security updates. The upgrade policy links the list.
+  last_checked: "2026-10-21"
 
 - brand: Aqara
   brand_slug: aqara
