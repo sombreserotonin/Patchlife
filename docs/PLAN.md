@@ -153,7 +153,8 @@ Targets are estimates. Each milestone closes only when its exit checks in ROADMA
 Order set by M4. Scope as in SPEC 5 and 6.
 - **Before charging money (H9c, H10):** ABN, GST once turnover reaches A$75,000, Stripe, terms and refund policy reviewed for unfair contract terms, a data licence, overseas tax.
 - **Matching:** search and the extension must prefer the longest exact match. The audits found old models whose names are prefixes of new ones (for example "Nest Cam Indoor" from 2015 inside "Nest Cam Indoor (wired, 3rd gen)").
-- **GitHub Pages:** its terms bar sites built mainly for commercial transactions, so paid features run on edge compute (SPEC 6), possibly on a subdomain.
+- **Hosting (D40):** GitHub Pages bars sites built mainly for commercial transactions or SaaS, so the paid feed, API keys and reports run elsewhere, on a subdomain. First choice: the owner's Unraid server published through the owner's Pangolin VPS (WireGuard tunnel, no open ports at home), which costs nothing extra; edge compute (SPEC 6) is the fallback if uptime needs it. The public site stays on GitHub Pages: free, served from a CDN and no maintenance. Self-hosting it would trade uptime and speed for features it doesn't need yet.
+- **Repository stays public (D40).** Making it private on a free account would unpublish the Pages site, stop the `main` ruleset and secret scanning, put Actions on a 2,000-minute monthly allowance, and break public links (corrections, the crawler contact page in PatchlifeBot's user agent).
 
 ### M7 Growth
 Monthly report and alerts as in SPEC 7, once there's an audience.
