@@ -128,6 +128,7 @@ npm ci
 | `npm run validate` | Checks every record against the schema and integrity rules |
 | `npm test` | Runs the unit tests offline against saved fixtures; no test touches the network |
 | `npm run verify:evidence [-- <id> ...]` | Fetches evidence URLs and marks records `verified` or `stale`. Needs network access to manufacturer sites, so in cloud sessions it runs in the `Crawl` environment |
+| `npm run build:site` | Builds the static site into `_site/`. `BASE_PATH`, `SITE_URL`, `BUILD_DATE` and `NOINDEX` set the base path, origin, status date and preview mode. Run `npm run validate` first |
 | `node scripts/data-report.mjs` | Prints the Measures rows of `docs/PLAN.md`, then counts by brand, category, status and verification state. Reads only local files, so it runs in any environment |
 
 ## How the project runs itself
