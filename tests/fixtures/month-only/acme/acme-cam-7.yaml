@@ -1,0 +1,17 @@
+id: acme-cam-7
+brand: Acme
+brand_slug: acme
+model: Cam 7
+category: camera
+regions: [UK]
+support:
+  rule: fixed_date
+  end_date: "2027-06"
+  at_least: false
+evidence:
+  - url: https://example.com/acme/eol
+    quote: Acme Cam 7 security updates until June 2027
+    retrieved: "2026-10-01"
+    regime: uk_psti
+verification:
+  status: unverified

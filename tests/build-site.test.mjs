@@ -419,6 +419,21 @@ test("the privacy page carries the approved text and every page links to it", (t
   for (const file of htmlFiles(site.outDir)) assert.match(site.read(file), /<a href="\/privacy\/">Privacy<\/a>/, file);
 });
 
+test("a month-only end date shows the month and year, never a day (D38)", (t) => {
+  const record = (id, end_date, at_least) => {
+    const r = ringStyle();
+    return Object.assign(r, { id, model: id, aliases: [], support: { ...r.support, end_date, at_least, conditions: null } });
+  };
+  const site = build(t, { records: [record("future", "2027-06", true), record("ended", "2026-06", false), record("passed", "2026-06", true)] });
+  const future = site.read("devices/future/index.html");
+  assert.ok(text(future).includes("Security updates until at least June 2027, as published by Ring (checked 21 Oct 2026)."), text(future));
+  assert.match(future, /At least until <time datetime="2027-06">June 2027<\/time>/);
+  assert.match(text(future), /Time left At least until June 2027\. Ring gives the month, not the day\./);
+  assert.match(text(site.read("devices/ended/index.html")), /Security updates ended in June 2026, as published by Ring/);
+  assert.match(text(site.read("devices/passed/index.html")), /Minimum support period ended in June 2026\. Ring may still provide updates\./);
+  for (const file of htmlFiles(site.outDir)) assert.doesNotMatch(text(site.read(file)), /\d+ June 202[67]|Invalid Date/, file);
+});
+
 test("coverage claims come from the categories that have records", (t) => {
   const site = build(t, { records: [ringStyle()] });
   assert.match(text(site.read("index.html")), /So far it covers 1 device: doorbells\./);

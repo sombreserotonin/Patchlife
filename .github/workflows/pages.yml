@@ -1,7 +1,7 @@
 name: Pages
 
 # Builds the site (D28) on every merge to main and daily just after 00:00 UTC, so status stays current (D7).
-# The preview at sombreserotonin.github.io/Patchlife carries noindex until it moves to patchlife.tech (PLAN M2).
+# Served at https://patchlife.tech from the site root, indexed, with a sitemap (PLAN M2).
 on:
   push:
     branches: [main]
@@ -29,14 +29,12 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run validate
-      - name: Build the preview
+      - name: Build the site
         run: npm run build:site
         env:
-          BASE_PATH: /Patchlife
-          SITE_URL: https://sombreserotonin.github.io
-          NOINDEX: '1'
+          SITE_URL: https://patchlife.tech
       - name: Lighthouse (M2 exit check)
-        # Scored on a root build without noindex, as the site will be served on patchlife.tech.
+        # Scored on a root build served locally, so canonical links point at the server being tested.
         run: |
           BASE_PATH= SITE_URL=http://localhost:8080 npm run build:site -- "$RUNNER_TEMP/lh-site"
           python3 -m http.server 8080 --bind 127.0.0.1 --directory "$RUNNER_TEMP/lh-site" > /dev/null 2>&1 &

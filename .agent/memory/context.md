@@ -1,12 +1,12 @@
 # Context (current state)
 
 - 2026-10-21: Repo created from the starter kit. Nothing deployed.
-- M0, M1 and M2 done (21 Oct 2026; #54). M3 (unattended data) is active; its tasks are in TASKS.md. The preview is live at https://sombreserotonin.github.io/Patchlife/ with noindex. The plan is `docs/PLAN.md`; the procedures are `docs/RUNBOOKS.md`; the cost pivot is `docs/COSTS.md`.
-- Data on `main`: 338 verified records from five brands, all audited: EZVIZ 193 (#51), TP-Link Tapo 60 (#22), Ring 50 (#24, #43 to #45), GL.iNet 23 (#49), Google Nest 12 (#21, #36). 309 are cameras or doorbells. Arlo can't be used (D18).
-- Decisions P1 to P8 settled 21 Oct (#30; D27 to D34). H9a approved (#52, 21 Oct). Waiting on the owner: the DNS steps to move to patchlife.tech (#57) and approval of the privacy page. G1 and G3 done 21 Oct. The prompt fixes are merged (#29, 21 Oct).
+- M0, M1 and M2 done (21 Oct 2026; #54). M3 (unattended data) is active; its tasks are in TASKS.md. The site is served at https://patchlife.tech (custom domain done, #57), behind Cloudflare's proxy; until protected PR #67 merges, it is still built for the `/Patchlife` preview path with noindex, so its links are 404s. The plan is `docs/PLAN.md`; the procedures are `docs/RUNBOOKS.md`; the cost pivot is `docs/COSTS.md`.
+- Data on `main`: 340 records from five brands, all audited: EZVIZ 193 (#51), TP-Link Tapo 60 (#22), Ring 50 (#24, #43 to #45), GL.iNet 25 (#49, Velica #61), Google Nest 12 (#21, #36). 309 are cameras or doorbells. Arlo can't be used (D18).
+- Decisions P1 to P8 settled 21 Oct (#30; D27 to D34). H9a approved (#52, 21 Oct). Privacy text approved (#60) with admin@sombrexo.com and GitHub issues as contacts; its PR #69 waits on the Cloudflare decision (#68). Waiting on the owner: merges of #66 and #67. G1 and G3 done 21 Oct. The prompt fixes are merged (#29, 21 Oct).
 - Labels: `audited` marks a data PR that passed RUNBOOKS A8. Heartbeat issue #27 gets one comment per daily build run (from 22 Oct, #29). The daily build merges a data PR only with `audited` or when it changes only `verification:` fields.
 - Repo is public. Ruleset `main` is active: pull request required (0 approvals), `test` check required, force pushes and deletion blocked, no bypass actors. Agents merge only PRs whose head branch is in this repo.
-- Domain `patchlife.tech` bought by the owner (#2); no trade mark clashes reported. No DNS or hosting yet (M2).
+- Domain `patchlife.tech` bought by the owner (#2); no trade mark clashes reported. DNS is at Cloudflare, proxied (it resolves to Cloudflare addresses), with Cloudflare Web Analytics injecting its beacon (#68).
 - Claude GitHub App installed (#3). `@claude` workflow not planned (#6): `claude.yml` stays but has no secret.
 - Scheduled task `Patchlife daily build` runs daily at 06:08 Australia/Sydney (19:08 UTC the day before) in `Default` (#5). `Patchlife nightly data` runs at 01:17 Sydney in `Crawl` with no connectors (#41, D27); its first run opened #49.
 - Cloud environments: `Default` (Trusted network; cannot reach manufacturer sites by any route) and `Crawl` (Custom allowlist, #9). All data work runs in `Crawl` (D17).
