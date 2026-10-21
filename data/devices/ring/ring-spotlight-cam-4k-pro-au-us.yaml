@@ -4,6 +4,7 @@ brand_slug: ring
 model: "Spotlight Cam 4K Pro"
 aliases:
   - "Ring Spotlight Cam 4K Pro"
+  - "Spotlight Cam Pro (2nd Gen)"
 category: camera
 regions: [AU, US]
 support:
@@ -24,8 +25,18 @@ evidence:
     retrieved: "2026-10-21"
     archive_url: null
     regime: vendor_policy
+  - url: https://ring.com/support/articles/538eg/ring-product-name-changes
+    quote: "Spotlight Cam Pro (2nd Gen) Spotlight Cam 4K Pro"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://ring.com/au/en/support/articles/538eg/ring-product-name-changes
+    quote: "Spotlight Cam Pro (2nd Gen) Spotlight Cam 4K Pro"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
 verification:
   status: verified
   checked: "2026-10-21"
-  text_sha256: a80cbfe958b127071af34e23cd4452997013497d7cb548010a6d110f370f13ff
+  text_sha256: 1439f5fd8561903869622ce5459f0b65f5fb61f5a3af60dd6bf062f2e459d8ea
 notes: Ring's UK page gives 31 December 2031 for this model (record ring-spotlight-cam-4k-pro), so this record covers only the AU and US pages' 2030 date.
