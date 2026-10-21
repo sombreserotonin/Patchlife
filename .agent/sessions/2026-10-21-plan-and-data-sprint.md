@@ -51,3 +51,7 @@ Two critic agents reviewed the first draft of the plan and found 52 issues, 19 o
 - Merged #36 (Google AU statements, audited), #37 (`--due`/`--limit`), #35 (data report) and #33 (redirect check), each after a multi-agent review and fixes.
 - Draft #34 (site generator) is being fixed after 28 confirmed findings; held for P2.
 - Every `Default` task is done. M1 waits on EZVIZ (#23) and `Crawl` sessions.
+
+## Update: prompt fixes merged
+- The owner merged #29. From the 22 Oct run, the daily build posts its status line on #27 and merges data PRs only with `audited`.
+- Data PRs no longer need to open as drafts (RUNBOOKS A2).

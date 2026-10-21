@@ -28,7 +28,7 @@ Exit: `npm run validate`, `npm test` and `npm run verify:evidence` pass; at leas
 Exit: live preview URL; automated accessibility check passes on the home page and one model page; Lighthouse performance, accessibility and SEO at 90 or above on a model page.
 
 ## M3 Unattended data
-- Nightly data refresh scheduled task live in the `Crawl` environment (decision P1, RUNBOOKS O6), after the prompt fixes.
+- Nightly data refresh scheduled task live in the `Crawl` environment (decision P1, RUNBOOKS O6); the prompt fixes it needs are merged (#29).
 - Re-verify every record checked more than 60 days ago (so none passes 90) and report dead sources.
 - PDF text and archive snapshots, if decision P3 moves them here.
 - Coverage for M4: at least 150 verified records, at least 40 in small-office categories (routers, printers, NVRs).
