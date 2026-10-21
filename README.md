@@ -38,7 +38,7 @@ As of 21 October 2026:
 - **In progress:** M1, the evidence engine and the first 50 verified records. The engine is built, and 120 audited, verified records from Ring, Google Nest and TP-Link are on `main`. A fourth brand is next.
 - **Site:** not live yet. The public site is M2.
 
-[`docs/PLAN.md`](docs/PLAN.md) has the plan, the decisions waiting on the owner and the 14-day action plan. Live progress is in [`.agent/progress/TASKS.md`](.agent/progress/TASKS.md), and the exit checks for each milestone are in [`.agent/progress/ROADMAP.md`](.agent/progress/ROADMAP.md).
+[`docs/PLAN.md`](docs/PLAN.md) has the plan, the decisions and the 14-day action plan; [`docs/COSTS.md`](docs/COSTS.md) has the plan for moving off subscription AI. Live progress is in [`.agent/progress/TASKS.md`](.agent/progress/TASKS.md), and the exit checks for each milestone are in [`.agent/progress/ROADMAP.md`](.agent/progress/ROADMAP.md).
 
 | Milestone | Goal |
 | --- | --- |
@@ -165,7 +165,7 @@ Patchlife doesn't publish reviews, ratings or brand rankings without a published
 | [`data/sources/`](data/sources/) | Starting URLs per brand (leads, not evidence) |
 | [`scripts/`](scripts/) | Validator, status computation, evidence checker and polite fetcher |
 | [`tests/`](tests/) | Unit tests and saved fixtures |
-| [`docs/`](docs/) | Plan, runbooks, brief, spec, architecture, data policy, crawler page |
+| [`docs/`](docs/) | Plan, costs, runbooks, brief, spec, architecture, data policy, crawler page |
 | [`.agent/`](.agent/) | Agent memory, roadmap, tasks, log, session notes and scheduled-task prompts |
 | [`.claude/`](.claude/) | Claude Code permissions and the `add-device-record` skill |
 | [`.github/`](.github/) | CI, the optional Claude workflow, issue forms and PR template |
@@ -176,6 +176,7 @@ Patchlife doesn't publish reviews, ratings or brand rankings without a published
 | Document | Covers |
 | --- | --- |
 | [`docs/PLAN.md`](docs/PLAN.md) | Where the project is going: milestones, decisions, risks and the action plan |
+| [`docs/COSTS.md`](docs/COSTS.md) | What the automation costs, and the staged plan to move off subscription AI |
 | [`docs/RUNBOOKS.md`](docs/RUNBOOKS.md) | Step-by-step procedures for the owner and agent sessions |
 | [`docs/BRIEF.md`](docs/BRIEF.md) | The problem, users, revenue and risks |
 | [`docs/SPEC.md`](docs/SPEC.md) | What gets built: records, status, verifier, site, extension, B2B |

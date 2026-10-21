@@ -55,3 +55,7 @@ Two critic agents reviewed the first draft of the plan and found 52 issues, 19 o
 ## Update: prompt fixes merged
 - The owner merged #29. From the 22 Oct run, the daily build posts its status line on #27 and merges data PRs only with `audited`.
 - Data PRs no longer need to open as drafts (RUNBOOKS A2).
+
+## Update: Ring regions and the cost plan
+- Merged #43, #44 and #45 (Ring region-date records, missing regions, former names), each audited by a separate `Crawl` session. 122 records.
+- Wrote `docs/COSTS.md` from a fact-checked research workflow: local model for extraction and triage only; most jobs to free GitHub Actions; API credits for single-shot calls.

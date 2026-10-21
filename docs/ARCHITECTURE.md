@@ -30,4 +30,4 @@ Scheduled tasks are created at claude.ai/code/routines and run on the owner's Cl
 - Known gap: cloud sessions and scheduled tasks act with the owner's GitHub identity, so GitHub cannot tell the agent from the owner. The protected-path rule is enforced by CI labelling and CLAUDE.md, not by GitHub permissions. Hard boundary for later: give the agent its own GitHub account with write but not admin access, and require the owner's code-owner review on protected paths.
 
 ## Cost
-Cloud sessions and scheduled tasks draw on the owner's subscription usage. `claude.yml` needs a `CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY` Actions secret. Scheduled prompts cap work per run (one task, or 15 sources).
+Cloud sessions and scheduled tasks draw on the owner's subscription usage. `claude.yml` needs a `CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY` Actions secret. Scheduled prompts cap work per run: one task for the daily build, one source for the nightly data task (D27). What each job costs, and the staged plan to move off subscription AI, are in `docs/COSTS.md`.
