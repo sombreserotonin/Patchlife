@@ -93,12 +93,13 @@ test("addYears keeps the day and handles 29 February", () => {
 });
 
 test("mentionsDate finds a date in the common written forms and nowhere else", () => {
-  for (const text of ["Ring Video Doorbell 3 31 December 2027", "until December 31, 2027.", "31st Dec 2027", "Dec. 31, 2027", "2027-12-31", "31/12/2027", "12/31/2027"]) {
+  for (const text of ["Ring Video Doorbell 3 31 December 2027", "until December 31, 2027.", "31st Dec 2027", "Dec. 31, 2027", "2027-12-31", "2027/12/31", "31/12/2027", "12/31/2027"]) {
     assert.ok(mentionsDate(text, "2027-12-31"), text);
   }
   assert.ok(mentionsDate("from 1 Sept 2026", "2026-09-01"));
   assert.ok(mentionsDate("the 3rd of March 2025", "2025-03-03"));
-  for (const [text, date] of [["31 December 2027", "2027-12-30"], ["131 December 2027", "2027-12-31"], ["31 December 20271", "2027-12-31"], ["December 2027", "2027-12-31"]]) {
+  assert.ok(mentionsDate("CS-T1C-A0-BG Europe 2028/1/20", "2028-01-20"));
+  for (const [text, date] of [["31 December 2027", "2027-12-30"], ["131 December 2027", "2027-12-31"], ["31 December 20271", "2027-12-31"], ["December 2027", "2027-12-31"], ["2028/1/20", "2028-01-02"]]) {
     assert.equal(mentionsDate(text, date), false, `${text} / ${date}`);
   }
 });
