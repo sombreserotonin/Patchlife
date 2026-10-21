@@ -62,12 +62,17 @@ About 60 to 70% of today's recurring agent runs need no model (*estimate* from t
 
 **What it saves:** little in cash. *Estimate:* a 10-minute job costs about A$0.03 of electricity; a month of nightly jobs about A$1. Haiku 5.5 through the API would cost about the same. The real value of the local card is needing no API key or billing account, no per-call spend, and keeping going if the subscription lapses.
 
+**Your machine:** Windows, 64 GB of DDR4, RX 9070 XT (owner, 21 Oct 2026).
+- On Windows, use the Vulkan backend: Ollama runs this card through Vulkan on Windows [2], and Windows ROCm had crash bugs on it in 2026 [3]. Vulkan was also the faster backend in the Linux tests above [9].
+- 64 GB lets a mixture-of-experts model keep its expert layers in system memory, as in the 35B offload result above [8]. That result was not measured on DDR4, which is slower than current memory, so offload speed on your machine is unknown until the gold-set test measures it. Models that fit fully in 16 GB don't depend on it.
+- Linux stays the better-tested path if you ever dual-boot, but it isn't needed.
+
 **Set-up when the time comes:**
-- Linux (Ubuntu 24.04.5 or 26.04.1).
 - llama.cpp `llama-server`, Vulkan build, pinned to a known-good version and re-benchmarked before upgrades [13].
 - JSON-schema-constrained output, so the model fills fields and code writes the YAML.
 - The server on 127.0.0.1 only.
-- Run it from a systemd timer with `Persistent=true` [14], not as a GitHub self-hosted runner: GitHub advises against self-hosted runners on public repos, because a fork PR could run code on your PC [15].
+- Run it from Windows Task Scheduler as a normal (not administrator) user, with "Run task as soon as possible after a scheduled start is missed" and "Wake the computer to run this task" ticked [14]. Both are off by default, and waking works from sleep only, not from a full shutdown. Not as a GitHub self-hosted runner: GitHub advises against self-hosted runners on public repos, because a fork PR could run code on your PC [15].
+- The job pushes a `claude/` branch and opens a PR with a fine-grained GitHub token limited to this repository (contents and pull requests only). Creating that token is a human gate (a secret).
 - **Before trusting it:** re-extract the 122 audited records from their pages and score exact quote, exact date and the right model and region. Only switch if it matches.
 
 ## Cheaper hosted options
@@ -133,7 +138,7 @@ If usage runs out on Pro, scheduled runs are rejected until the window resets (u
 11. Local agent tool-call failure: https://github.com/earendil-works/pi/issues/3325
 12. Claude Code LLM gateways: https://code.claude.com/docs/en/llm-gateway
 13. llama.cpp server: https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md
-14. systemd timers: https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html
+14. Windows Task Scheduler, start when available and wake to run: https://learn.microsoft.com/windows/win32/taskschd/taskschedulerschema-startwhenavailable-settingstype-element and https://learn.microsoft.com/windows/win32/taskschd/taskschedulerschema-waketorun-settingstype-element (systemd timers, if you use Linux: https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html)
 15. GitHub, hardening self-hosted runners: https://docs.github.com/en/actions/reference/security/secure-use#hardening-for-self-hosted-runners
 16. Claude pricing: https://claude.com/pricing
 17. About the Max plan: https://support.claude.com/en/articles/11049741-about-claude-s-max-plan

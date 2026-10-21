@@ -15,4 +15,6 @@
 - `gh api` works for `repos/sombreserotonin/Patchlife/...` paths only; repo settings writes and branch deletions are blocked from cloud sessions.
 - Licences: code AGPL-3.0-or-later, data ODbL-1.0.
 - Draft PRs: the REST API cannot mark a draft ready. The GitHub MCP tool `update_pull_request` with `draft: false` can, so the coordinating session marks an audited data PR ready before merging it.
+- Owner's machine for local models: Windows, 64 GB DDR4, RX 9070 XT (21 Oct 2026); Vulkan backend, Task Scheduler (docs/COSTS.md).
+- Sessions created with the session tools inherit the owner's Firecrawl connector; data and audit sessions may use it to search for URLs (D35), never as the source of a quote or category (D17).
 - Scheduled tasks: an agent can create one with the session tools, but it gets no repository and no connectors, so its runs have no checkout. The owner creates scheduled tasks in the claude.ai routines UI (nightly data task: #41).
