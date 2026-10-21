@@ -12,6 +12,7 @@ News, forums, retailers, distributors and AI answers are leads only, never evide
 - Table rows: quote the cell texts joined by single spaces, for example `Ring Video Doorbell 3 31 December 2027`.
 - The quotes must state what the record states: a `fixed_date` record's end date, any anchor date, and the number of years in a relative rule. `npm run validate` rejects a record whose dates or years are not written in any of its quotes.
 - Store only quotes and facts, never whole pages or images.
+- When a table states the rule in one place and lists the models in another (a group table), use two evidence items from the same URL: the rule and the model's entry.
 
 ## Accuracy
 - Never infer a date. A relative rule without a published anchor stays relative.
@@ -25,6 +26,9 @@ News, forums, retailers, distributors and AI answers are leads only, never evide
 - Disclaimer (final wording is a human gate): information as published by manufacturers, may change, not advice.
 
 ## Crawling
-- Scripts send `User-Agent: PatchlifeBot/0.1 (+<contact URL>)`. The contact URL is a human gate; until it exists, crawl only through Claude Code's fetch tool.
+- Scripts send `User-Agent: PatchlifeBot/0.1 (+https://github.com/sombreserotonin/Patchlife/blob/main/docs/CRAWLER.md)`.
+- Copy quotes from the page text the polite fetcher extracts (RUNBOOKS A2), never from Claude Code's fetch tool, which summarises pages and does not identify as PatchlifeBot.
+- A source whose robots.txt disallows PatchlifeBot, or that needs a login or passes a bot challenge, is not used. It could never be re-verified (D18).
 - Honour robots.txt, at most one request per second per host, back off on 429 and 503.
 - No logins, paywalls or CAPTCHAs, and no retailer price scraping.
+- Dates in records and logs are UTC (`date -u +%F`).

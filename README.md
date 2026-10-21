@@ -34,12 +34,11 @@ Patchlife collects those statements in one place, with a quote and a link for ev
 
 ## Status
 As of 21 October 2026:
-- **Done:** M0, the foundation: CI, labels, branch protection and the daily build scheduled task.
-- **In progress:** M1, the evidence engine and the first 50 verified records. Status computation and the evidence checker for HTML pages are built. PDF support and archive snapshots are still to do. Next comes running the checker against manufacturer pages in the `Crawl` environment.
-- **Data:** 2 seed records (Ring), both `unverified`.
+- **Done:** M0, the foundation.
+- **In progress:** M1, the evidence engine and the first 50 verified records. The engine is built, and about 118 verified camera and doorbell records from Ring, Google Nest and TP-Link are being reviewed before they merge.
 - **Site:** not live yet. The public site is M2.
 
-Live progress is in [`.agent/progress/TASKS.md`](.agent/progress/TASKS.md), and the plan with exit checks for each milestone is in [`.agent/progress/ROADMAP.md`](.agent/progress/ROADMAP.md).
+[`docs/PLAN.md`](docs/PLAN.md) has the plan, the decisions waiting on the owner and the 14-day action plan. Live progress is in [`.agent/progress/TASKS.md`](.agent/progress/TASKS.md), and the exit checks for each milestone are in [`.agent/progress/ROADMAP.md`](.agent/progress/ROADMAP.md).
 
 | Milestone | Goal |
 | --- | --- |
@@ -143,7 +142,7 @@ flowchart LR
 ```
 
 - **Daily build.** A scheduled task runs every morning at 06:08 Sydney time with the prompt in [`.agent/prompts/daily-build.md`](.agent/prompts/daily-build.md). It merges green agent PRs, does one roadmap task, and opens a PR.
-- **Two environments.** Coding, and reading sources with Claude Code's fetch tool, happen in the Default cloud environment. Scripts that fetch manufacturer pages, such as `npm run verify:evidence`, run only in the `Crawl` environment, whose network allowlist adds a fixed list of manufacturer hosts (see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)).
+- **Two environments.** Code, tests and docs happen in the `Default` cloud environment, which cannot reach manufacturer sites at all. Everything that reads a manufacturer page, from adding records to `npm run verify:evidence`, runs in the `Crawl` environment, whose network allowlist adds a fixed list of manufacturer hosts (see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)). Step-by-step procedures are in [`docs/RUNBOOKS.md`](docs/RUNBOOKS.md).
 - **Branch protection.** `main` needs a pull request and a passing `test` check, and force pushes and deletion are blocked.
 - **Protected files.** CI labels any PR from a branch in this repository that changes `.github/`, `.claude/`, `.agent/prompts/`, `CLAUDE.md`, `package.json` or `package-lock.json` with `needs-human-merge`, and agents leave those PRs for the owner to merge. This is a project rule, not a GitHub permission: agents act with the owner's GitHub identity (see the security model in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)).
 - **Human gates.** Anything that needs a person (money, accounts, secrets, DNS, legal text, publishing) becomes a `needs-human` issue with exact steps.
@@ -165,7 +164,7 @@ Patchlife doesn't publish reviews, ratings or brand rankings without a published
 | [`data/sources/`](data/sources/) | Starting URLs per brand (leads, not evidence) |
 | [`scripts/`](scripts/) | Validator, status computation, evidence checker and polite fetcher |
 | [`tests/`](tests/) | Unit tests and saved fixtures |
-| [`docs/`](docs/) | Brief, spec, architecture, data policy, crawler page |
+| [`docs/`](docs/) | Plan, runbooks, brief, spec, architecture, data policy, crawler page |
 | [`.agent/`](.agent/) | Agent memory, roadmap, tasks, log, session notes and scheduled-task prompts |
 | [`.claude/`](.claude/) | Claude Code permissions and the `add-device-record` skill |
 | [`.github/`](.github/) | CI, the optional Claude workflow, issue forms and PR template |
@@ -175,6 +174,8 @@ Patchlife doesn't publish reviews, ratings or brand rankings without a published
 ## Documentation
 | Document | Covers |
 | --- | --- |
+| [`docs/PLAN.md`](docs/PLAN.md) | Where the project is going: milestones, decisions, risks and the action plan |
+| [`docs/RUNBOOKS.md`](docs/RUNBOOKS.md) | Step-by-step procedures for the owner and agent sessions |
 | [`docs/BRIEF.md`](docs/BRIEF.md) | The problem, users, revenue and risks |
 | [`docs/SPEC.md`](docs/SPEC.md) | What gets built: records, status, verifier, site, extension, B2B |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | How it is built and run, and the security model |
