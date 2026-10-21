@@ -1,0 +1,26 @@
+id: gl-inet-gl-b2200-global
+brand: GL.iNet
+brand_slug: gl-inet
+model: "Velica (GL-B2200)"
+aliases:
+  - "GL-B2200"
+category: mesh-wifi
+regions: [GLOBAL]
+support:
+  rule: fixed_date
+  end_date: "2026-10-10"
+  years: null
+  anchor_date: null
+  at_least: false
+  conditions: "Status Maintenance: the model has reached end of life and GL.iNet lists a Supported Until date."
+evidence:
+  - url: https://www.gl-inet.com/en-us/pages/firmware-versions/?status=ended
+    quote: "GL-B2200 3.218 QSDK 15.05.1 Maintenance Oct 10th, 2024 Oct 10th, 2026"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+verification:
+  status: verified
+  checked: "2026-10-21"
+  text_sha256: d4a2a892540293a95e870eacb5912b7eaea8fc635ec78c4e6ab7b67bfdb61aa5
+notes: "GL.iNet's firmware versions table (columns Status, EOL Date, Supported Until; page names no region) gives EOL date Oct 10th, 2024 and Supported Until Oct 10th, 2026, recorded as GLOBAL (D24). GL.iNet's two pages give different dates for this model: its UK PSTI support period table gives June 11, 2027 or later, recorded as gl-inet-gl-b2200 (D39)."
