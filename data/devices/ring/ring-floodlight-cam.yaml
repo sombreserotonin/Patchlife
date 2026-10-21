@@ -1,0 +1,26 @@
+id: ring-floodlight-cam
+brand: Ring
+brand_slug: ring
+model: Floodlight Cam
+aliases:
+  - Ring Floodlight Cam
+category: camera
+regions: [UK]
+support:
+  rule: fixed_date
+  end_date: "2025-12-31"
+  years: null
+  anchor_date: null
+  at_least: true
+  conditions: null
+evidence:
+  - url: https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: Ring Floodlight Cam 31 December 2025
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+verification:
+  status: unverified
+  checked: null
+  text_sha256: null
+notes: Seed record (the original Floodlight Cam, not the 2K model). Useful as an "ended" example for status tests.

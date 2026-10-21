@@ -1,0 +1,19 @@
+id: acme-leap-5
+brand: Acme
+brand_slug: acme
+model: Leap 5
+category: sensor
+regions: [GLOBAL]
+support:
+  rule: years_after_launch
+  years: 3
+  anchor_date: "2024-02-29"
+  end_date: "2027-02-28"
+  at_least: true
+evidence:
+  - url: https://example.com/acme/leap-5
+    quote: Security updates for at least 3 years from launch on 29 February 2024.
+    retrieved: "2026-10-01"
+    regime: vendor_policy
+verification:
+  status: unverified

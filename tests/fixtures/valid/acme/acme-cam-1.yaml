@@ -1,0 +1,19 @@
+id: acme-cam-1
+brand: Acme
+brand_slug: acme
+model: Cam 1
+aliases: [AC-1]
+category: camera
+regions: [AU, UK]
+support:
+  rule: fixed_date
+  end_date: "2029-06-30"
+  at_least: true
+evidence:
+  - url: https://example.com/acme/security
+    quote: Acme Cam 1 30 June 2029
+    retrieved: "2026-10-01"
+    regime: au_smart_device_rules
+verification:
+  status: verified
+  checked: "2026-10-02"

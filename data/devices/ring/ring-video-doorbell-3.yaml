@@ -1,0 +1,26 @@
+id: ring-video-doorbell-3
+brand: Ring
+brand_slug: ring
+model: Video Doorbell 3
+aliases:
+  - Ring Video Doorbell 3
+category: doorbell
+regions: [UK]
+support:
+  rule: fixed_date
+  end_date: "2027-12-31"
+  years: null
+  anchor_date: null
+  at_least: true
+  conditions: null
+evidence:
+  - url: https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: Ring Video Doorbell 3 31 December 2027
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+verification:
+  status: unverified
+  checked: null
+  text_sha256: null
+notes: Seed record. The page also describes a purchase-channel rule; record it in conditions once the UK wording is confirmed by the M1 verifier.

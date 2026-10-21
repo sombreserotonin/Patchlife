@@ -1,0 +1,15 @@
+id: acme-hub-4
+brand: Acme
+brand_slug: acme
+model: Hub 4
+category: hub
+regions: [AU]
+support:
+  rule: none_published
+  at_least: false
+evidence:
+  - url: https://example.com/acme/hub-4
+    retrieved: "2026-10-01"
+    regime: vendor_policy
+verification:
+  status: unverified

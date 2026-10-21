@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lastpatch.invalid/schema/device.schema.json",
+  "title": "Device security support record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "brand", "brand_slug", "model", "category", "regions", "support", "evidence", "verification"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "maxLength": 120 },
+    "brand": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "brand_slug": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "maxLength": 60 },
+    "model": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "aliases": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1, "maxLength": 160 }
+    },
+    "category": {
+      "enum": [
+        "camera", "doorbell", "router", "mesh-wifi", "access-point", "network-switch", "smart-plug", "smart-bulb",
+        "smart-switch", "smart-lock", "smart-speaker", "smart-display", "tv", "streaming-device", "printer", "nas", "nvr",
+        "robot-vacuum", "baby-monitor", "thermostat", "hub", "sensor", "wearable", "appliance", "other"
+      ]
+    },
+    "regions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "enum": ["AU", "UK", "US", "EU", "GLOBAL"] }
+    },
+    "support": { "$ref": "#/$defs/support" },
+    "evidence": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/evidence" } },
+    "verification": { "$ref": "#/$defs/verification" },
+    "notes": { "type": ["string", "null"], "maxLength": 500 }
+  },
+  "if": {
+    "type": "object",
+    "properties": { "support": { "type": "object", "properties": { "rule": { "const": "none_published" } } } }
+  },
+  "then": true,
+  "else": {
+    "type": "object",
+    "properties": { "evidence": { "type": "array", "items": { "type": "object", "required": ["quote"], "properties": { "quote": { "type": "string" } } } } }
+  },
+  "$defs": {
+    "date": { "type": "string", "format": "date" },
+    "support": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rule", "at_least"],
+      "properties": {
+        "rule": {
+          "enum": [
+            "fixed_date", "years_after_eol", "years_after_launch", "years_after_manufacture", "years_after_purchase", "none_published"
+          ]
+        },
+        "end_date": { "anyOf": [{ "$ref": "#/$defs/date" }, { "type": "null" }] },
+        "years": { "anyOf": [{ "type": "integer", "minimum": 1, "maximum": 30 }, { "type": "null" }] },
+        "anchor_date": { "anyOf": [{ "$ref": "#/$defs/date" }, { "type": "null" }] },
+        "at_least": { "type": "boolean" },
+        "conditions": { "type": ["string", "null"], "maxLength": 300 }
+      },
+      "allOf": [
+        {
+          "if": { "type": "object", "properties": { "rule": { "const": "fixed_date" } } },
+          "then": {
+            "type": "object",
+            "required": ["end_date"],
+            "properties": { "end_date": { "$ref": "#/$defs/date" }, "years": { "type": "null" }, "anchor_date": { "type": "null" } }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "rule": { "enum": ["years_after_eol", "years_after_launch", "years_after_manufacture", "years_after_purchase"] }
+            }
+          },
+          "then": { "type": "object", "required": ["years"], "properties": { "years": { "type": "integer" } } }
+        },
+        {
+          "if": { "type": "object", "properties": { "rule": { "enum": ["years_after_manufacture", "years_after_purchase"] } } },
+          "then": { "type": "object", "properties": { "anchor_date": { "type": "null" }, "end_date": { "type": "null" } } }
+        },
+        {
+          "if": { "type": "object", "properties": { "rule": { "const": "none_published" } } },
+          "then": {
+            "type": "object",
+            "properties": { "end_date": { "type": "null" }, "years": { "type": "null" }, "anchor_date": { "type": "null" } }
+          }
+        }
+      ]
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "retrieved", "regime"],
+      "properties": {
+        "url": { "type": "string", "format": "uri", "pattern": "^https://" },
+        "quote": { "type": "string", "minLength": 3, "maxLength": 300 },
+        "retrieved": { "$ref": "#/$defs/date" },
+        "archive_url": { "anyOf": [{ "type": "string", "format": "uri", "pattern": "^https://" }, { "type": "null" }] },
+        "regime": { "enum": ["au_smart_device_rules", "uk_psti", "us_cyber_trust_mark", "vendor_policy"] }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": { "enum": ["unverified", "verified", "stale", "disputed"] },
+        "checked": { "anyOf": [{ "$ref": "#/$defs/date" }, { "type": "null" }] },
+        "text_sha256": { "anyOf": [{ "type": "string", "pattern": "^[a-f0-9]{64}$" }, { "type": "null" }] }
+      },
+      "if": { "type": "object", "properties": { "status": { "const": "verified" } } },
+      "then": { "type": "object", "required": ["checked"], "properties": { "checked": { "$ref": "#/$defs/date" } } }
+    }
+  }
+}

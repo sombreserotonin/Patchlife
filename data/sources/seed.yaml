@@ -1,0 +1,101 @@
+# Starting points for M1. Not evidence until a record quotes them.
+# URLs found on 2026-10-21; entries marked 2024 come from a 2024 list and may have moved.
+# last_checked: date this source was last fetched by the data refresh (null = never).
+
+- brand: Ring
+  brand_slug: ring
+  kind: per_model_dates
+  urls:
+    - https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    - https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+  note: Per-model "at least" dates in tables; the US page adds a purchase-channel rule.
+  last_checked: null
+
+- brand: Arlo
+  brand_slug: arlo
+  kind: eol_list
+  urls:
+    - https://kb.arlo.com/000063018/Arlo-Legacy-Cameras-End-of-Life
+  note: End-of-life list; critical security updates for one year after the EOL date.
+  last_checked: null
+
+- brand: TP-Link
+  brand_slug: tp-link
+  kind: years_after_eol
+  urls:
+    - https://www.tp-link.com/uk/support/psti/
+    - https://www.tp-link.com/uk/support/faq/3562/
+  note: Support ends 3 years after a product's end-of-life date; the second URL covers end-of-life products.
+  last_checked: null
+
+- brand: GL.iNet
+  brand_slug: gl-inet
+  kind: years_after_eol
+  urls:
+    - https://www.gl-inet.com/en-us/pages/psti
+  note: Support period runs 2 years from a product's end-of-life date.
+  last_checked: null
+
+- brand: Kyocera
+  brand_slug: kyocera
+  kind: per_model_dates
+  urls:
+    - https://www.kyoceradocumentsolutions.co.uk/en/support/product-security.html
+  note: Printers; per-model end of support dates.
+  last_checked: null
+
+- brand: ASUS
+  brand_slug: asus
+  kind: unknown
+  urls: [https://www.asus.com/support/faq/1051929/]
+  note: From a 2024 list.
+  last_checked: null
+
+- brand: GoPro
+  brand_slug: gopro
+  kind: unknown
+  urls: [https://gopro.com/en/us/legal/uk-psti-compliance]
+  note: From a 2024 list.
+  last_checked: null
+
+- brand: Google
+  brand_slug: google
+  kind: unknown
+  urls: [https://support.google.com/product-documentation/answer/14869041?hl=en]
+  note: From a 2024 list. Should cover Nest cameras and doorbells.
+  last_checked: null
+
+- brand: Lenovo
+  brand_slug: lenovo
+  kind: unknown
+  urls: [https://www.lenovo.com/us/outletus/en/compliance/uk-psti-soc/]
+  note: From a 2024 list.
+  last_checked: null
+
+- brand: Motorola
+  brand_slug: motorola
+  kind: unknown
+  urls: [https://en-gb.support.motorola.com/app/answers/detail/a_id/178271/~/uk-psti]
+  note: From a 2024 list.
+  last_checked: null
+
+- brand: NETGEAR
+  brand_slug: netgear
+  kind: unknown
+  urls: [https://kb.netgear.com/000066102/UK-PSTI-Declaration-of-Conformity]
+  note: From a 2024 list.
+  last_checked: null
+
+- brand: Samsung
+  brand_slug: samsung
+  kind: unknown
+  urls: [https://news.samsung.com/uk/notice-new-uk-product-security-and-telecommunications-infrastructure-psti-law]
+  note: From a 2024 list. A news post; find the underlying statement.
+  last_checked: null
+
+- brand: Grandstream
+  brand_slug: grandstream
+  kind: lead_only
+  urls: [https://cie-group.com/compliances-bsi/]
+  note: A distributor page says support ends 1 year after end of life. Lead only; find Grandstream's own statement.
+  last_checked: null

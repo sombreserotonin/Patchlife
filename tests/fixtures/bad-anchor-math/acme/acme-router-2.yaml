@@ -1,0 +1,19 @@
+id: acme-router-2
+brand: Acme
+brand_slug: acme
+model: Router 2
+category: router
+regions: [UK]
+support:
+  rule: years_after_eol
+  years: 3
+  anchor_date: "2025-03-31"
+  end_date: "2028-12-31"
+  at_least: false
+evidence:
+  - url: https://example.com/acme/psti
+    quote: The defined support period will end 3 years after the product's end-of-life date.
+    retrieved: "2026-10-01"
+    regime: uk_psti
+verification:
+  status: unverified
