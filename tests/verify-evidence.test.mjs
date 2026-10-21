@@ -103,7 +103,7 @@ function setupDevices(pages = PAGES) {
   const fetched = [];
   const get = async (url) => {
     fetched.push(url);
-    if (!(url in pages)) throw Object.assign(new Error(`HTTP 404 for ${url}`), { status: 404 });
+    if (!(url in pages)) throw Object.assign(new Error(`HTTP 404 for ${url}`), { status: 404, url });
     return { url, contentType: "text/html", text: pages[url] };
   };
   const file = (id) => join(dir, "acme", `${id}.yaml`);
@@ -169,12 +169,25 @@ test("verifyDevices marks a verified record stale when its page is gone, but not
 
 // acme-cam-1 is verified and its quote is not on the page, so reading the redirected page would mark it stale.
 test("verifyDevices reports a redirect to another origin or path as an error and leaves the record unchanged", async () => {
-  for (const to of ["https://example.com/", "https://www.example.com/acme/security"]) {
+  const others = ["https://example.com/", "https://www.example.com/acme/security", "http://example.com/acme/security", "https://example.com:8443/acme/security"];
+  for (const to of others) {
     const { dir, get, read } = setupDevices();
     const moved = async (url) => ({ ...(await get(url)), url: to });
     const before = read("acme-cam-1");
     const results = await verifyDevices(dir, { get: moved, today: TODAY, ids: ["acme-cam-1"] });
     assert.deepEqual(results, [{ id: "acme-cam-1", outcome: "error", reason: `redirected to ${to}` }]);
+    assert.equal(read("acme-cam-1"), before);
+  }
+});
+
+// The cited page itself was not removed, so a 404 or 410 after a redirect must not mark the record stale.
+test("verifyDevices reports a redirect that ends in 404 or 410 as an error and leaves a verified record unchanged", async () => {
+  for (const [to, status] of [["https://example.com/en-au/acme/security", 404], ["https://www.example.com/acme/security", 410]]) {
+    const { dir, read } = setupDevices();
+    const gone = async () => { throw Object.assign(new Error(`HTTP ${status} for ${to}`), { status, url: to }); };
+    const before = read("acme-cam-1");
+    const results = await verifyDevices(dir, { get: gone, today: TODAY, ids: ["acme-cam-1"] });
+    assert.deepEqual(results, [{ id: "acme-cam-1", outcome: "error", reason: `redirected to ${to}, HTTP ${status}` }]);
     assert.equal(read("acme-cam-1"), before);
   }
 });
@@ -186,6 +199,11 @@ test("verifyDevices still verifies after a redirect that changes only a trailing
     const results = await verifyDevices(dir, { get: moved, today: TODAY, ids: ["acme-leap-5"] });
     assert.deepEqual(results, [{ id: "acme-leap-5", outcome: "verified" }]);
   }
+  // The other way round: the cited URL ends in a slash and the final URL drops it.
+  const slash = setupDevices({ ...PAGES, "https://example.com/acme/leap-5/": PAGES["https://example.com/acme/leap-5"] });
+  writeFileSync(slash.file("acme-leap-5"), slash.read("acme-leap-5").replace("acme/leap-5", "acme/leap-5/"));
+  const dropped = async (url) => ({ ...(await slash.get(url)), url: url.replace(/\/$/, "") });
+  assert.deepEqual(await verifyDevices(slash.dir, { get: dropped, today: TODAY, ids: ["acme-leap-5"] }), [{ id: "acme-leap-5", outcome: "verified" }]);
 });
 
 test("verifyDevices skips disputed records and reports unknown ids", async () => {
