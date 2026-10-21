@@ -1,0 +1,17 @@
+- brand: Acme
+  brand_slug: acme
+  kind: eol_list
+  urls: [https://example.com/acme/end-of-life]
+  last_checked: null
+
+- brand: Initech
+  brand_slug: initech
+  kind: unknown
+  urls: [https://example.com/initech/psti]
+  last_checked: null
+
+- brand: Initech
+  brand_slug: initech
+  kind: unknown
+  urls: [https://example.com/initech/uk/psti]
+  last_checked: null

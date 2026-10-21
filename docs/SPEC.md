@@ -14,7 +14,7 @@ One YAML file per model at `data/devices/<brand_slug>/<id>.yaml`. The contract i
 
 `at_least: true` when the source says "at least" or "minimum". Caveats such as a purchase-channel condition go in `conditions` as one short sentence.
 
-Source registry: `data/sources/*.yaml` lists starting URLs per brand. Formalise its format in M1.
+Source registry: `data/sources/*.yaml` lists starting URLs per brand. Each file is a list of entries with `brand`, `brand_slug`, `kind` (how the pages state support), `urls` (one or more `https` links), an optional `note` and `last_checked` (the date the data refresh last fetched them, or null). The contract is `data/schema/source.schema.json`; `npm run validate` enforces it and also rejects a `brand_slug` listed twice or a `last_checked` date in the future.
 
 ## 2. Status (computed at build time, never stored)
 Against today's date: `supported` (more than 12 months left), `ending_soon` (12 months or less), `ended`, `unknown` (no computable date). A relative rule without an anchor is `unknown` and shown in words, for example "3 years after Acme ends sales of this model (date not yet published)".

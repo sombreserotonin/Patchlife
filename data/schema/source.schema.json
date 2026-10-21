@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://patchlife.invalid/schema/source.schema.json",
+  "title": "Source registry file: starting URLs per brand (leads, not evidence)",
+  "type": "array",
+  "minItems": 1,
+  "items": { "$ref": "#/$defs/source" },
+  "$defs": {
+    "date": { "type": "string", "format": "date" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["brand", "brand_slug", "kind", "urls", "last_checked"],
+      "properties": {
+        "brand": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "brand_slug": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "maxLength": 60 },
+        "kind": {
+          "description": "How the pages state support: per_model_dates (a date per model), eol_list (a list of end-of-life models), years_after_eol (N years after a model's end of life), unknown (not read yet), lead_only (not the maker's own page; find its statement).",
+          "enum": ["per_model_dates", "eol_list", "years_after_eol", "unknown", "lead_only"]
+        },
+        "urls": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "format": "uri", "pattern": "^https://" }
+        },
+        "note": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "last_checked": {
+          "description": "Date the data refresh last fetched these URLs; null means never.",
+          "anyOf": [{ "$ref": "#/$defs/date" }, { "type": "null" }]
+        }
+      }
+    }
+  }
+}
