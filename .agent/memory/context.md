@@ -1,8 +1,8 @@
 # Context (current state)
 
 - 2026-10-21: Repo created from the starter kit. Nothing deployed.
-- M0 done. M1 active: the evidence engine (status, polite fetcher, verifier CLI, quote-date check, source registry) is merged. The plan is `docs/PLAN.md`; the procedures are `docs/RUNBOOKS.md`.
-- Data on `main`: 120 verified records from three brands, all audited: Ring 48 (#24), Google Nest 12 (#21), TP-Link Tapo 60 (#22). Arlo can't be used (robots.txt and a bot challenge, D18). The fourth brand is EZVIZ, waiting on its allowlist hosts (#23).
+- M0 done. M1 active: the evidence engine (status, polite fetcher, verifier CLI with the redirect check and `--due`/`--limit`, quote-date check, source registry, data report) is merged. Every `Default` task in TASKS.md is done; M1 waits on a fourth brand. The M2 site generator is draft #34, held for decision P2. The plan is `docs/PLAN.md`; the procedures are `docs/RUNBOOKS.md`.
+- Data on `main`: 120 verified records from three brands, all audited: Ring 48 (#24), Google Nest 12 (#21, 6 with Australian evidence from #36), TP-Link Tapo 60 (#22). Arlo can't be used (robots.txt and a bot challenge, D18). The fourth brand is EZVIZ, waiting on its allowlist hosts (#23).
 - Waiting on the owner: decisions P1 to P4 this week (P5 to P8 later; docs/PLAN.md), #23, the settings in G1 and G3 (TASKS.md), the prompt-fix PR, and starting `Crawl` sessions (RUNBOOKS O1).
 - Labels: `audited` marks a data PR that passed RUNBOOKS A8. Heartbeat issue #27 gets one comment per daily build run once the prompt fix is merged.
 - Repo is public. Ruleset `main` is active: pull request required (0 approvals), `test` check required, force pushes and deletion blocked, no bypass actors. Agents merge only PRs whose head branch is in this repo.
@@ -14,3 +14,4 @@
 - Usage credits are off (#7). When usage runs out, scheduled runs are rejected until the usage window resets.
 - `gh api` works for `repos/sombreserotonin/Patchlife/...` paths only; repo settings writes and branch deletions are blocked from cloud sessions.
 - Licences: code AGPL-3.0-or-later, data ODbL-1.0.
+- Draft PRs: the REST API cannot mark a draft ready. The GitHub MCP tool `update_pull_request` with `draft: false` can, so the coordinating session marks an audited data PR ready before merging it.

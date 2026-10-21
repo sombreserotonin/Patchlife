@@ -65,7 +65,8 @@
   urls:
     - https://support.google.com/product-documentation/answer/10231940?hl=en
     - https://support.google.com/product-documentation/answer/14869041?hl=en
-  note: The first URL is the Nest table the Google records cite (#21); the second is from a 2024 list.
+    - https://support.google.com/chromecast/answer/10367042
+  note: The first URL is the Nest table the Google records cite (#21); the second is from a 2024 list; the third links the Australian statements (#36), including some for products outside cameras.
   last_checked: null
 
 - brand: Lenovo
