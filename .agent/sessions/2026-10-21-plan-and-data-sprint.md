@@ -59,3 +59,8 @@ Two critic agents reviewed the first draft of the plan and found 52 issues, 19 o
 ## Update: Ring regions and the cost plan
 - Merged #43, #44 and #45 (Ring region-date records, missing regions, former names), each audited by a separate `Crawl` session. 122 records.
 - Wrote `docs/COSTS.md` from a fact-checked research workflow: local model for extraction and triage only; most jobs to free GitHub Actions; API credits for single-shot calls.
+
+## Update: preview live
+- #47 merged by the owner; the preview is live at https://sombreserotonin.github.io/Patchlife/ with noindex, and M2's exit checks pass.
+- Nightly data task live (#41); its first run opened #49 (GL.iNet), now being audited. EZVIZ records in progress.
+- Owner is on Max, aiming for Pro: D37 and COSTS.md "Getting to Pro".
