@@ -1,0 +1,37 @@
+id: ring-door-view-cam
+brand: Ring
+brand_slug: ring
+model: "Door View Cam"
+aliases:
+  - "Ring Door View Cam"
+  - "Peephole Cam (also called Door View Cam)"
+category: doorbell
+regions: [UK, AU, US]
+support:
+  rule: fixed_date
+  end_date: "2030-12-31"
+  years: null
+  anchor_date: null
+  at_least: true
+  conditions: "If bought new on ring.com, or on amazon.com where Amazon is the seller, at least four years from purchase or this date, whichever is later."
+evidence:
+  - url: https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "Ring Door View Cam 31 December 2030"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://ring.com/au/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "Ring Door View Cam 31 December 2030"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "Peephole Cam (also called Door View Cam) 31 December 2030"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+verification:
+  status: verified
+  checked: "2026-10-21"
+  text_sha256: 0601354d95f1e9c47d83a5e1944f713bc81cf501fc7078fe1b7fc2bcbd2ec4cf
+notes: null
