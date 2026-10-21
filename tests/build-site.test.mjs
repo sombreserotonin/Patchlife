@@ -361,7 +361,7 @@ test("the sitemap lists every HTML page and nothing else", (t) => {
   const pages = htmlFiles(site.outDir).map((file) => `https://patchlife.tech/${file.replace(/index\.html$/, "")}`);
   const locs = [...site.read("sitemap.xml").matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]).sort();
   assert.deepEqual(locs, pages.sort());
-  assert.equal(pages.length, 1 + 5 + 1 + 5 + 3, "home, 5 models, 1 brand, 5 categories, 3 info pages");
+  assert.equal(pages.length, 1 + 5 + 1 + 5 + 4, "home, 5 models, 1 brand, 5 categories, 4 info pages");
   assert.equal(site.read("robots.txt"), "User-agent: *\nAllow: /\n\nSitemap: https://patchlife.tech/sitemap.xml\n");
 });
 
@@ -407,6 +407,16 @@ test("no built file carries an H9a draft marker, and the approved wording stays"
   assertApproved(about, "Australia's smart device rules apply", "about");
   assertApproved(about, "Claude Code, an AI coding tool", "about");
   assertApproved(site.read("methodology/index.html"), "The source gave a minimum period", "methodology");
+});
+
+test("the privacy page carries the approved text and every page links to it", (t) => {
+  const site = build(t);
+  const privacy = site.read("privacy/index.html");
+  assertApproved(privacy, "Patchlife doesn't collect information about you.", "privacy");
+  assertApproved(privacy, "The site sets no cookies and runs no analytics, advertising or tracking scripts.", "privacy");
+  assertApproved(privacy, "regardless of whether the visitor has signed into GitHub or not.", "privacy");
+  assert.match(privacy, /<a href="mailto:admin@sombrexo\.com">admin@sombrexo\.com<\/a>, or open an issue at <a href="https:\/\/github\.com\/sombreserotonin\/Patchlife\/issues">/);
+  for (const file of htmlFiles(site.outDir)) assert.match(site.read(file), /<a href="\/privacy\/">Privacy<\/a>/, file);
 });
 
 test("a month-only end date shows the month and year, never a day (D38)", (t) => {
@@ -804,7 +814,7 @@ test("the CLI runs when the script is reached through a symlink", (t) => {
   const outDir = join(tmp, "out");
   const run = spawnSync(process.execPath, [link, outDir, VALID], { encoding: "utf8", env: { ...process.env, BUILD_DATE: TODAY } });
   assert.equal(run.status, 0, run.stderr);
-  assert.match(run.stdout, /15 page\(s\) for 5 record\(s\)/);
+  assert.match(run.stdout, /16 page\(s\) for 5 record\(s\)/);
   assert.ok(existsSync(join(outDir, "index.html")));
 });
 

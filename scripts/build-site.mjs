@@ -35,6 +35,8 @@ const REPO_URL = "https://github.com/sombreserotonin/Patchlife";
 const CORRECTION_URL = `${REPO_URL}/issues/new/choose`;
 const CRAWLER_URL = `${REPO_URL}/blob/main/docs/CRAWLER.md`;
 const NOTICE_URL = `${REPO_URL}/blob/main/data/NOTICE.md`;
+const GITHUB_PRIVACY_URL = "https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement";
+const CONTACT_EMAIL = "admin@sombrexo.com";
 const AGPL_URL = `${REPO_URL}/blob/main/LICENSE`;
 const ODBL_URL = "https://opendatacommons.org/licenses/odbl/1-0/";
 const HOME_AFFAIRS_URL = "https://www.homeaffairs.gov.au/about-us/our-portfolios/cyber-security/security-standards-for-smart-devices";
@@ -321,6 +323,7 @@ function footer(ctx) {
 <li><a href="${link(ctx, "/methodology/")}">Methodology</a></li>
 <li><a href="${link(ctx, "/corrections/")}">Corrections</a></li>
 <li><a href="${link(ctx, "/about/")}">About</a></li>
+<li><a href="${link(ctx, "/privacy/")}">Privacy</a></li>
 <li><a href="${link(ctx, "/api/v1/devices.json")}">Data feed (JSON)</a></li>
 </ul></nav>
 </footer>`;
@@ -563,6 +566,27 @@ function aboutPage(ctx, { coverage }) {
   });
 }
 
+// The owner approved this text in #60, with the email and GitHub issues as the contacts.
+function privacyPage(ctx) {
+  return layout(ctx, {
+    path: "/privacy/",
+    title: "Privacy | Patchlife",
+    description: "Patchlife doesn't collect information about you. How search, hosting, corrections and questions work.",
+    body: html`<h1>Privacy</h1>
+<p>Last updated: 22 October 2026.</p>
+<p>Patchlife doesn't collect information about you.</p>
+<ul>
+<li><strong>No accounts, forms or tracking.</strong> The site sets no cookies and runs no analytics, advertising or tracking scripts.</li>
+<li><strong>Search stays on your device.</strong> The search box works in your browser. What you type isn't sent to us.</li>
+<li><strong>Hosting.</strong> The site is hosted on GitHub Pages. GitHub says: "When a GitHub Pages site is visited, the visitor's IP address is logged and stored for security purposes, regardless of whether the visitor has signed into GitHub or not." Patchlife can't see those logs. <a href="${GITHUB_PRIVACY_URL}">GitHub's privacy statement</a> explains how GitHub handles them.</li>
+<li><strong>Links to other sites.</strong> Links to manufacturers' pages and to GitHub take you to their sites, which have their own privacy policies.</li>
+<li><strong>Corrections.</strong> Reporting a correction uses a GitHub issue, which needs a GitHub account and is public.</li>
+<li><strong>Questions.</strong> Email <a href="mailto:${CONTACT_EMAIL}">${CONTACT_EMAIL}</a>, or open an issue at <a href="${REPO_URL}/issues">github.com/sombreserotonin/Patchlife/issues</a>.</li>
+</ul>
+<p>If this ever changes, for example when a waitlist collects email addresses, this page will say so before it happens.</p>`,
+  });
+}
+
 // ---------- Build ----------
 export function readAttribution(noticePath = join(ROOT, "data/NOTICE.md")) {
   const match = readFileSync(noticePath, "utf8").match(/Attribute it as: "([^"]+)"/);
@@ -641,8 +665,8 @@ const within = (dir, path) => {
 
 // Every path buildSite writes, relative to the output folder: its files, and the folders that hold them.
 const BUILD_FILE =
-  /^(?:index\.html|robots\.txt|sitemap\.xml|search-index\.json|search\.js|(?:about|methodology|corrections)\/index\.html|(?:devices|brands|categories)\/[a-z0-9]+(?:-[a-z0-9]+)*\/index\.html|api\/v1\/devices\.json|api\/v1\/devices\/[a-z0-9]+(?:-[a-z0-9]+)*\.json)$/;
-const BUILD_FOLDER = /^(?:about|methodology|corrections|devices|brands|categories|api|api\/v1|api\/v1\/devices|(?:devices|brands|categories)\/[a-z0-9]+(?:-[a-z0-9]+)*)$/;
+  /^(?:index\.html|robots\.txt|sitemap\.xml|search-index\.json|search\.js|(?:about|methodology|corrections|privacy)\/index\.html|(?:devices|brands|categories)\/[a-z0-9]+(?:-[a-z0-9]+)*\/index\.html|api\/v1\/devices\.json|api\/v1\/devices\/[a-z0-9]+(?:-[a-z0-9]+)*\.json)$/;
+const BUILD_FOLDER = /^(?:about|methodology|corrections|privacy|devices|brands|categories|api|api\/v1|api\/v1\/devices|(?:devices|brands|categories)\/[a-z0-9]+(?:-[a-z0-9]+)*)$/;
 
 // True when everything under dir is a file or folder buildSite writes (so no symlinks, dotfiles, .git, CNAME or notes)
 // and api/v1/devices.json has the shape of this build's feed.
@@ -767,6 +791,7 @@ export function buildSite({ records, outDir, basePath = "", siteUrl = DEFAULT_SI
   writePage("/methodology/", methodologyPage(ctx));
   writePage("/corrections/", correctionsPage(ctx));
   writePage("/about/", aboutPage(ctx, { coverage }));
+  writePage("/privacy/", privacyPage(ctx));
 
   // JSON feed (SPEC 4): every response carries the licence, the attribution line and the build date.
   const licence = { license: "ODbL-1.0", license_url: ODBL_URL, attribution, notice_url: NOTICE_URL, build_date: today };
