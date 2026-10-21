@@ -1,0 +1,62 @@
+name: Re-verify evidence
+
+# Nightly re-verification on GitHub's runners, with no model (docs/COSTS.md stage 1). It checks up to 40 verified
+# records whose last check is more than 60 days old and pushes the results to claude/reverify-<date> when the data
+# changes are verification only (RUNBOOKS A9). The daily build opens that PR, so CI runs, and merges it. Every evidence
+# host answered a runner on 21 Oct 2026 (Probe hosts run 39695382968).
+on:
+  schedule:
+    - cron: '41 12 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: reverify
+  cancel-in-progress: false
+
+jobs:
+  reverify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - name: Stop while an earlier re-verification is unmerged
+        # Its records still look due on main, so this run would check them again and conflict with it.
+        run: |
+          open=$(git ls-remote --heads origin 'refs/heads/claude/reverify-*')
+          if [ -n "$open" ]; then
+            echo "::error::Unmerged re-verification branch: merge or delete it first (RUNBOOKS A9). $open"
+            exit 1
+          fi
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
+      - name: Re-verify the oldest due records
+        # Exit 1 means a record was stale, failed or errored: a result to push, not a broken run.
+        run: |
+          set +e
+          npm run verify:evidence -- --due 60 --limit 40 2>&1 | tee "$RUNNER_TEMP/verify.txt"
+          status=${PIPESTATUS[0]}
+          set -e
+          if [ "$status" -gt 1 ]; then exit "$status"; fi
+      - run: npm run validate
+      - run: npm test
+      - name: Push verification changes
+        run: |
+          if [ -z "$(git status --porcelain -- data)" ]; then
+            echo "Nothing to push: no record was due, or nothing changed." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          node scripts/verification-only.mjs
+          branch="claude/reverify-$(date -u +%F)"
+          git switch -c "$branch"
+          git add data
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -q -m "data: re-verify $(date -u +%F)" -m "$(tail -n 1 "$RUNNER_TEMP/verify.txt")" \
+            -m "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          git push origin "$branch"
+          echo "Pushed $branch" | tee -a "$GITHUB_STEP_SUMMARY"

@@ -18,6 +18,7 @@ If these files disagree with each other or with the code, say so in your PR rath
 - `npm run verify:evidence [-- [--due <days>] [--limit <n>] <id> ...]` fetch each evidence URL and mark records `verified` or `stale`; `--due` and `--limit` pick the oldest verified records; needs the `Crawl` environment
 - `npm run build:site [-- <outDir>]` build the static site into `_site/` (env: `BASE_PATH`, `SITE_URL`, `BUILD_DATE`, `NOINDEX`); run `npm run validate` first
 - `node scripts/data-report.mjs` counts records by brand, category, status and verification state; its first four lines are the Measures rows in `docs/PLAN.md`
+- `node scripts/verification-only.mjs [ref]` exits 0 only if the data under `data/` differs from `ref` (default `HEAD`) in nothing but `verification` blocks and `data/sources/page-hashes.json` (RUNBOOKS A9); the nightly `Re-verify evidence` workflow runs `verify:evidence` on GitHub's runners
 - `node scripts/probe-hosts.mjs [devicesDir]` checks robots.txt and the first cited page on each evidence host with the polite fetcher and prints one line per host (host, robots.txt result, HTTP status or error); always exits 0; runs on GitHub's runners through the manual `Probe hosts` workflow, or under `node --use-env-proxy` in `Crawl`
 
 Add every new command here when you create it.
