@@ -43,5 +43,5 @@ evidence:
 verification:
   status: verified
   checked: "2026-10-21"
-  text_sha256: d354c84f0de567b1bcdbb023e6123897120d9ceb3ab9e38e10a876471a201bae
+  text_sha256: ebf808a56445ae975e1100b37eaa761e0870499f1761ecfe3448035131ad4bd1
 notes: "Google's table gives the US Google Store release date and the release date plus 5 years (minimum), in US month/day/year format. Google's page names no region; dates are anchored to the US Google Store. Also listed in Google's Australian Cyber Security Rules statement of compliance (February 2026), which applies where sold in Australia."

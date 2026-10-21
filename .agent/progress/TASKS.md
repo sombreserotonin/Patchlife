@@ -1,6 +1,8 @@
 # Tasks
 
-## Active: M1
+## Active: M1 and M2 done (2026-10-21); M3 is next
+The coordinating session writes the M3 tasks.
+
 The plan and the reasons for this order are in `docs/PLAN.md`. Data tasks need a `Crawl` session (D17), which only the owner or a coordinating session can start until decision P1 is made, so they are marked waiting.
 
 Rules for the daily build:
@@ -15,7 +17,6 @@ Next for the daily build (`Default`), in order:
 Waiting:
 - [ ] EZVIZ camera records per RUNBOOKS A2, then an A8 audit by a second session: the fourth brand. Hosts added (#23); a `Crawl` session started by the coordinating session on 21 Oct is doing it.
 - [ ] Audit and merge #49 (GL.iNet, 24 router, mesh and hub records from the nightly task's first run): an A8 session started on 21 Oct. Routers don't count toward M1's camera and doorbell exit.
-- [ ] M1 exit check (waiting on the EZVIZ task, then a `Crawl` session): run a full `npm run verify:evidence`. Mark M1 done in ROADMAP.md and write the M2 tasks only if at least 50 records are `verified` across at least four brands. With fewer brands, leave M1 open and say why in the PR.
 
 
 Leads for after M1 (need `Crawl`): Google's regulatory page `https://support.google.com/chromecast/answer/10367042` also links Australian statements for Google TV Streamer (4K), Google Nest Mini, Google Nest Wifi Pro and Nest x Yale Lock (found by the #36 audit).
@@ -23,6 +24,7 @@ Leads for after M1 (need `Crawl`): Google's regulatory page `https://support.goo
 Moved to M3 (D29): PDF text (needs a `package.json` dependency PR) and archive snapshots (test in `Crawl`).
 
 Done:
+- [x] M1 exit check (2026-10-21): full `npm run verify:evidence` reported "338 record(s) checked, 0 problem(s)"; 309 verified camera and doorbell records from four brands (EZVIZ 187, TP-Link 60, Ring 50, Google 12). M1 and M2 marked done in ROADMAP.md.
 - [x] Status computation as in SPEC 2 (`scripts/status.mjs`), tested at the 12-month boundary and for relative rules without anchors.
 - [x] Evidence verifier core as in SPEC 3 for HTML (`scripts/verify-evidence.mjs`), with offline fixture tests.
 - [x] Crawler contact page `docs/CRAWLER.md` (#10).
