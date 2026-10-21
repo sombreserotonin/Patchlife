@@ -5,7 +5,7 @@ model: Video Doorbell 3
 aliases:
   - Ring Video Doorbell 3
 category: doorbell
-regions: [UK]
+regions: [UK, AU, US]
 support:
   rule: fixed_date
   end_date: "2027-12-31"
@@ -19,8 +19,18 @@ evidence:
     retrieved: "2026-10-21"
     archive_url: null
     regime: vendor_policy
+  - url: https://ring.com/au/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "Ring Video Doorbell 3 31 December 2027"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "Video Doorbell 3 31 December 2027"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
 verification:
   status: verified
   checked: "2026-10-21"
-  text_sha256: 12cbdeafbaccb60df3d8e9b1f95596a60fbbe5ad478f90ed0c49e37c9210fc31
+  text_sha256: 0601354d95f1e9c47d83a5e1944f713bc81cf501fc7078fe1b7fc2bcbd2ec4cf
 notes: Seed record.

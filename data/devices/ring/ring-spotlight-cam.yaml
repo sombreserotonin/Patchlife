@@ -4,8 +4,12 @@ brand_slug: ring
 model: "Spotlight Cam"
 aliases:
   - "Ring Spotlight Cam"
+  - "Spotlight Cam (1st Gen), Wired"
+  - "Spotlight Cam (1st Gen), Battery"
+  - "Spotlight Cam (1st Gen), Solar"
+  - "Spotlight Cam (1st Gen), Mount"
 category: camera
-regions: [UK, AU]
+regions: [UK, AU, US]
 support:
   rule: fixed_date
   end_date: "2026-12-31"
@@ -24,8 +28,13 @@ evidence:
     retrieved: "2026-10-21"
     archive_url: null
     regime: vendor_policy
+  - url: https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "Spotlight Cam (1st Gen), Wired 31 December 2026 Spotlight Cam (1st Gen), Battery 31 December 2026 Spotlight Cam (1st Gen), Solar 31 December 2026 Spotlight Cam (1st Gen), Mount 31 December 2026"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
 verification:
   status: verified
   checked: "2026-10-21"
-  text_sha256: d60cb408c74e5831e1fccee3277904660eedb87653cd390b71869ad820a74c64
+  text_sha256: 0601354d95f1e9c47d83a5e1944f713bc81cf501fc7078fe1b7fc2bcbd2ec4cf
 notes: null

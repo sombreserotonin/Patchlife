@@ -4,8 +4,12 @@ brand_slug: ring
 model: "Spotlight Cam Pro"
 aliases:
   - "Ring Spotlight Cam Pro"
+  - "Spotlight Cam Pro Battery"
+  - "Spotlight Cam Pro Wired"
+  - "Spotlight Cam Pro Plug-in"
+  - "Spotlight Cam Pro Solar"
 category: camera
-regions: [UK]
+regions: [UK, US]
 support:
   rule: fixed_date
   end_date: "2030-12-31"
@@ -19,8 +23,13 @@ evidence:
     retrieved: "2026-10-21"
     archive_url: null
     regime: vendor_policy
+  - url: https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "Spotlight Cam Pro Battery, Spotlight Cam Pro Wired, Spotlight Cam Pro Plug-in, Spotlight Cam Pro Solar 31 December 2030"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
 verification:
   status: verified
   checked: "2026-10-21"
-  text_sha256: 12cbdeafbaccb60df3d8e9b1f95596a60fbbe5ad478f90ed0c49e37c9210fc31
+  text_sha256: ef68204108474bd4dea7e01262a208022ed2bb45aa2e1e8ce4bbd873c2b7214b
 notes: null
