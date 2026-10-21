@@ -12,11 +12,9 @@ Next for the daily build (`Default`), in order:
 - Nothing. Do housekeeping only and end with `WAITING: no Default task`.
 
 Waiting:
-- [ ] PDF text (D29): the owner merges the `unpdf` 1.8.1 dependency (#73, protected); then the code PR on `claude/pdf-text` (fetcher returns PDF bytes, verifier extracts text with unpdf) merges after `main` is merged into it. Don't start it again.
-- [ ] Owner merges #72 (protected, after #71): the `add-device-record` skill stores month-only dates as `YYYY-MM` (D38).
-- [ ] Owner merges #67 (protected): the Pages build moves to `patchlife.tech` at the root, indexed, with a sitemap. Until then every link on patchlife.tech is a 404. Then Search Console (H7).
-- [ ] Owner merges #66 (protected): the manual `Probe hosts` workflow. Then run it once and record which evidence hosts block GitHub's runners (COSTS stage 1).
-- [ ] Cloudflare on patchlife.tech (#68, owner): the proxy is on and Web Analytics injects a beacon, which the approved privacy text doesn't cover. Privacy page #69 merges once the owner picks DNS only, analytics off, or extra wording.
+- [ ] PDF text (D29): `unpdf` 1.8.1 is on `main` (#73); the code PR on `claude/pdf-text` (fetcher returns PDF bytes, verifier extracts text with unpdf) merges after `main` is merged into it. Don't start it again.
+- [ ] `Probe hosts` (#66) was dispatched on 21 Oct with `gh api -X POST repos/sombreserotonin/Patchlife/actions/workflows/probe-hosts.yml/dispatches -f ref=main`: record from its log which evidence hosts block GitHub's runners (COSTS stage 1).
+- [ ] Search Console (H7): the agent posts the steps in a `needs-human` issue; the owner verifies the Domain property and submits `https://patchlife.tech/sitemap.xml`.
 - [ ] Coverage for M4 (the nightly task, one source a night): at least 40 verified small-office records (routers, printers, NVRs). GL.iNet gave routers (#49); next in the registry are Kyocera, ASUS, GoPro, Lenovo, Motorola, NETGEAR, Samsung and Grandstream.
 - [ ] Archive snapshots (D29): test the Wayback "save" endpoint from `Crawl` (web.archive.org is allowlisted) and, if it works, fill `archive_url` on new evidence.
 - [ ] M3 exit check (a `Crawl` session, after the tasks above): three consecutive nightly runs each end in a correct PR or a correct "nothing to do", and a deliberately broken fixture source is caught and flagged.
@@ -24,6 +22,7 @@ Waiting:
 Leads (need `Crawl`): Google's regulatory page `https://support.google.com/chromecast/answer/10367042` also links Australian statements for Google TV Streamer (4K), Google Nest Mini, Google Nest Wifi Pro and Nest x Yale Lock (#36 audit). TP-Link's TC and TD rows (PLAN M3). Ring renames not settled by Ring's pages (#44, #45).
 
 Done:
+- [x] The site is live at https://patchlife.tech from the root, indexed, with a sitemap (#67, 21 Oct). Privacy page live (#69), with the Cloudflare wording the owner chose in #68 (option C: keep the proxy and Web Analytics, disclose both; D41). Lighthouse gates on the median of three runs (#75). The skill stores month-only dates (#72). The `Probe hosts` workflow is merged (#66).
 - [x] Month-only dates (D38): `end_date` may be `YYYY-MM` on a `fixed_date` record. `npm run validate` requires a quote stating the month and year and rejects one that states a day in it; status counts the month's last day for ended and its first day for ending soon; the site shows "June 2027" and "ended in June 2026". The `add-device-record` skill still says to skip month-only dates until its protected PR merges.
 - [x] H9a draft markers removed (#62); numeric dates read in each source's `date_order`, and a quote must name the model, with names unique per brand except D33 splits (#64); one hash per evidence URL and a per-page change report (#63); `scripts/probe-hosts.mjs` (#65). Merged 21 Oct after a combined local merge: validate 340 records, 0 errors; test 165 of 165.
 - [x] Velica GL-B2200 (D39): UK and global records, one per stated scope (#61).
