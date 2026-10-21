@@ -1,26 +1,44 @@
 // Builds the static site (SPEC 4): HTML pages, the JSON feed, the search index, sitemap.xml and robots.txt.
 // Usage: node scripts/build-site.mjs [outDir] [devicesDir]
-// With no outDir it empties and rebuilds _site/. Env: BASE_PATH (default ""), SITE_URL (default https://patchlife.tech),
-// BUILD_DATE (YYYY-MM-DD, default today in UTC). Status is computed against BUILD_DATE (D7). Run `npm run validate` first:
-// this script trusts the data's shape but not its text, which comes from crawled pages.
-import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
+// outDir defaults to _site/; an empty argument counts as absent. The CLI empties outDir before writing, and refuses one
+// that is the cwd, the repository, a parent of either, holds the device records, or is a non-empty folder that is not an
+// earlier build. Env: BASE_PATH (default ""), SITE_URL (default https://patchlife.tech), BUILD_DATE (YYYY-MM-DD, default
+// today in UTC), NOINDEX (1 or true: noindex on every page and a robots.txt that disallows all, for the preview).
+// Status is computed against BUILD_DATE (D7). Run `npm run validate` first: this script trusts the data's shape but not
+// its text, which comes from crawled pages.
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import YAML from "yaml";
 import { computeStatus } from "./status.mjs";
 import { listYamlFiles } from "./validate-data.mjs";
-import { STATUS_LABELS, displayName, longDate, supportSummary } from "../site/search.js";
+import {
+  answerText,
+  displayName,
+  isMinimumPassed,
+  listWords,
+  longDate,
+  plural,
+  regionText,
+  ruleWords,
+  shortDate,
+  statusKey,
+  statusLabel,
+  summaryText,
+  underReview,
+} from "../site/search.js";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const REPO_URL = "https://github.com/sombreserotonin/Patchlife";
 const CORRECTION_URL = `${REPO_URL}/issues/new/choose`;
 const CRAWLER_URL = `${REPO_URL}/blob/main/docs/CRAWLER.md`;
 const NOTICE_URL = `${REPO_URL}/blob/main/data/NOTICE.md`;
+const AGPL_URL = `${REPO_URL}/blob/main/LICENSE`;
 const ODBL_URL = "https://opendatacommons.org/licenses/odbl/1-0/";
 const HOME_AFFAIRS_URL = "https://www.homeaffairs.gov.au/about-us/our-portfolios/cyber-security/security-standards-for-smart-devices";
+const PSTI_URL = "https://www.cooley.com/services/practice/european-tech-regulation/products/uk-product-security-and-telecommunications-infrastructure-act";
 const DEFAULT_SITE_URL = "https://patchlife.tech";
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 const CATEGORY_LABELS = {
   camera: "Cameras",
@@ -49,21 +67,12 @@ const CATEGORY_LABELS = {
   appliance: "Appliances",
   other: "Other devices",
 };
-// DATA-POLICY: a statement is shown with the regions it covers, for example "UK statement".
-const REGION_LABELS = { AU: "Australian statement", UK: "UK statement", US: "US statement", EU: "EU statement", GLOBAL: "Global statement" };
 const REGIME_LABELS = {
   au_smart_device_rules: "Statement under Australia's smart device rules",
   uk_psti: "UK PSTI statement of compliance",
   us_cyber_trust_mark: "US Cyber Trust Mark registry",
   vendor_policy: "Manufacturer's support policy",
 };
-const STATUS_NOTES = {
-  supported: "More than 12 months of security updates left.",
-  ending_soon: "12 months or less of security updates left.",
-  ended: "The end date has passed.",
-  unknown: "No end date can be worked out from what the manufacturer has published.",
-};
-// Draft wording: the disclaimer needs the owner's legal read (gate H9a) before launch.
 const DISCLAIMER = "Support information is as published by each manufacturer. It may change and is not advice.";
 
 // ---------- HTML escaping ----------
@@ -94,13 +103,15 @@ export function html(strings, ...values) {
   return new Html(out);
 }
 
-// Plain text of a fragment this file generated: its only tags are our own and its only entities come from escapeHtml.
-const UNESCAPES = { "&lt;": "<", "&gt;": ">", "&quot;": '"', "&#39;": "'", "&amp;": "&" };
-const plainText = (fragment) => fragment.text.replace(/<[^>]*>/g, "").replace(/&(?:lt|gt|quot|#39|amp);/g, (e) => UNESCAPES[e]);
+// Copy that needs the owner's legal read before launch (gate H9a) is marked in the HTML so the review can find it.
+const DRAFT = html`<!-- Draft wording: needs the owner's legal read (gate H9a). -->`;
+const draft = (content) => html`${DRAFT}${content}`;
 
-// JSON-LD block. Escaping <, > and & as \u003c and so on keeps "</script>" and "<!--" out while staying valid JSON.
+// JSON-LD block. <, >, & and the two Unicode line separators become backslash-u escapes, which keeps "</script>" and
+// "<!--" out of the script element while the JSON stays valid.
+const JSON_LD_UNSAFE = new RegExp(`[<>&${String.fromCharCode(0x2028, 0x2029)}]`, "g");
 function jsonLd(value) {
-  const json = JSON.stringify(value).replace(/[<>&\u2028\u2029]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`);
+  const json = JSON.stringify(value).replace(JSON_LD_UNSAFE, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`);
   return new Html(`<script type="application/ld+json">${json}</script>`);
 }
 
@@ -114,15 +125,17 @@ export function httpsUrl(value) {
   }
 }
 
-// ---------- Words and dates ----------
-const SHORT_DATE = new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
-const shortDate = (isoDate) => SHORT_DATE.format(new Date(`${isoDate}T00:00:00Z`));
+// ---------- Dates ----------
 const longTime = (isoDate) => html`<time datetime="${isoDate}">${longDate(isoDate)}</time>`;
 const shortTime = (isoDate) => html`<time datetime="${isoDate}">${shortDate(isoDate)}</time>`;
-const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
-const listWords = (items) => (items.length > 1 ? `${items.slice(0, -1).join(", ")} and ${items.at(-1)}` : items[0]);
 const latestRetrieved = (record) => record.evidence.map((ev) => ev.retrieved).sort().at(-1);
-const orderedRegions = (record) => Object.keys(REGION_LABELS).filter((region) => record.regions.includes(region));
+
+// True for a YYYY-MM-DD string naming a day that exists (2027-02-31 does not).
+export function isRealDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value ?? "")) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
 
 function addMonths(isoDate, months) {
   const [y, m, d] = isoDate.split("-").map(Number);
@@ -149,55 +162,55 @@ export function timeLeft(today, end) {
   return words.length ? listWords(words) : null;
 }
 
-// A relative rule in words. Without an anchor it says the date is not yet published (SPEC 2).
-function ruleWords(record) {
-  const { rule, years, anchor_date: anchor } = record.support;
-  const span = plural(years, "year");
-  const brand = record.brand;
-  if (rule === "years_after_eol") {
-    return anchor ? html`${span} after ${brand} ended sales of this model on ${longTime(anchor)}` : html`${span} after ${brand} ends sales of this model (date not yet published)`;
-  }
-  if (rule === "years_after_launch") {
-    return anchor ? html`${span} after ${brand} launched this model on ${longTime(anchor)}` : html`${span} after ${brand} launched this model (date not yet published)`;
-  }
-  if (rule === "years_after_manufacture") return html`${span} after the device was made (the date varies from unit to unit)`;
-  if (rule === "years_after_purchase") return html`${span} after you buy the device`;
-  throw new Error(`${record.id}: no wording for rule "${rule}"`);
+// ---------- Record wording ----------
+// What the site, lists and search know about a record. Null fields are left out to keep the search index small.
+function indexEntry(record, status) {
+  const { support, verification } = record;
+  const entry = {
+    id: record.id,
+    brand: record.brand,
+    model: record.model,
+    aliases: record.aliases?.length ? record.aliases : null,
+    category: record.category,
+    status,
+    rule: support.rule,
+    years: support.years,
+    anchor_date: support.anchor_date,
+    end_date: support.end_date,
+    at_least: support.at_least,
+    regions: record.regions,
+    checked: verification.checked,
+    retrieved: latestRetrieved(record),
+    verification: verification.status,
+  };
+  return Object.fromEntries(Object.entries(entry).filter(([, value]) => value !== null && value !== undefined));
 }
 
-// The date shown as "checked": the last automated check, else the latest date someone retrieved the evidence.
-function checkedPhrase(record) {
-  const word = record.support.rule === "none_published" ? "searched" : record.verification.checked ? "checked" : "retrieved";
-  return html`${word} ${shortTime(record.verification.checked ?? latestRetrieved(record))}`;
+// For an "at least" date the status describes the guaranteed minimum, not when updates stop (D23).
+function statusNote({ status, at_least: atLeast }) {
+  if (status === "supported") return atLeast ? "More than 12 months of the guaranteed minimum left." : "More than 12 months of security updates left.";
+  if (status === "ending_soon") return atLeast ? "12 months or less of the guaranteed minimum left." : "12 months or less of security updates left.";
+  if (status === "ended") return atLeast ? "The guaranteed minimum period has passed." : "The end date has passed.";
+  return "No end date can be worked out from what the manufacturer has published.";
 }
 
-// The headline sentence on a model page (SPEC 4 copy pattern; P8 copy once an "at least" date has passed).
-function answer(record, status) {
+function supportPeriod(record, entry) {
   const { rule, end_date: end, at_least: atLeast } = record.support;
-  const brand = record.brand;
-  const source = html`as published by ${brand} (${checkedPhrase(record)})`;
-  if (rule === "none_published") return html`No security update period published by ${brand} was found for this model (${checkedPhrase(record)}).`;
-  if (!end) return html`Security updates for ${atLeast ? "at least " : ""}${ruleWords(record)}, ${source}.`;
-  if (status === "ended" && atLeast) return html`Minimum support period ended on ${longTime(end)}. ${brand} may still provide updates. Date ${source}.`;
-  if (status === "ended") return html`Security updates ended on ${longTime(end)}, ${source}.`;
-  return html`Security updates until ${atLeast ? "at least " : ""}${longTime(end)}, ${source}.`;
-}
-
-function supportPeriod(record) {
-  const { rule, end_date: end, at_least: atLeast } = record.support;
-  if (rule === "none_published") return "None published";
+  if (rule === "none_published") return "No published period found";
   if (rule === "fixed_date") return html`${atLeast ? "At least until" : "Until"} ${longTime(end)}`;
-  return html`${atLeast ? "At least " : ""}${ruleWords(record)}`;
+  return `${atLeast ? "At least " : ""}${ruleWords(entry)}`;
 }
 
 function timeLeftText(record, status, today) {
-  const { rule, end_date: end, at_least: atLeast } = record.support;
+  const { rule, end_date: end, at_least: atLeast, conditions } = record.support;
   if (rule === "years_after_purchase") return "Depends on when you bought the device";
   if (rule === "years_after_manufacture") return "Depends on when the device was made";
   if (!end) return rule === "none_published" ? "Not known" : html`Not known until ${record.brand} publishes the date`;
-  if (status === "ended") return atLeast ? "None guaranteed. The minimum period has ended." : "None. Security updates have ended.";
+  // A condition can give some buyers longer (Ring's purchase rule), so never say "none guaranteed" when there is one.
+  if (status === "ended" && atLeast) return draft(conditions ? "The minimum period to this date has ended. See Conditions." : "None guaranteed. The minimum period has ended.");
+  if (status === "ended") return "None. Security updates have ended.";
   const left = timeLeft(today, end);
-  if (!left) return "Today is the last day";
+  if (!left) return atLeast ? "Today is the last guaranteed day" : "Today is the last day";
   return atLeast ? `At least ${left}` : left;
 }
 
@@ -214,6 +227,13 @@ function sourceLink(url) {
   return safe ? html`<a class="url" href="${safe}">${safe}</a>` : html`<span class="url">${url} (not linked: not an https address)</span>`;
 }
 
+// The answer as HTML: the P8 sentence is draft legal copy.
+const answerHtml = (entry) => (isMinimumPassed(entry) ? draft(answerText(entry)) : answerText(entry));
+const reviewFlag = (entry) => (underReview(entry) ? html` <strong>Under review.</strong>` : "");
+const statusBadge = (entry) => html`<span class="status ${statusKey(entry)}">${statusLabel(entry)}</span>`;
+// "Cameras" becomes "cameras" inside a sentence; "TVs" stays as it is.
+const inSentence = (label) => (/^[A-Z][a-z]/.test(label) ? label[0].toLowerCase() + label.slice(1) : label);
+
 // ---------- Layout ----------
 const CSS = html`<style>
 :root{color:#1b1b1b;background:#fff;font:1rem/1.55 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
@@ -229,10 +249,13 @@ h2{font-size:1.25rem;margin:1.75rem 0 .5rem}
 .crumbs{list-style:none;padding:0;margin:1rem 0 0;font-size:.9rem}
 .crumbs li{display:inline}
 .crumbs li+li::before{content:" / ";color:#555}
-.answer{font-size:1.2rem}
+.answer{font-size:1.2rem;margin-bottom:.25rem}
+.regions{margin-top:0}
+.disclaimer{font-size:.9rem;color:#444}
 .status{display:inline-block;padding:0 .45em;border-radius:.25em;font-weight:600}
 .supported{background:#e3f2e6;color:#0b4f1f}
 .ending_soon{background:#fdf0db;color:#6a3700}
+.minimum_passed{background:#ece6f5;color:#46297d}
 .ended{background:#fbe5e3;color:#8a1c17}
 .unknown{background:#eceff1;color:#36454f}
 dt{font-weight:600}
@@ -281,13 +304,13 @@ form.addEventListener("submit", (event) => event.preventDefault());
 
 const link = (ctx, path) => `${ctx.base}${path}`;
 const absolute = (ctx, path) => `${ctx.siteUrl}${ctx.base}${path}`;
+const disclaimerNote = (ctx) => draft(html`<p class="disclaimer">${DISCLAIMER} <a href="${link(ctx, "/methodology/")}">How the dates are checked</a>.</p>`);
 
 function footer(ctx) {
   return html`<footer>
 <p>Status as at ${shortTime(ctx.today)}.</p>
-<!-- Draft wording: the disclaimer needs the owner's legal read (gate H9a) before launch. -->
-<p>${DISCLAIMER}</p>
-<p>Source code: <a href="${REPO_URL}">AGPL-3.0-or-later</a>. Data licence: <a href="${ODBL_URL}">ODbL 1.0</a>. ${ctx.attribution} Quoted manufacturer statements remain the property of their owners.</p>
+${draft(html`<p>${DISCLAIMER}</p>`)}
+<p><a href="${REPO_URL}">Source code on GitHub</a> under the <a href="${AGPL_URL}">AGPL-3.0-or-later</a> licence. Data licence: <a href="${ODBL_URL}">ODbL 1.0</a>. ${ctx.attribution} ${draft("Quoted manufacturer statements remain the property of their owners.")}</p>
 <nav aria-label="Site"><ul>
 <li><a href="${link(ctx, "/methodology/")}">Methodology</a></li>
 <li><a href="${link(ctx, "/corrections/")}">Corrections</a></li>
@@ -305,6 +328,7 @@ function layout(ctx, { path, title, description, body, head }) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${title}</title>
 <meta name="description" content="${description}">
+${ctx.noindex ? html`<meta name="robots" content="noindex">` : ""}
 <link rel="canonical" href="${absolute(ctx, path)}">
 <link rel="icon" href="data:,">
 ${CSS}
@@ -328,30 +352,29 @@ function breadcrumbs(ctx, trail) {
   )}</ol></nav>`;
 }
 
-const statusBadge = (status) => html`<span class="status ${status}">${STATUS_LABELS[status]}</span>`;
-
+// Each row repeats the attribution, checked date, regions and any review flag (DATA-POLICY Display).
 function deviceList(ctx, items) {
   return html`<ul class="devices">${items.map(
-    ({ record, status }) => html`<li><a href="${link(ctx, `/devices/${record.id}/`)}">${displayName(record.brand, record.model)}</a><br>
-${statusBadge(status)} ${supportSummary({ status, ...record.support })}. <span class="muted">Regions: ${orderedRegions(record).join(", ")}</span></li>`,
+    ({ record, entry }) => html`<li><a href="${link(ctx, `/devices/${record.id}/`)}">${displayName(record.brand, record.model)}</a><br>
+${statusBadge(entry)} ${answerHtml(entry)} <span class="muted">${regionText(entry)}.</span>${reviewFlag(entry)}</li>`,
   )}</ul>`;
 }
 
 // ---------- Pages ----------
-function modelPage(ctx, { record, status }) {
+function modelPage(ctx, { record, status, entry }) {
   const name = displayName(record.brand, record.model);
   const path = `/devices/${record.id}/`;
   const brandPath = `/brands/${record.brand_slug}/`;
   const aliases = (record.aliases ?? []).filter((alias) => alias.normalize("NFKC").toLowerCase() !== name.normalize("NFKC").toLowerCase());
   const conditions = record.support.conditions;
-  const headline = answer(record, status);
+  const description = summaryText(entry);
   const structured = jsonLd({
     "@context": "https://schema.org",
     "@type": "WebPage",
     "@id": absolute(ctx, path),
     url: absolute(ctx, path),
     name: `${name} security updates`,
-    description: plainText(headline),
+    description,
     inLanguage: "en-AU",
     ...(record.verification.checked ? { dateModified: record.verification.checked } : {}),
     about: { "@type": "Thing", name, ...(aliases.length ? { alternateName: aliases } : {}) },
@@ -375,16 +398,16 @@ function modelPage(ctx, { record, status }) {
   const searched = record.evidence.filter((ev) => !ev.quote);
   const body = html`${breadcrumbs(ctx, [["Home", "/"], [record.brand, brandPath], [name, path]])}
 <h1>${name}</h1>
-<p class="answer">${headline}</p>
+<p class="answer">${answerHtml(entry)}</p>
+<p class="regions">${regionText(entry)}.${reviewFlag(entry)}</p>
+${disclaimerNote(ctx)}
 <dl>
 <dt>Status</dt>
-<dd>${statusBadge(status)} Status as at ${shortTime(ctx.today)}. ${STATUS_NOTES[status]}</dd>
+<dd>${statusBadge(entry)} Status as at ${shortTime(ctx.today)}. ${statusNote(entry)}</dd>
 <dt>Time left</dt>
 <dd>${timeLeftText(record, status, ctx.today)}</dd>
 <dt>Support period</dt>
-<dd>${supportPeriod(record)}</dd>
-<dt>Regions</dt>
-<dd>${listWords(orderedRegions(record).map((region) => REGION_LABELS[region]))}</dd>
+<dd>${supportPeriod(record, entry)}</dd>
 ${conditions ? html`<dt>Conditions</dt>
 <dd>${conditions}</dd>` : ""}
 ${aliases.length ? html`<dt>Also known as</dt>
@@ -405,13 +428,7 @@ ${searched.length ? html`<p>Pages searched:</p>
 <ul>${searched.map((ev) => html`<li>${sourceLink(ev.url)}, ${shortTime(ev.retrieved)}</li>`)}</ul>` : ""}
 <h2>Something wrong?</h2>
 <p><a href="${CORRECTION_URL}">Report a correction</a> and link the manufacturer's own page. Dates only change when a primary source supports the change.</p>`;
-  return layout(ctx, {
-    path,
-    title: `${name} security updates | Patchlife`,
-    description: plainText(headline),
-    head: structured,
-    body,
-  });
+  return layout(ctx, { path, title: `${name} security updates | Patchlife`, description, head: structured, body });
 }
 
 function listPage(ctx, { path, title, heading, intro, trail, items }) {
@@ -422,22 +439,24 @@ function listPage(ctx, { path, title, heading, intro, trail, items }) {
     body: html`${breadcrumbs(ctx, trail)}
 <h1>${heading}</h1>
 <p>${intro} Status as at ${shortTime(ctx.today)}.</p>
+${disclaimerNote(ctx)}
 ${deviceList(ctx, items)}`,
   });
 }
 
-function homePage(ctx, { items, brands, categories }) {
+function homePage(ctx, { items, brands, categories, coverage }) {
   return layout(ctx, {
     path: "/",
     title: "Patchlife: when smart devices stop getting security updates",
     description: "Look up when a smart device stops getting security updates, with the manufacturer's own words as evidence.",
     body: html`<h1>When does your smart device stop getting security updates?</h1>
-<p>Patchlife looks up when cameras, doorbells and other smart devices stop getting security updates, and quotes the manufacturer's own words as evidence. It covers ${plural(items.length, "device")} so far.</p>
+<p>Patchlife looks up when smart devices stop getting security updates, and quotes the manufacturer's own words as evidence. So far it covers ${plural(items.length, "device")}: ${coverage}.</p>
 <form id="search" role="search" data-base="${ctx.base}">
 <label for="q">Search by brand, model or model number</label>
 <input id="q" name="q" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search">
 </form>
 <noscript><p>Search needs JavaScript. You can browse by brand or category below.</p></noscript>
+${disclaimerNote(ctx)}
 <p id="search-count" aria-live="polite"></p>
 <ul id="search-results"></ul>
 <h2>Browse by brand</h2>
@@ -445,7 +464,7 @@ function homePage(ctx, { items, brands, categories }) {
 <h2>Browse by category</h2>
 <ul>${categories.map((c) => html`<li><a href="${link(ctx, `/categories/${c.slug}/`)}">${CATEGORY_LABELS[c.slug]}</a> (${plural(c.items.length, "model")})</li>`)}</ul>
 <h2>How it works</h2>
-<p>Every answer quotes the manufacturer's statement and links to it. Nothing is estimated: when a manufacturer gives a rule such as "3 years after end of life" without the date, the page says so. <a href="${link(ctx, "/methodology/")}">Read the methodology</a>.</p>
+<p>Every date quotes the manufacturer's statement and links to it. Nothing is estimated: when a manufacturer gives a rule such as "3 years after end of life" without the date, the page says so. <a href="${link(ctx, "/methodology/")}">Read the methodology</a>.</p>
 ${SEARCH_LOADER}`,
   });
 }
@@ -475,20 +494,20 @@ function methodologyPage(ctx) {
 <h2>No estimated dates</h2>
 <p>Dates are never inferred, estimated or rounded. When a manufacturer gives a rule such as "3 years after end of life" but has not published the end-of-life date, the page shows the rule in words and the status is unknown until the date is published. "At least" appears when the source says "at least" or "minimum". If a search finds no published support period, the page says so.</p>
 <h2>Regions</h2>
-<p>Each record lists the regions its statement covers, labelled for example "UK statement" or "Australian statement". A statement for one region may not apply to the same model sold elsewhere.</p>
+<p>Each record lists the regions its statement covers, labelled for example "UK statement" or "Australian statement". When a manufacturer's policy names no region, the page says so. A statement for one region may not apply to the same model sold elsewhere.</p>
 <h2>Status</h2>
-<p>Status is worked out from the dates each time the site is built, and each page shows the date it applies to. An end date is the last day of support.</p>
+<p>Status is worked out from the dates each time the site is built, and each page shows the date it applies to. An end date is the last day of the stated period. When the source says "at least", it is the last guaranteed day, and updates may continue after it.</p>
 <dl>
-<dt>Supported</dt><dd>More than 12 months of security updates left.</dd>
-<dt>Ending soon</dt><dd>12 months or less left, up to and including the end date.</dd>
-<dt>Ended</dt><dd>The end date has passed. When the source gave a minimum period, the manufacturer may still provide updates after it.</dd>
+<dt>Supported</dt><dd>More than 12 months of the stated period left.</dd>
+<dt>Ending soon</dt><dd>12 months or less of the stated period left, up to and including the end date.</dd>
+<dt>Minimum passed</dt><dd>${draft("The source gave a minimum period and its end date has passed. The manufacturer may still provide updates.")}</dd>
+<dt>Ended</dt><dd>The end date has passed, and the source gave no minimum.</dd>
 <dt>Unknown</dt><dd>No end date can be worked out, for example when a rule's anchor date has not been published.</dd>
 </dl>
 <h2>Checking quotes</h2>
-<p>An automated check fetches each source page, normalises the text (Unicode NFKC, collapsed spaces, ignoring case) and confirms the quote is still there. When the quote is found, the record shows the date of that check. When a quote disappears, the record is flagged for review and new evidence. The policy is to re-check every record at least every 90 days.</p>
+<p>An automated check fetches each source page, normalises the text (Unicode NFKC, collapsed spaces, ignoring case) and confirms the quote is still there. When the quote is found, the record shows the date of that check. When a quote disappears, the record is marked "Under review" until new evidence is found. The policy is to re-check every record at least every 90 days.</p>
 <h2>Disclaimer</h2>
-<!-- Draft wording: the disclaimer needs the owner's legal read (gate H9a) before launch. -->
-<p>${DISCLAIMER}</p>`,
+${draft(html`<p>${DISCLAIMER}</p>`)}`,
   });
 }
 
@@ -513,29 +532,27 @@ function correctionsPage(ctx) {
   });
 }
 
-function aboutPage(ctx) {
+function aboutPage(ctx, { coverage }) {
   return layout(ctx, {
     path: "/about/",
     title: "About | Patchlife",
     description: "What Patchlife is, why it exists, and how its code and data are licensed.",
     body: html`<h1>About Patchlife</h1>
-<p>Smart devices stop getting security updates long before they stop working, and buyers rarely know when. Patchlife looks up when a camera, doorbell, router, printer or smart plug stops getting security updates, and quotes the manufacturer's own words as evidence.</p>
+<p>Smart devices stop getting security updates long before they stop working, and buyers rarely know when. Patchlife looks up when a smart device stops getting security updates, and quotes the manufacturer's own words as evidence. So far it covers ${coverage}.</p>
 <h2>Why</h2>
-<p>Australia's smart device rules apply to most household smart devices made from 4 March 2026, and makers must publish how long a device gets security updates (<a href="${HOME_AFFAIRS_URL}">Department of Home Affairs</a>). The UK has required a statement of compliance since 29 April 2024 under its PSTI regulations. These statements are spread across many support pages and PDFs, often as a rule such as "3 years after end of life" rather than a date. Patchlife collects them in one place, with a quote and a link for every answer.</p>
+${draft(html`<p>Australia's smart device rules apply to most household smart devices made from 4 March 2026, and makers must publish how long a device gets security updates (<a href="${HOME_AFFAIRS_URL}">Department of Home Affairs</a>). The UK has required a statement of compliance since 29 April 2024 under its PSTI regulations (<a href="${PSTI_URL}">Cooley</a>). These statements are spread across many support pages and PDFs, often as a rule such as "3 years after end of life" rather than a date. Patchlife collects them in one place, with a quote and a link for every answer.</p>`)}
 <h2>What Patchlife doesn't do</h2>
-<p>Patchlife doesn't publish reviews, ratings or brand rankings without a published methodology, give legal advice, certify compliance, or collect retailer prices or reviews.</p>
+${draft(html`<p>Patchlife doesn't publish reviews, ratings or brand rankings without a published methodology, give legal advice, certify compliance, or collect retailer prices or reviews.</p>`)}
 <h2>Open code and data</h2>
 <ul>
-<li>The code is free software under the GNU Affero General Public License v3.0 or later: <a href="${REPO_URL}">source code on GitHub</a>.</li>
-<li>The data is available under the <a href="${ODBL_URL}">Open Database License v1.0</a>. Attribute it as: "${ctx.attribution}" Quoted manufacturer statements remain the property of their owners and are included only as evidence. <a href="${NOTICE_URL}">Data licence details</a>.</li>
-<li>Every record as JSON: <a href="${link(ctx, "/api/v1/devices.json")}">/api/v1/devices.json</a>. One record: /api/v1/devices/&lt;id&gt;.json.</li>
+<li>The code is free software under the <a href="${AGPL_URL}">GNU Affero General Public License v3.0 or later</a>: <a href="${REPO_URL}">source code on GitHub</a>.</li>
+<li>The data is available under the <a href="${ODBL_URL}">Open Database License v1.0</a>. Attribute it as: "${ctx.attribution}" ${draft("Quoted manufacturer statements remain the property of their owners and are included only as evidence.")} <a href="${NOTICE_URL}">Data licence details</a>.</li>
+<li>Every record as JSON: <a href="${link(ctx, "/api/v1/devices.json")}">${link(ctx, "/api/v1/devices.json")}</a>. One record: ${link(ctx, "/api/v1/devices/")}&lt;id&gt;.json.</li>
 </ul>
 <h2>Who runs it</h2>
-<!-- Draft wording: the owner should confirm how the project describes itself before launch (gate H9a). -->
-<p>Claude Code, an AI coding tool, builds and runs Patchlife. A human owner makes the decisions that need a person, such as money, accounts, legal text and publishing.</p>
+${draft(html`<p>Claude Code, an AI coding tool, builds and runs Patchlife. A human owner makes the decisions that need a person, such as money, accounts, legal text and publishing.</p>`)}
 <h2>Disclaimer</h2>
-<!-- Draft wording: the disclaimer needs the owner's legal read (gate H9a) before launch. -->
-<p>${DISCLAIMER}</p>`,
+${draft(html`<p>${DISCLAIMER}</p>`)}`,
   });
 }
 
@@ -546,21 +563,80 @@ export function readAttribution(noticePath = join(ROOT, "data/NOTICE.md")) {
   return match[1];
 }
 
+// Every record under devicesDir. A file that does not parse to a mapping is reported with its path.
 export function loadRecords(devicesDir) {
-  return listYamlFiles(devicesDir).map((file) => YAML.parse(readFileSync(file, "utf8")));
+  if (!existsSync(devicesDir)) throw new Error(`devices directory not found: ${devicesDir}`);
+  return listYamlFiles(devicesDir).map((file) => {
+    let record;
+    try {
+      record = YAML.parse(readFileSync(file, "utf8"));
+    } catch (err) {
+      throw new Error(`${file}: ${err.message.split("\n")[0]}`);
+    }
+    if (!record || typeof record !== "object" || Array.isArray(record)) throw new Error(`${file}: not a device record`);
+    return record;
+  });
 }
 
 export function normaliseBasePath(value = "") {
   const trimmed = value.trim().replace(/\/+$/, "");
   const base = trimmed && !trimmed.startsWith("/") ? `/${trimmed}` : trimmed;
-  if (!/^(\/[A-Za-z0-9._~-]+)*$/.test(base)) throw new Error(`BASE_PATH "${value}" may only hold path segments of letters, digits, ".", "_", "~" and "-"`);
+  if (!/^(\/[A-Za-z0-9._~-]+)*$/.test(base)) throw new Error(`BASE_PATH ${JSON.stringify(value)} may only hold path segments of letters, digits, ".", "_", "~" and "-"`);
   return base;
 }
 
+// A plain http or https URL with no query, fragment, credentials or spaces, without its trailing slash.
+export function normaliseSiteUrl(value) {
+  const trimmed = String(value).trim().replace(/\/+$/, "");
+  let url = null;
+  try {
+    url = new URL(trimmed);
+  } catch {
+    // reported below
+  }
+  const clean = url ? `${url.origin}${url.pathname}`.replace(/\/+$/, "") : null;
+  if (!url || !["http:", "https:"].includes(url.protocol) || url.search || url.hash || url.username || url.password || clean !== trimmed) {
+    throw new Error(`SITE_URL ${JSON.stringify(String(value).trim())} must be a plain http or https URL with no spaces, query or fragment`);
+  }
+  return clean;
+}
+
 export function optionsFromEnv(env = process.env) {
-  const siteUrl = (env.SITE_URL || DEFAULT_SITE_URL).replace(/\/+$/, "");
-  if (!/^https?:\/\/[^/?#]+(\/[^?#]*)?$/.test(siteUrl)) throw new Error(`SITE_URL "${env.SITE_URL}" must be an http or https URL`);
-  return { basePath: normaliseBasePath(env.BASE_PATH ?? ""), siteUrl, today: env.BUILD_DATE || new Date().toISOString().slice(0, 10) };
+  const today = (env.BUILD_DATE ?? "").trim() || new Date().toISOString().slice(0, 10);
+  if (!isRealDate(today)) throw new Error(`build date ${JSON.stringify(today)} must be a real date in YYYY-MM-DD form`);
+  return {
+    basePath: normaliseBasePath(env.BASE_PATH ?? ""),
+    siteUrl: normaliseSiteUrl(env.SITE_URL || DEFAULT_SITE_URL),
+    today,
+    noindex: !["", "0", "false"].includes(String(env.NOINDEX ?? "").trim().toLowerCase()),
+  };
+}
+
+export const resolveOutDir = (arg) => resolve(arg || join(ROOT, "_site"));
+
+const realPath = (path) => {
+  try {
+    return realpathSync(path);
+  } catch {
+    return resolve(path);
+  }
+};
+// True when path is dir or inside it.
+const within = (dir, path) => {
+  const rel = relative(dir, path);
+  return !(rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel));
+};
+
+// Why the CLI must not empty outDir, or null when it may.
+export function unsafeOutDirReason(outDir, { cwd = process.cwd(), root = ROOT, devicesDir = join(ROOT, "data/devices") } = {}) {
+  const out = realPath(outDir);
+  if (within(out, realPath(cwd))) return "it is the current directory or one of its parents";
+  if (within(out, realPath(root))) return "it is the repository or one of its parents";
+  if (within(out, realPath(devicesDir))) return "it holds the device records";
+  if (!existsSync(out)) return null;
+  if (!statSync(out).isDirectory()) return "it is a file";
+  if (readdirSync(out).length && !existsSync(join(out, "api", "v1", "devices.json"))) return "it is not empty and is not an earlier site build";
+  return null;
 }
 
 const byName = (a, b) =>
@@ -578,17 +654,23 @@ function groupBy(items, key) {
 }
 
 // Writes the site into outDir and returns { records, pages }. Paths come from ids and slugs, which must be plain slugs.
-export function buildSite({ records, outDir, basePath = "", siteUrl = DEFAULT_SITE_URL, today, attribution = readAttribution() }) {
-  if (!ISO_DATE.test(today ?? "")) throw new Error(`build date "${today}" must be YYYY-MM-DD`);
-  const ctx = { base: normaliseBasePath(basePath), siteUrl: siteUrl.replace(/\/+$/, ""), today, attribution };
+export function buildSite({ records, outDir, basePath = "", siteUrl = DEFAULT_SITE_URL, today, noindex = false, attribution = readAttribution() }) {
+  if (!isRealDate(today)) throw new Error(`build date ${JSON.stringify(today)} must be a real date in YYYY-MM-DD form`);
+  const ctx = { base: normaliseBasePath(basePath), siteUrl: normaliseSiteUrl(siteUrl), today, noindex, attribution };
   for (const record of records) {
     if (!SLUG.test(record.id ?? "") || !SLUG.test(record.brand_slug ?? "")) throw new Error(`record "${record.id}" needs a slug id and brand_slug`);
     if (!Object.hasOwn(CATEGORY_LABELS, record.category ?? "")) throw new Error(`${record.id}: no label for category "${record.category}"`);
   }
 
-  const items = records.map((record) => ({ record, status: computeStatus(record, today) })).sort(byName);
+  const items = records
+    .map((record) => {
+      const status = computeStatus(record, today);
+      return { record, status, entry: indexEntry(record, status) };
+    })
+    .sort(byName);
   const brands = groupBy(items, (item) => item.record.brand_slug).map((group) => ({ ...group, name: group.items[0].record.brand }));
   const categories = groupBy(items, (item) => item.record.category);
+  const coverage = listWords(categories.map((c) => inSentence(CATEGORY_LABELS[c.slug])));
   const pages = [];
   const write = (path, content) => {
     const file = join(outDir, path);
@@ -600,7 +682,7 @@ export function buildSite({ records, outDir, basePath = "", siteUrl = DEFAULT_SI
     pages.push(path);
   };
 
-  writePage("/", homePage(ctx, { items, brands, categories }));
+  writePage("/", homePage(ctx, { items, brands, categories, coverage }));
   for (const item of items) writePage(`/devices/${item.record.id}/`, modelPage(ctx, item));
   for (const brand of brands) {
     writePage(`/brands/${brand.slug}/`, listPage(ctx, {
@@ -625,7 +707,7 @@ export function buildSite({ records, outDir, basePath = "", siteUrl = DEFAULT_SI
   }
   writePage("/methodology/", methodologyPage(ctx));
   writePage("/corrections/", correctionsPage(ctx));
-  writePage("/about/", aboutPage(ctx));
+  writePage("/about/", aboutPage(ctx, { coverage }));
 
   // JSON feed (SPEC 4): every response carries the licence, the attribution line and the build date.
   const licence = { license: "ODbL-1.0", license_url: ODBL_URL, attribution, notice_url: NOTICE_URL, build_date: today };
@@ -633,30 +715,30 @@ export function buildSite({ records, outDir, basePath = "", siteUrl = DEFAULT_SI
   write("/api/v1/devices.json", JSON.stringify({ ...licence, count: items.length, devices: items.map(feedDevice) }));
   for (const item of items) write(`/api/v1/devices/${item.record.id}.json`, JSON.stringify({ ...licence, device: feedDevice(item) }));
 
-  const index = items.map(({ record, status }) => ({
-    id: record.id,
-    brand: record.brand,
-    model: record.model,
-    ...(record.aliases?.length ? { aliases: record.aliases } : {}),
-    category: record.category,
-    status,
-    end_date: record.support.end_date ?? null,
-    at_least: record.support.at_least,
-  }));
-  write("/search-index.json", JSON.stringify({ license: "ODbL-1.0", attribution, build_date: today, devices: index }));
+  write("/search-index.json", JSON.stringify({ license: "ODbL-1.0", attribution, build_date: today, devices: items.map((item) => item.entry) }));
   copyFileSync(join(ROOT, "site/search.js"), join(outDir, "search.js"));
 
   const urls = pages.map((path) => `  <url><loc>${escapeHtml(absolute(ctx, path))}</loc></url>`).join("\n");
   write("/sitemap.xml", `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`);
-  write("/robots.txt", `User-agent: *\nAllow: /\n\nSitemap: ${absolute(ctx, "/sitemap.xml")}\n`);
+  write("/robots.txt", ctx.noindex ? "User-agent: *\nDisallow: /\n" : `User-agent: *\nAllow: /\n\nSitemap: ${absolute(ctx, "/sitemap.xml")}\n`);
 
   return { records: items.length, pages: pages.length };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const outDir = resolve(process.argv[2] ?? join(ROOT, "_site"));
-  const devicesDir = resolve(process.argv[3] ?? join(ROOT, "data/devices"));
-  if (!process.argv[2]) rmSync(outDir, { recursive: true, force: true });
-  const result = buildSite({ records: loadRecords(devicesDir), outDir, ...optionsFromEnv() });
-  console.log(`${result.pages} page(s) for ${result.records} record(s) written to ${relative(process.cwd(), outDir) || "."}`);
+  try {
+    const outDir = resolveOutDir(process.argv[2]);
+    const devicesDir = resolve(process.argv[3] || join(ROOT, "data/devices"));
+    const records = loadRecords(devicesDir);
+    if (!records.length) throw new Error(`no device records found in ${devicesDir}`);
+    const options = optionsFromEnv();
+    const reason = unsafeOutDirReason(outDir, { devicesDir });
+    if (reason) throw new Error(`refusing to empty ${outDir}: ${reason}`);
+    rmSync(outDir, { recursive: true, force: true });
+    const result = buildSite({ records, outDir, ...options });
+    console.log(`${result.pages} page(s) for ${result.records} record(s) written to ${relative(process.cwd(), outDir) || "."}`);
+  } catch (err) {
+    console.error(`build-site: ${err.message}`);
+    process.exit(1);
+  }
 }

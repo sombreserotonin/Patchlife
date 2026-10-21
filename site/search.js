@@ -1,12 +1,21 @@
-// Client-side search for the home page (SPEC 4), plus the wording the site generator shares with it.
-// matchDevices is pure, so the same file runs in the browser and in node:test. attachSearch is the only part that touches the DOM.
+// Client-side search for the home page (SPEC 4), plus the wording the site generator shares with it, so model pages,
+// lists and search results say the same thing. matchDevices is pure, so this file runs in the browser and in node:test.
+// attachSearch is the only part that touches the DOM. A "device" here is a search-index entry (see indexEntry in build-site.mjs).
 
 export const STATUS_LABELS = { supported: "Supported", ending_soon: "Ending soon", ended: "Ended", unknown: "Unknown" };
 
-const LONG_DATE = new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+// An "at least" date that has passed is a minimum that has passed, not the end of updates (D23, P8).
+export const isMinimumPassed = ({ status, at_least: atLeast }) => status === "ended" && atLeast === true;
+export const statusKey = (device) => (isMinimumPassed(device) ? "minimum_passed" : device.status);
+export const statusLabel = (device) => (isMinimumPassed(device) ? "Minimum passed" : (STATUS_LABELS[device.status] ?? device.status));
 
-// "2027-12-31" becomes "31 December 2027".
+const LONG_DATE = new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+const SHORT_DATE = new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+// "2027-12-31" becomes "31 December 2027" (long) or "31 Dec 2027" (short).
 export const longDate = (isoDate) => LONG_DATE.format(new Date(`${isoDate}T00:00:00Z`));
+export const shortDate = (isoDate) => SHORT_DATE.format(new Date(`${isoDate}T00:00:00Z`));
+export const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+export const listWords = (items) => (items.length > 1 ? `${items.slice(0, -1).join(", ")} and ${items.at(-1)}` : (items[0] ?? ""));
 
 const fold = (text) => String(text).normalize("NFKC").toLowerCase();
 const squash = (text) => text.replace(/[^\p{L}\p{N}]+/gu, "");
@@ -16,13 +25,62 @@ export function displayName(brand, model) {
   return fold(model).startsWith(`${fold(brand)} `) ? model : `${brand} ${model}`;
 }
 
-// One line about the end date, for lists and search results.
-export function supportSummary({ status, end_date: end, at_least: atLeast, rule }) {
-  if (rule === "none_published") return "No support period published";
-  if (!end) return "No end date published";
-  if (status === "ended") return atLeast ? `Minimum support period ended on ${longDate(end)}` : `Security updates ended on ${longDate(end)}`;
-  return `Security updates until ${atLeast ? "at least " : ""}${longDate(end)}`;
+// DATA-POLICY: a statement is shown with the regions it covers. GLOBAL means the maker's policy names no region (D24).
+const REGION_ADJECTIVES = { AU: "Australian", UK: "UK", US: "US", EU: "EU" };
+const REGION_NAMES = { AU: "Australia", UK: "UK", US: "US", EU: "EU", GLOBAL: "any region" };
+
+// "UK statement", "Australian and UK statements", "Policy that names no region". With nothing found, the regions searched.
+export function regionText({ regions = [], rule }) {
+  if (rule === "none_published") {
+    return `Regions searched: ${listWords(Object.keys(REGION_NAMES).filter((r) => regions.includes(r)).map((r) => REGION_NAMES[r]))}`;
+  }
+  const named = Object.keys(REGION_ADJECTIVES).filter((r) => regions.includes(r)).map((r) => REGION_ADJECTIVES[r]);
+  const parts = named.length ? [`${listWords(named)} ${named.length === 1 ? "statement" : "statements"}`] : [];
+  if (regions.includes("GLOBAL")) parts.push(parts.length ? "and a policy that names no region" : "Policy that names no region");
+  return parts.join(", ");
 }
+
+// P6: a stale or disputed record is flagged next to its date until it is settled.
+export const underReview = ({ verification }) => verification === "stale" || verification === "disputed";
+
+// The date shown after "as published by": the last automated check, else the latest date the evidence was retrieved.
+function checkedPhrase({ rule, checked, retrieved }) {
+  const word = rule === "none_published" ? "searched" : checked ? "checked" : "retrieved";
+  return `${word} ${shortDate(checked ?? retrieved)}`;
+}
+
+// A relative rule in words. An anchor is "the date <brand> gives", because sources word it differently (SPEC 1 and 2).
+export function ruleWords({ rule, years, anchor_date: anchor, brand }) {
+  const span = plural(years, "year");
+  if (rule === "years_after_eol") {
+    return anchor
+      ? `${span} after the end-of-sale or end-of-life date ${brand} gives for this model, ${longDate(anchor)}`
+      : `${span} after ${brand} ends sales of this model (date not yet published)`;
+  }
+  if (rule === "years_after_launch") {
+    return anchor
+      ? `${span} after the launch or first-sale date ${brand} gives for this model, ${longDate(anchor)}`
+      : `${span} after this model's launch or first sale (date not yet published)`;
+  }
+  if (rule === "years_after_manufacture") return `${span} after the device was made (the date varies from unit to unit)`;
+  if (rule === "years_after_purchase") return `${span} after you buy the device`;
+  return null;
+}
+
+// The answer: SPEC 4's copy pattern, or the P8 wording once an "at least" date has passed.
+// Draft wording: the P8 sentence needs the owner's legal read (gate H9a). The generator marks it in the HTML.
+export function answerText(device) {
+  const { brand, status, end_date: end, at_least: atLeast, rule } = device;
+  const source = `as published by ${brand} (${checkedPhrase(device)})`;
+  if (rule === "none_published") return `No security update period published by ${brand} was found for this model (${checkedPhrase(device)}).`;
+  if (!end) return `Security updates for ${atLeast ? "at least " : ""}${ruleWords(device)}, ${source}.`;
+  if (isMinimumPassed(device)) return `Minimum support period ended on ${longDate(end)}. ${brand} may still provide updates. Date ${source}.`;
+  if (status === "ended") return `Security updates ended on ${longDate(end)}, ${source}.`;
+  return `Security updates until ${atLeast ? "at least " : ""}${longDate(end)}, ${source}.`;
+}
+
+// The answer with its regions and any review flag: the line used in lists, search results and page descriptions.
+export const summaryText = (device) => `${answerText(device)} ${regionText(device)}.${underReview(device) ? " Under review." : ""}`;
 
 // Devices whose brand, model, aliases or id contain every term of the query, after NFKC and lower-casing.
 // A term also matches with spaces and punctuation ignored, so "ac1" finds the model number "AC-1".
@@ -52,7 +110,7 @@ export function attachSearch({ input, count, list, devices, base }) {
         const link = document.createElement("a");
         link.href = `${base}/devices/${encodeURIComponent(device.id)}/`;
         link.textContent = displayName(device.brand, device.model);
-        item.append(link, `: ${STATUS_LABELS[device.status] ?? device.status}. ${supportSummary(device)}.`);
+        item.append(link, `: ${statusLabel(device)}. ${summaryText(device)}`);
         return item;
       }),
     );
