@@ -3,7 +3,7 @@
 _As at Wednesday 21 October 2026. Dates are Sydney dates unless they say UTC. Review this at every milestone close and at least monthly. Milestone exit checks are in [`ROADMAP.md`](../.agent/progress/ROADMAP.md), the next tasks are in [`TASKS.md`](../.agent/progress/TASKS.md), and the procedures are in [`RUNBOOKS.md`](RUNBOOKS.md)._
 
 ## Summary
-- **Where we are.** M0 is done. M1 is close: the evidence engine is built, and 118 verified camera and doorbell records from three brands are written. 48 (Ring) are on `main`; 70 (Google Nest #21, TP-Link #22) are being fixed after their audit.
+- **Where we are.** M0 is done. M1 is close: the evidence engine is built, and 120 audited, verified camera and doorbell records from three brands are on `main`. M1 needs a fourth brand.
 - **The strategy.**
   1. Collect evidence-backed data.
   2. Publish it as a fast static site.
@@ -25,7 +25,7 @@ _As at Wednesday 21 October 2026. Dates are Sydney dates unless they say UTC. Re
 
 | Area | State |
 | --- | --- |
-| Data | 48 verified Ring records on `main`. Audited and being fixed: Google Nest 12 (#21), TP-Link Tapo 58 (#22). Arlo: none, because its pages block bots (D18). |
+| Data | 120 verified records on `main`, all audited: Ring 48 (#24), Google Nest 12 (#21), TP-Link Tapo 60 (#22). Arlo: none, because its pages block bots (D18). |
 | Evidence engine | Status computation, polite fetcher, verifier CLI (`npm run verify:evidence`), and the check that each quote states the record's dates and years. HTML only. |
 | Source registry | Schema-checked by `npm run validate` (#26). |
 | Automation | Daily build at 06:08 Sydney (19:08 UTC the day before) in `Default`. `Crawl` environment for data. No nightly data run yet. Heartbeat issue [#27](https://github.com/sombreserotonin/Patchlife/issues/27). |
@@ -73,12 +73,11 @@ Targets are estimates. Each milestone closes only when its exit checks in ROADMA
   - the evidence checker (HTML), polite fetcher and verifier CLI;
   - the check that quotes state each record's dates and years;
   - the source registry format;
-  - 48 verified Ring records (#24, audited and fixed before merge).
+  - 120 verified records from three brands, each audited and fixed before merge: Ring 48 (#24), Google Nest 12 (#21), TP-Link Tapo 60 (#22).
 - **To do:**
-  1. Merge the audited fixes to #21 and #22, giving 118 or more verified records from three brands.
-  2. Fourth brand: EZVIZ once you add its hosts (#23). Then a `Crawl` session adds the records (O1, A2) and a second one audits them (A8). None of the other camera brands checked so far has an HTML statement on a reachable, bot-friendly host: Arlo's robots.txt disallows all bots, and Aqara, Reolink and GoPro publish PDFs.
-  3. Update `data/sources/seed.yaml` with what the research found (a daily build task).
-  4. Exit check (a `Crawl` session): a full `npm run verify:evidence`, with at least 50 verified records from at least four brands. Then ROADMAP is updated.
+  1. Fourth brand: EZVIZ once you add its hosts (#23). Then a `Crawl` session adds the records (O1, A2) and a second one audits them (A8). None of the other camera brands checked so far has an HTML statement on a reachable, bot-friendly host: Arlo's robots.txt disallows all bots, and Aqara, Reolink and GoPro publish PDFs.
+  2. Update `data/sources/seed.yaml` with what the research found (a daily build task).
+  3. Exit check (a `Crawl` session): a full `npm run verify:evidence`, with at least 50 verified records from at least four brands. Then ROADMAP is updated.
 - **If EZVIZ fails:** the fourth brand waits for PDF support (Aqara, Reolink or GoPro), which pulls P3 back into M1. TP-Link's UK PDF adds UK records, not a new brand.
 
 ### M2 Public site, search only
@@ -204,8 +203,8 @@ Monthly report and alerts as in SPEC 7, once there's an audience.
 
 | Measure | Now | M1 | M3 | M4 start |
 | --- | --- | --- | --- | --- |
-| Verified records on `main` | 48 (70 more in review) | 50 or more | 150 or more | 150 or more |
-| Brands with verified records | 1 | 4 | 6 or more | 6 or more |
+| Verified records on `main` | 120 | 50 or more | 150 or more | 150 or more |
+| Brands with verified records | 3 | 4 | 6 or more | 6 or more |
 | Share with a computable status | 100% | n/a | 60% or more | 60% or more |
 | Stale records | 0 | 0 | under 2% | under 2% |
 | Daily build heartbeats reporting OK (counted once the prompt fix lands) | n/a | n/a | 5 or more a week | 5 or more a week |

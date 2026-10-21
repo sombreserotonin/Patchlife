@@ -1,0 +1,48 @@
+id: google-nest-doorbell-wired
+brand: Google
+brand_slug: google
+model: "Nest Doorbell (wired)"
+aliases:
+  - "Google Nest Doorbell (wired)"
+  - "Nest Doorbell wired"
+  - "G28DR"
+category: doorbell
+regions: [GLOBAL, UK]
+support:
+  rule: years_after_launch
+  end_date: "2027-10-04"
+  years: 5
+  anchor_date: "2022-10-04"
+  at_least: true
+  conditions: "Covers critical issues that Google can fix with a remote software update."
+evidence:
+  - url: https://support.google.com/product-documentation/answer/10231940?hl=en
+    quote: "Nest Doorbell (wired) 10/4/2022 10/4/2027 Yes"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://support.google.com/product-documentation/answer/10231940?hl=en
+    quote: "Google Nest connected home devices will receive automatic security updates for at least 5 years from the date we start selling them on the US Google Store."
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://support.google.com/product-documentation/answer/10231940?hl=en
+    quote: "Security updates will address critical issues known to Google Nest that are able to be resolved with a remote software update."
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://support.google.com/product-documentation/answer/14869041?hl=en
+    quote: "Nest Doorbell wired (G28DR)"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: uk_psti
+  - url: https://support.google.com/product-documentation/answer/14869041?hl=en
+    quote: "Group 2: At least five years from when the device first became available on the Google Store in the US"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: uk_psti
+verification:
+  status: verified
+  checked: "2026-10-21"
+  text_sha256: 2e2d1d165ecd0371043304a2ecfc5abbcfb0b4d48618fad64e58d7cf509154c2
+notes: "Google's table gives the US Google Store release date and the release date plus 5 years (minimum), in US month/day/year format. Also listed in Google's UK PSTI statement of compliance (April 2024), which applies where sold in the UK. Google's page names no region; dates are anchored to the US Google Store. The wired doorbell Google released on 4 October 2022, not Nest Hello or the 3rd gen."

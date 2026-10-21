@@ -1,0 +1,58 @@
+id: google-nest-cam-wired
+brand: Google
+brand_slug: google
+model: "Nest Cam (wired)"
+aliases:
+  - "Google Nest Cam (wired)"
+  - "Nest Cam wired"
+  - "GJQ9T"
+category: camera
+regions: [GLOBAL, UK, AU]
+support:
+  rule: years_after_launch
+  end_date: "2026-10-05"
+  years: 5
+  anchor_date: "2021-10-05"
+  at_least: true
+  conditions: "Covers critical issues that Google can fix with a remote software update."
+evidence:
+  - url: https://support.google.com/product-documentation/answer/10231940?hl=en
+    quote: "Nest Cam (wired) 10/5/2021 10/5/2026 Yes"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://support.google.com/product-documentation/answer/10231940?hl=en
+    quote: "Google Nest connected home devices will receive automatic security updates for at least 5 years from the date we start selling them on the US Google Store."
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://support.google.com/product-documentation/answer/10231940?hl=en
+    quote: "Security updates will address critical issues known to Google Nest that are able to be resolved with a remote software update."
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://support.google.com/product-documentation/answer/14869041?hl=en
+    quote: "Nest Cam wired (GJQ9T)"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: uk_psti
+  - url: https://support.google.com/product-documentation/answer/14869041?hl=en
+    quote: "Group 2: At least five years from when the device first became available on the Google Store in the US"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: uk_psti
+  - url: https://support.google.com/product-documentation/answer/16888142?hl=en
+    quote: "Nest Cam wired (GJQ9T)"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: au_smart_device_rules
+  - url: https://support.google.com/product-documentation/answer/16888142?hl=en
+    quote: "At least five years from when the device first became available on the Google Store in the US, ending no earlier than October 5, 2026"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: au_smart_device_rules
+verification:
+  status: verified
+  checked: "2026-10-21"
+  text_sha256: 9aa3e4c5494109433fce3e27cdb2b6149bf2df8f8196b153faefc0ba94bbc392
+notes: "Google's table gives the US Google Store release date and the release date plus 5 years (minimum), in US month/day/year format. Also listed in Google's UK PSTI (April 2024) and Australian Cyber Security Rules (February 2026) statements of compliance, each applying where sold in that country. Google's page names no region; dates are anchored to the US Google Store. Google's table lists this model as currently receiving critical security updates (checked 2026-10-21); the 5-year minimum has passed."

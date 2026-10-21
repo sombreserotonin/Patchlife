@@ -42,3 +42,7 @@ Two critic agents reviewed the first draft of the plan and found 52 issues, 19 o
 - **Me:** merge the audited data PRs, open the decisions issue and the protected prompt-fix PR.
 - **Owner:** #23, P1 to P4, the G1 settings.
 - **Then:** the EZVIZ batch, the M1 exit check in `Crawl`, and the M2 build.
+
+## Update: data merged
+- #21 (Google Nest, 12) and #22 (TP-Link Tapo, 60) merged after their audit fixes, each with an audit comment and the `audited` label.
+- `main` now holds 120 verified records from three brands. M1 needs a fourth brand (EZVIZ, #23) before its exit check.
