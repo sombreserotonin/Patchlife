@@ -17,7 +17,7 @@ Status: done 2026-10-21. Issues #2 to #7; CI run links in the M0 PR.
 - 50 verified camera and doorbell records from at least four brands, starting from `data/sources/seed.yaml`.
 - Fetching sources needs the `Crawl` environment (D17): data work runs in `Crawl` sessions, not in the daily build.
 
-Exit: `npm run validate`, `npm test` and `npm run verify:evidence` pass; 50 records are `verified`.
+Exit: `npm run validate`, `npm test` and `npm run verify:evidence` pass; at least 50 records are `verified`, from at least four brands.
 
 ## M2 Public site, search only
 - Site generator and host chosen and recorded. Proposed (decision P2): a plain Node build script and GitHub Pages.

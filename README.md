@@ -35,7 +35,7 @@ Patchlife collects those statements in one place, with a quote and a link for ev
 ## Status
 As of 21 October 2026:
 - **Done:** M0, the foundation.
-- **In progress:** M1, the evidence engine and the first 50 verified records. The engine is built, and about 118 verified camera and doorbell records from Ring, Google Nest and TP-Link are being reviewed before they merge.
+- **In progress:** M1, the evidence engine and the first 50 verified records. The engine is built, 48 verified Ring records are on `main`, and 70 more from Google Nest and TP-Link are being fixed after their audit.
 - **Site:** not live yet. The public site is M2.
 
 [`docs/PLAN.md`](docs/PLAN.md) has the plan, the decisions waiting on the owner and the 14-day action plan. Live progress is in [`.agent/progress/TASKS.md`](.agent/progress/TASKS.md), and the exit checks for each milestone are in [`.agent/progress/ROADMAP.md`](.agent/progress/ROADMAP.md).
@@ -142,7 +142,7 @@ flowchart LR
 ```
 
 - **Daily build.** A scheduled task runs every morning at 06:08 Sydney time with the prompt in [`.agent/prompts/daily-build.md`](.agent/prompts/daily-build.md). It merges green agent PRs, does one roadmap task, and opens a PR.
-- **Two environments.** Code, tests and docs happen in the `Default` cloud environment, which cannot reach manufacturer sites at all. Everything that reads a manufacturer page, from adding records to `npm run verify:evidence`, runs in the `Crawl` environment, whose network allowlist adds a fixed list of manufacturer hosts (see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)). Step-by-step procedures are in [`docs/RUNBOOKS.md`](docs/RUNBOOKS.md).
+- **Two environments.** Code, tests and docs happen in the `Default` cloud environment, whose network cannot reach manufacturer sites. Everything that reads a manufacturer page, from adding records to `npm run verify:evidence`, runs in the `Crawl` environment, whose network allowlist adds a fixed list of manufacturer hosts (see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)). Step-by-step procedures are in [`docs/RUNBOOKS.md`](docs/RUNBOOKS.md).
 - **Branch protection.** `main` needs a pull request and a passing `test` check, and force pushes and deletion are blocked.
 - **Protected files.** CI labels any PR from a branch in this repository that changes `.github/`, `.claude/`, `.agent/prompts/`, `CLAUDE.md`, `package.json` or `package-lock.json` with `needs-human-merge`, and agents leave those PRs for the owner to merge. This is a project rule, not a GitHub permission: agents act with the owner's GitHub identity (see the security model in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)).
 - **Human gates.** Anything that needs a person (money, accounts, secrets, DNS, legal text, publishing) becomes a `needs-human` issue with exact steps.

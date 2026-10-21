@@ -27,7 +27,7 @@ News, forums, retailers, distributors and AI answers are leads only, never evide
 
 ## Crawling
 - Scripts send `User-Agent: PatchlifeBot/0.1 (+https://github.com/sombreserotonin/Patchlife/blob/main/docs/CRAWLER.md)`.
-- Copy quotes from the page text the polite fetcher extracts (RUNBOOKS A2), never from Claude Code's fetch tool, which summarises pages and does not identify as PatchlifeBot.
+- Copy quotes from the page text the polite fetcher extracts (RUNBOOKS A2), never from Claude Code's fetch tool, Firecrawl or any other connector. Those summarise pages or fetch them without identifying as PatchlifeBot (D17).
 - A source whose robots.txt disallows PatchlifeBot, or that needs a login or passes a bot challenge, is not used. It could never be re-verified (D18).
 - Honour robots.txt, at most one request per second per host, back off on 429 and 503.
 - No logins, paywalls or CAPTCHAs, and no retailer price scraping.

@@ -9,7 +9,12 @@ The owner asked for a forward plan, an action plan and better documentation, and
   - TP-Link (#22): 58 records, from an Australian statement in HTML.
   - Arlo: none. Its robots.txt disallows all bots and www.arlo.com serves a bot challenge, so it is out (D18).
   - Every session reported its own `verify:evidence` output, and I read it from their transcripts.
-  - A six-agent audit then checked the three PRs against independent reads of the source pages (RUNBOOKS A8). See the LOG line that records the merges.
+  - A six-agent audit checked each PR against an independent read of its source pages. Before D17, this used Firecrawl as the second reader.
+  - Every PR's dates were right, but each had one blocking problem:
+    - Ring: `conditions` widened the purchase channel. Fixed by me, then #24 was audited and merged.
+    - TP-Link: unversioned aliases.
+    - Google: past minimums that Google still patches, and an unruled `GLOBAL` region.
+  - The TP-Link and Google sessions are applying their fixes and re-verifying in `Crawl`; merges are recorded in LOG.
 - **Guard:** `npm run validate` now rejects a record whose dates or years aren't written in its quotes (#20).
 - **Mistake:** #20 also committed a `node_modules` symlink, which three sessions reported. It was fixed in #25, with `.gitignore` corrected (D22).
 - **Source registry:** schema and validation (#26), written by a background agent in a worktree.
@@ -24,6 +29,14 @@ The owner asked for a forward plan, an action plan and better documentation, and
 - `docs/PLAN.md`: summary, current state, how the work runs, decisions P1 to P8, milestones with targets, the legal checklist, risks, measures, and a 14-day action plan.
 - `docs/RUNBOOKS.md`: owner runbooks O1 to O7 and agent runbooks A1 to A8.
 - Updated ARCHITECTURE, ROADMAP, TASKS, DATA-POLICY, BRIEF, README, decisions (D17 to D22) and context.
+
+## Critique
+Two critic agents reviewed the first draft of the plan and found 52 issues, 19 of them blocking. All are fixed in the merged plan. The most serious:
+- the daily build would have merged unaudited data PRs that night;
+- D17's "by any route" was false, because connectors can reach the sites;
+- the daily build would have run out of tasks and could close M1 early;
+- the weekdays came from the wrong year;
+- two external facts were wrong (EOSL.ai doesn't charge yet; not every accessibility checker uses axe-core).
 
 ## Next
 - **Me:** merge the audited data PRs, open the decisions issue and the protected prompt-fix PR.
