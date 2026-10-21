@@ -9,9 +9,11 @@ Rules for the daily build:
 - Never mark M3 done. Only the session that runs the M3 exit check may do that, and only if it passes.
 
 Next for the daily build (`Default`), in order:
-- [ ] PDF text (D29, protected dependency split per A6): pick one PDF text library whose licence fits D9 and D30, extract text from a fixture PDF in tests, and make `htmlToText`'s counterpart feed the same quote check. The `package.json` change is the protected PR; the code and tests can wait in a normal PR until it merges.
+- Nothing. Do housekeeping only and end with `WAITING: no Default task`.
 
 Waiting:
+- [ ] PDF text (D29): the owner merges the `unpdf` 1.8.1 dependency (#73, protected); then the code PR on `claude/pdf-text` (fetcher returns PDF bytes, verifier extracts text with unpdf) merges after `main` is merged into it. Don't start it again.
+- [ ] Owner merges #72 (protected, after #71): the `add-device-record` skill stores month-only dates as `YYYY-MM` (D38).
 - [ ] Owner merges #67 (protected): the Pages build moves to `patchlife.tech` at the root, indexed, with a sitemap. Until then every link on patchlife.tech is a 404. Then Search Console (H7).
 - [ ] Owner merges #66 (protected): the manual `Probe hosts` workflow. Then run it once and record which evidence hosts block GitHub's runners (COSTS stage 1).
 - [ ] Cloudflare on patchlife.tech (#68, owner): the proxy is on and Web Analytics injects a beacon, which the approved privacy text doesn't cover. Privacy page #69 merges once the owner picks DNS only, analytics off, or extra wording.
