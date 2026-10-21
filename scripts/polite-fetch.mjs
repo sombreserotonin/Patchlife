@@ -6,6 +6,7 @@ const MIN_GAP_MS = 1000;
 const MAX_ATTEMPTS = 3;
 const MAX_WAIT_S = 60;
 const MAX_REDIRECTS = 5;
+const TIMEOUT_MS = 30_000;
 
 function ruleRegExp(pattern) {
   const anchored = pattern.endsWith("$");
@@ -17,20 +18,23 @@ function ruleRegExp(pattern) {
 }
 
 // RFC 9309: groups naming PatchlifeBot replace the "*" groups; the longest matching rule wins, Allow on a tie.
+// User-agent values are cut to their product token, so "PatchlifeBot/0.1" matches too.
 export function robotsAllows(robotsTxt, path) {
   const groups = [];
   let group = null;
   let inAgentLines = false;
-  for (const raw of robotsTxt.split(/\r?\n/)) {
+  for (const raw of robotsTxt.split(/\r\n|\r|\n/)) {
     const match = raw.replace(/#.*/, "").match(/^\s*([a-z-]+)\s*:\s*(.*?)\s*$/i);
     if (!match) continue;
     const key = match[1].toLowerCase();
     if (key === "user-agent") {
       if (!inAgentLines) groups.push((group = { agents: [], rules: [] }));
-      group.agents.push(match[2].toLowerCase());
+      group.agents.push(match[2].toLowerCase().match(/^(\*|[a-z_-]*)/)[1]);
       inAgentLines = true;
     } else if ((key === "allow" || key === "disallow") && group) {
-      if (match[2]) group.rules.push({ allow: key === "allow", length: match[2].length, re: ruleRegExp(match[2]) });
+      // URL paths arrive percent-encoded, so encode non-ASCII in rules the same way before comparing.
+      const pattern = match[2].replace(/[^\x00-\x7f]+/gu, encodeURIComponent);
+      if (pattern) group.rules.push({ allow: key === "allow", length: pattern.length, re: ruleRegExp(pattern) });
       inAgentLines = false;
     }
   }
@@ -44,35 +48,61 @@ export function robotsAllows(robotsTxt, path) {
   return best ? best.allow : true;
 }
 
-// Returns get(url) -> { url, contentType, text }, or throws with the reason. State (robots cache, per-host timing) is per fetcher.
+// Returns get(url) -> { url, contentType, text }, or throws with the reason (and `status` for HTTP errors).
+// State (robots cache, per-host timing, hosts that asked us to back off) lasts for the fetcher's lifetime.
 export function createFetcher({ fetch = globalThis.fetch, now = Date.now, sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
   const lastRequest = new Map();
   const robots = new Map();
+  const backedOff = new Set();
 
-  async function request(url, redirect) {
+  // Retry-After is either delta seconds or an HTTP date.
+  function retrySeconds(res, attempt) {
+    const header = (res.headers.get("retry-after") ?? "").trim();
+    const seconds = /^\d+$/.test(header) ? Number(header) : (Date.parse(header) - now()) / 1000;
+    return seconds > 0 ? seconds : 5 * attempt;
+  }
+
+  // Every request goes through here, so robots.txt, retries and redirect hops are all spaced per host.
+  async function request(url) {
     const host = new URL(url).host;
+    if (backedOff.has(host)) throw new Error(`${host} asked us to back off`);
     for (let attempt = 1; ; attempt++) {
       const wait = (lastRequest.get(host) ?? -Infinity) + MIN_GAP_MS - now();
       if (wait > 0) await sleep(wait);
       lastRequest.set(host, now());
-      const res = await fetch(url, { headers: { "user-agent": USER_AGENT }, redirect });
-      if ((res.status !== 429 && res.status !== 503) || attempt === MAX_ATTEMPTS) return res;
-      const retryAfter = Number(res.headers.get("retry-after"));
-      const seconds = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : 5 * attempt;
-      if (seconds > MAX_WAIT_S) return res;
+      const res = await fetch(url, { headers: { "user-agent": USER_AGENT }, redirect: "manual", signal: AbortSignal.timeout(TIMEOUT_MS) });
+      if (res.status !== 429 && res.status !== 503) return res;
+      const seconds = retrySeconds(res, attempt);
+      if (attempt === MAX_ATTEMPTS || seconds > MAX_WAIT_S) {
+        backedOff.add(host);
+        return res;
+      }
       await res.body?.cancel();
       await sleep(seconds * 1000);
     }
   }
 
-  // 4xx means no robots.txt, so everything is allowed; 429, 5xx or a network failure means assume everything is
-  // disallowed (RFC 9309). Throws with the reason when a URL may not be fetched.
+  // Follows redirects by hand so each hop is spaced; more than MAX_REDIRECTS hops throws.
+  async function follow(url, beforeHop = async () => {}) {
+    for (let hops = 0; ; hops++) {
+      await beforeHop(url);
+      const res = await request(url);
+      const location = res.headers.get("location");
+      if (res.status < 300 || res.status >= 400 || !location) return { url, res };
+      await res.body?.cancel();
+      if (hops === MAX_REDIRECTS) throw new Error(`more than ${MAX_REDIRECTS} redirects from ${url}`);
+      url = new URL(location, url).href;
+    }
+  }
+
+  // 4xx means no robots.txt, so everything is allowed; 429, 5xx, too many redirects or a network failure means
+  // assume everything is disallowed (RFC 9309). Throws with the reason when a URL may not be fetched.
   async function checkRobots(url) {
     const { origin, pathname, search } = new URL(url);
     if (!robots.has(origin)) {
       let entry = { txt: "" };
       try {
-        const res = await request(`${origin}/robots.txt`, "follow");
+        const { res } = await follow(`${origin}/robots.txt`);
         if (res.ok) entry = { txt: await res.text() };
         else {
           await res.body?.cancel();
@@ -88,22 +118,13 @@ export function createFetcher({ fetch = globalThis.fetch, now = Date.now, sleep 
     if (!robotsAllows(entry.txt, pathname + search)) throw new Error(`robots.txt disallows ${url}`);
   }
 
+  // Only a 200 is the page: other 2xx codes include bot challenges such as a 202 from a web application firewall.
   return async function get(url) {
-    for (let hops = 0; hops <= MAX_REDIRECTS; hops++) {
-      await checkRobots(url);
-      const res = await request(url, "manual");
-      const location = res.headers.get("location");
-      if (res.status >= 300 && res.status < 400 && location) {
-        await res.body?.cancel();
-        url = new URL(location, url).href;
-        continue;
-      }
-      if (!res.ok) {
-        await res.body?.cancel();
-        throw new Error(`HTTP ${res.status} for ${url}`);
-      }
-      return { url, contentType: (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase(), text: await res.text() };
+    const { url: finalUrl, res } = await follow(url, checkRobots);
+    if (res.status !== 200) {
+      await res.body?.cancel();
+      throw Object.assign(new Error(`HTTP ${res.status} for ${finalUrl}`), { status: res.status });
     }
-    throw new Error(`more than ${MAX_REDIRECTS} redirects from ${url}`);
+    return { url: finalUrl, contentType: (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase(), text: await res.text() };
   };
 }

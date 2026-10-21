@@ -30,6 +30,18 @@ test("htmlToText decodes entities", () => {
   assert.ok(normalise(htmlToText(html)).includes("ring’s policy"));
 });
 
+test("htmlToText drops comments and inline tags without adding spaces", () => {
+  assert.equal(normalise(htmlToText("Doorbell <!-- -->3<!-- -->.")), "doorbell 3.");
+  assert.equal(normalise(htmlToText("until <strong>31 December 2027</strong>.")), "until 31 december 2027.");
+  assert.equal(normalise(htmlToText("31<sup>st</sup> December")), "31st december");
+  assert.equal(normalise(htmlToText("<td>Ring</td><td>31 Dec</td><abbr>EOL</abbr><br>x")), "ring 31 dec eol x");
+});
+
+test("htmlToText decodes Latin-1 and typographic entities, and normalise drops invisible characters", () => {
+  assert.equal(normalise(htmlToText("Ring&reg; Cam&trade; &Eacute;t&eacute; &frac12;&hellip;")), "ring® camtm été 1⁄2...");
+  assert.equal(normalise("Door\u00adbell\u200b 3\ufeff"), "doorbell 3");
+});
+
 test("a quote matches regardless of case and spacing", () => {
   assert.ok(quoteMatches("RING video  doorbell 3 31 December 2027", htmlToText(html)));
 });
@@ -89,7 +101,7 @@ function setupDevices(pages = PAGES) {
   const fetched = [];
   const get = async (url) => {
     fetched.push(url);
-    if (!(url in pages)) throw new Error(`HTTP 404 for ${url}`);
+    if (!(url in pages)) throw Object.assign(new Error(`HTTP 404 for ${url}`), { status: 404 });
     return { url, contentType: "text/html", text: pages[url] };
   };
   const file = (id) => join(dir, "acme", `${id}.yaml`);
@@ -136,6 +148,21 @@ test("verifyDevices leaves files unchanged when a page cannot be fetched or is n
   assert.deepEqual(outcomes(results), { "acme-leap-5": "error", "acme-router-2": "error" });
   assert.match(results.find((r) => r.id === "acme-router-2").reason, /unsupported content type "application\/pdf"/);
   assert.deepEqual({ leap: read("acme-leap-5"), router: read("acme-router-2") }, before);
+});
+
+test("verifyDevices marks a verified record stale when its page is gone, but not on other errors", async () => {
+  const gone = { ...PAGES };
+  delete gone["https://example.com/acme/security"];
+  const removed = setupDevices(gone);
+  const results = await verifyDevices(removed.dir, { get: removed.get, today: TODAY, ids: ["acme-cam-1"] });
+  assert.deepEqual(results, [{ id: "acme-cam-1", outcome: "stale", reason: "HTTP 404 for https://example.com/acme/security" }]);
+  assert.match(removed.read("acme-cam-1"), /status: stale/);
+
+  const down = setupDevices();
+  const before = down.read("acme-cam-1");
+  const failing = async () => { throw Object.assign(new Error("HTTP 500 for https://example.com/acme/security"), { status: 500 }); };
+  assert.deepEqual(outcomes(await verifyDevices(down.dir, { get: failing, today: TODAY, ids: ["acme-cam-1"] })), { "acme-cam-1": "error" });
+  assert.equal(down.read("acme-cam-1"), before);
 });
 
 test("verifyDevices skips disputed records and reports unknown ids", async () => {

@@ -10,7 +10,7 @@ function setup(routes) {
   const calls = [];
   const sleeps = [];
   const fetch = async (url, init) => {
-    calls.push({ url, at: t, ua: init.headers["user-agent"] });
+    calls.push({ url, at: t, ua: init.headers["user-agent"], redirect: init.redirect, signal: init.signal });
     const route = Array.isArray(routes[url]) ? routes[url].shift() : routes[url];
     if (route instanceof Error) throw route;
     return route ? route() : new Response("", { status: 404 });
@@ -42,6 +42,19 @@ test("robots: the longest match wins and Allow wins a tie", () => {
   assert.equal(robotsAllows(txt, "/x"), true);
 });
 
+test("robots: a user-agent line with a version or the full user agent still names PatchlifeBot", () => {
+  assert.equal(robotsAllows("User-agent: *\nAllow: /\n\nUser-agent: PatchlifeBot/0.1\nDisallow: /", "/x"), false);
+  assert.equal(robotsAllows(`User-agent: *\nAllow: /\n\nUser-agent: ${USER_AGENT}\nDisallow: /`, "/x"), false);
+});
+
+test("robots: CR-only line endings", () => {
+  assert.equal(robotsAllows("User-agent: *\rDisallow: /support\r", "/support/a"), false);
+});
+
+test("robots: non-ASCII rules match the percent-encoded URL path", () => {
+  assert.equal(robotsAllows("User-agent: *\nDisallow: /de/über-uns", new URL("https://a.test/de/über-uns").pathname), false);
+});
+
 test("robots: * wildcards, $ anchors and empty Disallow", () => {
   const txt = "User-agent: *\nDisallow: /*.pdf$\nDisallow:";
   assert.equal(robotsAllows(txt, "/doc.pdf"), false);
@@ -50,10 +63,10 @@ test("robots: * wildcards, $ anchors and empty Disallow", () => {
   assert.equal(robotsAllows("", "/anything"), true);
 });
 
-test("sends the PatchlifeBot user agent and returns the page", async () => {
+test("sends the PatchlifeBot user agent with a timeout and returns the page", async () => {
   const { get, calls } = setup({ "https://a.test/p": reply("<p>hi</p>", 200, { "content-type": "text/HTML; charset=utf-8" }) });
   assert.deepEqual(await get("https://a.test/p"), { url: "https://a.test/p", contentType: "text/html", text: "<p>hi</p>" });
-  assert.ok(calls.every((c) => c.ua === USER_AGENT));
+  assert.ok(calls.every((c) => c.ua === USER_AGENT && c.redirect === "manual" && c.signal instanceof AbortSignal));
 });
 
 test("a page robots.txt disallows is never requested", async () => {
@@ -104,6 +117,44 @@ test("a Retry-After over a minute is not waited out", async () => {
   assert.deepEqual(sleeps, [1000]);
 });
 
+test("robots.txt redirects are followed one hop at a time, a second apart", async () => {
+  const { get, calls } = setup({
+    "https://a.test/robots.txt": reply("", 301, { location: "/robots-new.txt" }),
+    "https://a.test/robots-new.txt": reply("User-agent: *\nDisallow: /private", 200, { "content-type": "text/plain" }),
+    "https://a.test/p": reply("ok"),
+  });
+  await assert.rejects(get("https://a.test/private/x"), /robots.txt disallows/);
+  assert.equal((await get("https://a.test/p")).text, "ok");
+  assert.deepEqual(calls.map((c) => `${c.url}@${c.at}`), ["https://a.test/robots.txt@0", "https://a.test/robots-new.txt@1000", "https://a.test/p@2000"]);
+});
+
+test("more than five robots.txt redirects counts as unreachable", async () => {
+  const { get, calls } = setup({ "https://a.test/robots.txt": () => new Response("", { status: 302, headers: { location: "/robots.txt" } }) });
+  await assert.rejects(get("https://a.test/p"), /robots.txt unreachable \(more than 5 redirects/);
+  assert.equal(calls.length, 6);
+});
+
+test("a host that asks for a long back-off gets no more requests in this run", async () => {
+  const { get, urls } = setup({ "https://a.test/1": [reply("", 429, { "retry-after": "120" })], "https://a.test/2": reply("2") });
+  await assert.rejects(get("https://a.test/1"), /HTTP 429/);
+  await assert.rejects(get("https://a.test/2"), /a.test asked us to back off/);
+  assert.deepEqual(urls(), ["https://a.test/robots.txt", "https://a.test/1"]);
+});
+
+test("Retry-After as an HTTP date is honoured", async () => {
+  const soon = setup({ "https://a.test/p": [reply("", 503, { "retry-after": "Thu, 01 Jan 1970 00:00:03 GMT" }), reply("ok")] });
+  assert.equal((await soon.get("https://a.test/p")).text, "ok");
+  assert.deepEqual(soon.sleeps, [1000, 2000]);
+  const later = setup({ "https://a.test/p": [reply("", 503, { "retry-after": "Thu, 01 Jan 1970 00:05:00 GMT" })] });
+  await assert.rejects(later.get("https://a.test/p"), /HTTP 503/);
+  assert.deepEqual(later.sleeps, [1000]);
+});
+
+test("only a 200 counts as the page", async () => {
+  const { get } = setup({ "https://a.test/p": reply("<p>checking your browser</p>", 202) });
+  await assert.rejects(get("https://a.test/p"), (err) => err.status === 202 && /HTTP 202/.test(err.message));
+});
+
 test("redirects are followed with robots.txt checked on the new host", async () => {
   const { get, urls } = setup({
     "https://a.test/old": reply("", 301, { location: "https://b.test/new" }),
@@ -118,7 +169,7 @@ test("a relative redirect resolves against the current URL", async () => {
   assert.deepEqual(await get("https://a.test/old"), { url: "https://a.test/new", contentType: "text/html", text: "moved" });
 });
 
-test("an error status throws", async () => {
+test("an error status throws with the status", async () => {
   const { get } = setup({});
-  await assert.rejects(get("https://a.test/missing"), /HTTP 404 for https:\/\/a.test\/missing/);
+  await assert.rejects(get("https://a.test/missing"), (err) => err.status === 404 && /HTTP 404 for https:\/\/a.test\/missing/.test(err.message));
 });
