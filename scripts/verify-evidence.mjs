@@ -1,10 +1,11 @@
 // Checks that each evidence quote appears in the source page (SPEC 3) and records the result in the YAML.
 // Stores hashes, never pages. PDF extraction and archive snapshots are not built yet.
-// Usage: node --use-env-proxy scripts/verify-evidence.mjs [id ...]
+// Usage: node --use-env-proxy scripts/verify-evidence.mjs [--due <days>] [--limit <n>] [id ...]
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseArgs } from "node:util";
 import YAML from "yaml";
 import { createFetcher } from "./polite-fetch.mjs";
 import { listYamlFiles } from "./validate-data.mjs";
@@ -75,6 +76,22 @@ export function verifyRecord(record, texts, today = new Date().toISOString().sli
   return { ok: true, verification: { status: "verified", checked: today, text_sha256 } };
 }
 
+// Returns the ids to check: those named in ids, or all. With due or limit, it keeps only verified records (others need
+// repair, not a re-check), then those whose `checked` is more than `due` days before today (UTC dates), sorts them
+// oldest first (a missing date counts as oldest), and keeps the first `limit`.
+export function selectRecords(records, { ids = [], due, limit, today = new Date().toISOString().slice(0, 10) } = {}) {
+  const named = ids.length ? records.filter((r) => ids.includes(r.id)) : records;
+  if (due == null && limit == null) return named.map((r) => r.id);
+  const cutoff = due == null ? null : new Date(Date.parse(today) - due * 86_400_000).toISOString().slice(0, 10);
+  const checked = (r) => r.verification.checked ?? "";
+  return named
+    .filter((r) => r.verification.status === "verified" && r.support.rule !== "none_published")
+    .filter((r) => cutoff == null || checked(r) < cutoff)
+    .sort((a, b) => (checked(a) < checked(b) ? -1 : checked(a) > checked(b) ? 1 : 0))
+    .slice(0, limit ?? Infinity)
+    .map((r) => r.id);
+}
+
 const quoted = (doc, value) => Object.assign(doc.createNode(value), { type: "QUOTE_DOUBLE" });
 
 // A redirect to another origin or path, such as a homepage, means the cited page has moved, so its text is not checked.
@@ -86,7 +103,7 @@ function samePage(cited, final) {
 
 // Updates records in place: verified when every quote matches, stale when a verified record's quote no longer
 // matches or its page is gone (404 or 410). Any other fetch failure leaves the file unchanged. Returns one { id, outcome, reason } per record checked.
-export async function verifyDevices(devicesDir, { ids = [], get = createFetcher(), today = new Date().toISOString().slice(0, 10) } = {}) {
+export async function verifyDevices(devicesDir, { ids = [], due, limit, get = createFetcher(), today = new Date().toISOString().slice(0, 10) } = {}) {
   const pages = new Map();
   const page = (url) => {
     if (!pages.has(url)) {
@@ -99,12 +116,14 @@ export async function verifyDevices(devicesDir, { ids = [], get = createFetcher(
     return pages.get(url);
   };
 
+  const files = listYamlFiles(devicesDir).map((file) => ({ file, doc: YAML.parseDocument(readFileSync(file, "utf8")) }));
+  const records = files.map(({ doc }) => doc.toJS());
+  const chosen = new Set(selectRecords(records, { ids, due, limit, today }));
   const results = [];
-  for (const file of listYamlFiles(devicesDir)) {
-    const doc = YAML.parseDocument(readFileSync(file, "utf8"));
-    const record = doc.toJS();
+  for (const [i, { file, doc }] of files.entries()) {
+    const record = records[i];
     const { id } = record;
-    if (ids.length && !ids.includes(id)) continue;
+    if (!chosen.has(id)) continue;
     if (record.support.rule === "none_published" || record.verification.status === "disputed") {
       results.push({ id, outcome: "skipped", reason: record.support.rule === "none_published" ? "none_published" : "disputed" });
       continue;
@@ -138,14 +157,28 @@ export async function verifyDevices(devicesDir, { ids = [], get = createFetcher(
       results.push({ id, outcome: "failed", reason: result.reason });
     }
   }
-  for (const id of ids) {
-    if (!results.some((r) => r.id === id)) results.push({ id, outcome: "error", reason: "no record with this id" });
+  for (const id of new Set(ids)) {
+    if (!records.some((r) => r.id === id)) results.push({ id, outcome: "error", reason: "no record with this id" });
   }
   return results;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const results = await verifyDevices(join(ROOT, "data/devices"), { ids: process.argv.slice(2) });
+  let options;
+  try {
+    const { values, positionals } = parseArgs({ allowPositionals: true, options: { due: { type: "string" }, limit: { type: "string" } } });
+    // Up to five digits, so a huge --due cannot push the cutoff outside the range of Date.
+    const count = (name) => {
+      const value = values[name];
+      if (value !== undefined && !/^\d{1,5}$/.test(value)) throw new Error(`--${name} takes a whole number up to 99999, not "${value}"`);
+      return value === undefined ? undefined : Number(value);
+    };
+    options = { ids: positionals, due: count("due"), limit: count("limit") };
+  } catch (err) {
+    console.error(err.message);
+    process.exit(2);
+  }
+  const results = await verifyDevices(join(ROOT, "data/devices"), options);
   for (const r of results) console.log(`${r.id}: ${r.outcome}${r.reason ? ` (${r.reason})` : ""}`);
   const problems = results.filter((r) => ["failed", "stale", "error"].includes(r.outcome)).length;
   console.log(`${results.length} record(s) checked, ${problems} problem(s)`);
