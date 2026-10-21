@@ -210,6 +210,8 @@ Monthly report and alerts as in SPEC 7, once there's an audience.
 | Daily build heartbeats reporting OK (counted once the prompt fix lands) | n/a | n/a | 5 or more a week | 5 or more a week |
 | Oldest open `needs-human` item | under 1 day | under 7 days | under 7 days | under 7 days |
 
+The first four rows of **Now** are the first four lines of `node scripts/data-report.mjs`, run on 21 Oct 2026 (UTC).
+
 ## Action plan: next 14 days
 Who: **A** = agent (daily build or coordinating session), **O** = owner.
 

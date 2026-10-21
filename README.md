@@ -128,6 +128,7 @@ npm ci
 | `npm run validate` | Checks every record against the schema and integrity rules |
 | `npm test` | Runs the unit tests offline against saved fixtures; no test touches the network |
 | `npm run verify:evidence [-- <id> ...]` | Fetches evidence URLs and marks records `verified` or `stale`. Needs network access to manufacturer sites, so in cloud sessions it runs in the `Crawl` environment |
+| `node scripts/data-report.mjs` | Prints the Measures rows of `docs/PLAN.md`, then counts by brand, category, status and verification state. Reads only local files, so it runs in any environment |
 
 ## How the project runs itself
 Claude Code does the work in cloud sessions and scheduled tasks. The guard rails are in the repository itself:
