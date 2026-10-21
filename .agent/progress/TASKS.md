@@ -20,7 +20,7 @@ Next for the daily build (`Default`), in order:
 - [ ] Verifier: add `--due <days>` and `--limit <n>` options that select records whose `checked` is empty or older than that many days, oldest first, with tests. This is for the nightly re-verify.
 
 Waiting:
-- [ ] Merge #21 (Google, 12) and #22 (TP-Link, 58) once their audit fixes are pushed and re-verified. Both audits are done; #24 (Ring) is merged. (Waiting on the coordinating session of 21 Oct 2026.)
+- [ ] Google Nest Australian statements of compliance for 6 of the merged models, linked from `https://support.google.com/chromecast/answer/10367042`, per RUNBOOKS A2 with region `AU` and model-number aliases, then an A8 audit (found by the #21 audit; needs a `Crawl` session).
 - [ ] EZVIZ camera records per RUNBOOKS A2, then an A8 audit by a second session: the fourth brand (waiting on #23, then the owner starting `Crawl` sessions, O1).
 - [ ] M1 exit check (waiting on the EZVIZ task, then a `Crawl` session): run a full `npm run verify:evidence`. Mark M1 done in ROADMAP.md and write the M2 tasks only if at least 50 records are `verified` across at least four brands. With fewer brands, leave M1 open and say why in the PR.
 
@@ -35,6 +35,7 @@ Done:
 - [x] First real verifier run in `Crawl`: both Ring seed records verified (#19).
 - [x] `npm run validate` checks that quotes state each record's dates and years (#20).
 - [x] Source registry format, validated by `npm run validate` (#26).
+- [x] Data, audited per RUNBOOKS A8: Ring 48 (#24), Google Nest 12 (#21), TP-Link Tapo 60 (#22). 120 verified records from three brands on `main`.
 - [x] `needs-human` issues for the `Crawl` environment (#9) and the crawler contact URL (#10).
 
 ## Done: M0 (2026-10-21)
