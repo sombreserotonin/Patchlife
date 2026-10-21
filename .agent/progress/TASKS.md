@@ -35,6 +35,7 @@ Done:
 - [x] `npm run validate` checks that quotes state each record's dates and years (#20).
 - [x] Source registry format, validated by `npm run validate` (#26).
 - [x] Data, audited per RUNBOOKS A8: Ring 48 (#24), Google Nest 12 (#21), TP-Link Tapo 60 (#22). 120 verified records from three brands on `main`.
+- [x] Verifier reports `error (redirected to <final url>)` when the cited page redirects to another origin or path, and leaves the record unchanged (#33).
 - [x] `needs-human` issues for the `Crawl` environment (#9) and the crawler contact URL (#10).
 
 ## Done: M0 (2026-10-21)
