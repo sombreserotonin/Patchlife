@@ -1,11 +1,11 @@
-id: ring-spotlight-cam-4k-pro-us
+id: ring-spotlight-cam-4k-pro-au-us
 brand: Ring
 brand_slug: ring
 model: "Spotlight Cam 4K Pro"
 aliases:
   - "Ring Spotlight Cam 4K Pro"
 category: camera
-regions: [US]
+regions: [AU, US]
 support:
   rule: fixed_date
   end_date: "2030-12-31"
@@ -14,6 +14,11 @@ support:
   at_least: true
   conditions: "If bought new on ring.com, or on amazon.com where Amazon is the seller, at least four years from purchase or this date, whichever is later."
 evidence:
+  - url: https://ring.com/au/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "Ring Spotlight Cam 4K Pro 31 December 2030"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
   - url: https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
     quote: "Spotlight Cam 4K Pro 31 December 2030"
     retrieved: "2026-10-21"
@@ -22,5 +27,5 @@ evidence:
 verification:
   status: verified
   checked: "2026-10-21"
-  text_sha256: 2a8b9a5c31241b1bf4662453914d9bc00ce48cd2c5ec7dcd114e91637a2fb7c6
-notes: Ring's UK page gives 31 December 2031 for this model (record ring-spotlight-cam-4k-pro), so this record covers only the US page's 2030 date. Ring's AU page also gives 31 December 2030 but is not yet recorded.
+  text_sha256: a80cbfe958b127071af34e23cd4452997013497d7cb548010a6d110f370f13ff
+notes: Ring's UK page gives 31 December 2031 for this model (record ring-spotlight-cam-4k-pro), so this record covers only the AU and US pages' 2030 date.
