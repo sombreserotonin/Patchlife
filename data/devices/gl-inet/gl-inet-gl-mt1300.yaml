@@ -5,15 +5,20 @@ model: "Beryl (GL-MT1300)"
 aliases:
   - "GL-MT1300"
 category: router
-regions: [UK]
+regions: [GLOBAL, UK]
 support:
   rule: fixed_date
-  end_date: "2027-06-11"
+  end_date: "2028-06-08"
   years: null
   anchor_date: null
-  at_least: true
-  conditions: "Pre-defined support period; the actual period is 2 years after GL.iNet announces end of life, so it can be longer."
+  at_least: false
+  conditions: "Status Maintenance: the model has reached end of life and GL.iNet lists a Supported Until date."
 evidence:
+  - url: https://www.gl-inet.com/en-us/pages/firmware-versions/?status=ended
+    quote: "GL-MT1300 4.3.25 Native OpenWrt 22.03.4 Maintenance June 9, 2026 June 8, 2028"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
   - url: https://www.gl-inet.com/en-us/pages/psti-support-period
     quote: "Beryl (GL-MT1300) June 11, 2027 or later*"
     retrieved: "2026-10-21"
@@ -27,5 +32,5 @@ evidence:
 verification:
   status: verified
   checked: "2026-10-21"
-  text_sha256: e50090b5139b5194019d2a768c8b7e9ce9fedf10ffb88681ad5a970e5e50c249
-notes: "The page is GL.iNet's PSTI support period table and names no region; recorded as UK, the regime it is published under. The date is the pre-defined minimum, not a guaranteed end."
+  text_sha256: a70600544dcfe238a851be879f75f7c70d2a74e8e5d1522b1f06ced71d714983
+notes: "GL.iNet's firmware versions table (columns Status, EOL Date, Supported Until; page names no region) gives EOL date June 9, 2026 and Supported Until June 8, 2028, recorded as GLOBAL. The UK PSTI support period table still lists a pre-defined minimum of June 11, 2027 or later, which this date is consistent with, so UK is kept."
