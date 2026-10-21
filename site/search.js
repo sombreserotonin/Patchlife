@@ -92,19 +92,36 @@ export function answerText(device) {
 // The answer with its regions and any review flag: the line used in lists, search results and page descriptions.
 export const summaryText = (device) => `${answerText(device)} ${regionText(device)}.${underReview(device) ? " Under review." : ""}`;
 
+// 0 when the whole query is a name of the device (its model, brand and model, or an alias), 1 when a name starts with
+// it, 2 otherwise. Spaces and punctuation are ignored as a fallback, as in matching.
+function rank(device, phrase, bare) {
+  const names = [device.model, displayName(device.brand, device.model), ...(device.aliases ?? [])].map(fold);
+  if (names.some((name) => name === phrase || (bare !== "" && squash(name) === bare))) return 0;
+  if (names.some((name) => name.startsWith(phrase) || (bare !== "" && squash(name).startsWith(bare)))) return 1;
+  return 2;
+}
+
 // Devices whose brand, model, aliases or id contain every term of the query, after NFKC and lower-casing.
 // A term also matches with spaces and punctuation ignored, so "ac1" finds the model number "AC-1".
+// Exact names come first, then names that start with the query, then the rest, each in index order: "Floodlight Cam"
+// finds Ring's Floodlight Cam before the Floodlight Cam 2K (alias "Floodlight Cam (2nd Gen)") and Google's Nest Cam with Floodlight.
 export function matchDevices(index, query) {
   const terms = fold(query).split(/\s+/).filter(Boolean);
   if (!terms.length) return [];
-  return index.filter((device) => {
-    const fields = [device.brand, device.model, device.id, ...(device.aliases ?? [])].map(fold);
-    const squashed = fields.map(squash);
-    return terms.every((term) => {
-      const bare = squash(term);
-      return fields.some((field) => field.includes(term)) || (bare !== "" && squashed.some((field) => field.includes(bare)));
-    });
-  });
+  const phrase = terms.join(" ");
+  const bare = squash(phrase);
+  return index
+    .filter((device) => {
+      const fields = [device.brand, device.model, device.id, ...(device.aliases ?? [])].map(fold);
+      const squashed = fields.map(squash);
+      return terms.every((term) => {
+        const termBare = squash(term);
+        return fields.some((field) => field.includes(term)) || (termBare !== "" && squashed.some((field) => field.includes(termBare)));
+      });
+    })
+    .map((device) => ({ device, rank: rank(device, phrase, bare) }))
+    .sort((a, b) => a.rank - b.rank)
+    .map(({ device }) => device);
 }
 
 const MAX_RESULTS = 50;

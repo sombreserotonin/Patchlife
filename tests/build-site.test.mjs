@@ -761,6 +761,24 @@ test("matchDevices finds aliases and model numbers and needs every term", (t) =>
   assert.equal(ids("acme").length, 5);
 });
 
+test("matchDevices ranks an exact model or alias first, then prefix matches, then the rest", (t) => {
+  const ids = ["ring-floodlight-cam", "ring-floodlight-cam-2k", "google-nest-cam-with-floodlight"];
+  const records = ["ring", "google"].flatMap((brand) => loadRecords(join(ROOT, "data", "devices", brand))).filter((r) => ids.includes(r.id));
+  assert.equal(records.length, 3);
+  const index = build(t, { records }).json("search-index.json").devices;
+  const order = (devices, query) => matchDevices(devices, query).map((d) => d.id);
+  for (const devices of [index, [...index].reverse()]) {
+    assert.deepEqual(order(devices, "Floodlight Cam"), ids, "exact model, then a prefix (Floodlight Cam 2K), then the rest");
+    assert.deepEqual(order(devices, "ring floodlight cam"), ids.slice(0, 2), "brand and model together count as exact");
+    assert.equal(order(devices, "Floodlight Cam (2nd Gen)")[0], "ring-floodlight-cam-2k", "an exact alias");
+    assert.equal(order(devices, "floodlightcam")[0], "ring-floodlight-cam", "exact with spaces ignored");
+  }
+  const cam10 = { ...structuredClone(byId(fixtures(), "acme-cam-1")), id: "acme-cam-10", model: "Cam 10", aliases: ["AC-10"] };
+  const acme = build(t, { records: [byId(fixtures(), "acme-cam-1"), cam10] }).json("search-index.json").devices.reverse();
+  assert.deepEqual(order(acme, "acme cam 1"), ["acme-cam-1", "acme-cam-10"], "brand and model count as exact without a brand alias");
+  assert.deepEqual(order(acme, "AC-1"), ["acme-cam-1", "acme-cam-10"], "an exact alias beats an alias that starts with it");
+});
+
 test("every category in the schema has a page label", (t) => {
   const schema = JSON.parse(readFileSync(join(ROOT, "data", "schema", "device.schema.json"), "utf8"));
   const base = byId(fixtures(), "acme-cam-1");
