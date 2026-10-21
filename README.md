@@ -31,3 +31,7 @@ npm ci            # install
 npm run validate  # check every record against the schema and integrity rules
 npm test          # unit tests
 ```
+
+## Licence
+- Code: GNU AGPL v3 or later (`LICENSE`).
+- Data in `data/`: Open Database License v1.0 (`data/LICENSE`; scope and attribution in `data/NOTICE.md`).

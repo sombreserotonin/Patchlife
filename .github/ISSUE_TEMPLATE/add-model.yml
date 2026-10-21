@@ -1,0 +1,26 @@
+name: Add a device
+description: Ask us to cover a device we don't list yet.
+title: "Add: "
+labels: ["add-model"]
+body:
+  - type: input
+    id: device
+    attributes:
+      label: Device
+      description: Brand and model, including the model number if you know it.
+      placeholder: Acme Cam 2 (AC-200)
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Manufacturer source (optional)
+      description: The maker's page that states how long the device gets security updates.
+    validations:
+      required: false
+  - type: textarea
+    id: details
+    attributes:
+      label: Anything else?
+    validations:
+      required: false

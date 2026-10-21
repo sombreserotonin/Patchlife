@@ -32,7 +32,8 @@ Against today's date: `supported` (more than 12 months left), `ending_soon` (12 
 - Model page: end date or rule in words, time left, status, quote, source link, date checked, "Report a correction" link.
 - Copy pattern: "Security updates until at least 31 December 2027, as published by Ring (checked 21 Oct 2026)."
 - Static output, client-side search, sitemap, structured data, WCAG 2.1 AA, fast on mobile.
-- JSON: `/api/v1/devices.json` (all records) and `/api/v1/devices/<id>.json`.
+- JSON: `/api/v1/devices.json` (all records) and `/api/v1/devices/<id>.json`. Every response includes `license: "ODbL-1.0"` and the attribution line from `data/NOTICE.md`.
+- Footer on every page: links to the source code (AGPL-3.0-or-later), the data licence (ODbL) and the attribution line.
 
 ## 5. Browser extension (M5)
 - Manifest V3. On product pages of three chosen AU or UK retailers, match the model locally against a downloaded index and show a badge with status and end date, plus up to three longer-supported alternatives.
