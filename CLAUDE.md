@@ -1,4 +1,4 @@
-# LastPatch (working name)
+# Patchlife
 
 A lookup of when smart devices stop getting security updates, quoting the manufacturer as evidence. Free site and browser extension for consumers; paid feed and reports for MSPs, IT teams and suppliers. You build and run all of it.
 

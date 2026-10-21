@@ -24,6 +24,6 @@ News, forums, retailers, distributors and AI answers are leads only, never evide
 - Disclaimer (final wording is a human gate): information as published by manufacturers, may change, not advice.
 
 ## Crawling
-- Scripts send `User-Agent: LastPatchBot/0.1 (+<contact URL>)`. The contact URL is a human gate; until it exists, crawl only through Claude Code's fetch tool.
+- Scripts send `User-Agent: PatchlifeBot/0.1 (+<contact URL>)`. The contact URL is a human gate; until it exists, crawl only through Claude Code's fetch tool.
 - Honour robots.txt, at most one request per second per host, back off on 429 and 503.
 - No logins, paywalls or CAPTCHAs, and no retailer price scraping.

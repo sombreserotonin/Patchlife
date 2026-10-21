@@ -8,7 +8,7 @@
 - [ ] End-of-task updates (LOG, TASKS, session note).
 
 ## Human gates (the agent opens an issue; a human closes it)
-- H1 Final name; check domain and trademark availability.
+- H1 Name chosen: Patchlife. Check domain and trade mark availability before buying anything.
 - H2 Connect GitHub to Claude Code (claude.ai/code onboarding) and install the Claude GitHub App on this repo.
 - H3 Ruleset on `main`: require a pull request and the `test` status check; block force pushes and deletion.
 - H4 Daily build scheduled task at claude.ai/code/routines: this repo, Default environment, daily at a few minutes past the hour, prompt `Follow .agent/prompts/daily-build.md`.

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://lastpatch.invalid/schema/device.schema.json",
+  "$id": "https://patchlife.invalid/schema/device.schema.json",
   "title": "Device security support record",
   "type": "object",
   "additionalProperties": false,
