@@ -1,7 +1,7 @@
 # Context (current state)
 
 - 2026-10-21: Repo created from the starter kit. Nothing deployed.
-- 2026-10-21: M0 done. M1 active: status computation, the HTML verifier core, the polite fetcher and the verifier CLI are built. `npm run verify:evidence` waits on the owner merging #16; then it needs a run in `Crawl`.
+- 2026-10-21: M0 done. M1 active: status computation, the HTML verifier core, the polite fetcher and the verifier CLI are built. `npm run verify:evidence` is merged (#16) and ran for real in `Crawl`.
 - Repo is public. Ruleset `main` is active: pull request required (0 approvals), `test` check required, force pushes and deletion blocked, no bypass actors.
 - Domain `patchlife.tech` bought by the owner (#2); owner reports no trade mark clashes. No DNS or hosting yet (M2, H6).
 - Claude GitHub App installed (#3). `@claude` workflow not planned (#6): `claude.yml` stays but has no secret.
@@ -10,5 +10,5 @@
 - Crawler contact URL: `https://github.com/sombreserotonin/Patchlife/blob/main/docs/CRAWLER.md` (#10).
 - Usage credits are off (owner, #7). When usage runs out, scheduled runs are rejected until the usage window resets.
 - Default environment network: the shell cannot reach manufacturer sites, web.archive.org, registry RDAP or docs.github.com. `gh api` works for `repos/sombreserotonin/Patchlife/...` paths only.
-- Data: 2 seed records (Ring), both `unverified`. Seed sources in `data/sources/seed.yaml`, none checked yet.
+- Data: 2 seed records (Ring), both `verified` in `Crawl` on 2026-10-21 (the `Crawl` allowlist and proxy reach ring.com). Seed sources in `data/sources/seed.yaml`, none checked yet.
 - Licences: code AGPL-3.0-or-later, data ODbL-1.0.
