@@ -3,7 +3,7 @@
 - 2026-10-21: Repo created from the starter kit. Nothing deployed.
 - M0, M1 and M2 done (21 Oct 2026; #54). M3 (unattended data) is active; its tasks are in TASKS.md. The preview is live at https://sombreserotonin.github.io/Patchlife/ with noindex. The plan is `docs/PLAN.md`; the procedures are `docs/RUNBOOKS.md`; the cost pivot is `docs/COSTS.md`.
 - Data on `main`: 338 verified records from five brands, all audited: EZVIZ 193 (#51), TP-Link Tapo 60 (#22), Ring 50 (#24, #43 to #45), GL.iNet 23 (#49), Google Nest 12 (#21, #36). 309 are cameras or doorbells. Arlo can't be used (D18).
-- Decisions P1 to P8 settled 21 Oct (#30; D27 to D34). Waiting on the owner: the H9a legal read (#52), the Velica decision and P9 (month-only dates) in TASKS.md. G1 and G3 done 21 Oct. The prompt fixes are merged (#29, 21 Oct).
+- Decisions P1 to P8 settled 21 Oct (#30; D27 to D34). H9a approved (#52, 21 Oct). Waiting on the owner: the DNS steps to move to patchlife.tech (#57) and approval of the privacy page. G1 and G3 done 21 Oct. The prompt fixes are merged (#29, 21 Oct).
 - Labels: `audited` marks a data PR that passed RUNBOOKS A8. Heartbeat issue #27 gets one comment per daily build run (from 22 Oct, #29). The daily build merges a data PR only with `audited` or when it changes only `verification:` fields.
 - Repo is public. Ruleset `main` is active: pull request required (0 approvals), `test` check required, force pushes and deletion blocked, no bypass actors. Agents merge only PRs whose head branch is in this repo.
 - Domain `patchlife.tech` bought by the owner (#2); no trade mark clashes reported. No DNS or hosting yet (M2).
