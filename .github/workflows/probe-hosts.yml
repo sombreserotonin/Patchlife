@@ -1,0 +1,23 @@
+name: Probe hosts
+
+# Checks robots.txt and the first cited page on each evidence host from a GitHub runner, to learn which hosts block
+# runners before the nightly re-verify moves to Actions (docs/COSTS.md stage 1). Run it by hand. It is a report, so it
+# passes even when hosts fail: read the log, one line per host.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
+      - run: node scripts/probe-hosts.mjs
