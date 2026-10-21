@@ -1,11 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildSite, loadRecords, optionsFromEnv, resolveOutDir, timeLeft, unsafeOutDirReason } from "../scripts/build-site.mjs";
+import { buildSite, loadRecords, normaliseBasePath, optionsFromEnv, resolveOutDir, timeLeft, unsafeOutDirReason } from "../scripts/build-site.mjs";
 import { attachSearch, matchDevices } from "../site/search.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -241,22 +241,71 @@ test("at-least wording never overstates the minimum", (t) => {
   const lastDay = text(build(t, { today: "2029-06-30" }).read("devices/acme-cam-1/index.html"));
   assert.match(lastDay, /Time left Today is the last guaranteed day/);
 
-  const records = fixtures();
-  byId(records, "acme-leap-5").support.conditions = "If bought new, at least four years from purchase or this date, whichever is later.";
-  const passed = build(t, { records, today: "2027-03-01" });
-  assert.match(text(passed.read("devices/acme-leap-5/index.html")), /Time left The minimum period to this date has ended\. See Conditions\./);
-  assert.doesNotMatch(passed.read("devices/acme-leap-5/index.html"), /None guaranteed/);
   assert.match(text(build(t, { today: "2027-03-01" }).read("devices/acme-leap-5/index.html")), /Time left None guaranteed\. The minimum period has ended\./);
 });
 
-test("status notes hedge an at-least minimum when the record has conditions", (t) => {
-  const soon = build(t, { records: [ringStyle()], today: "2027-06-01" }).read("devices/ring-video-doorbell-3/index.html");
-  assert.match(text(soon), /Status Ending soon Status as at 1 June 2027\. 12 months or less of the minimum to this date left\. See Conditions\./);
-  assertDraftMarked(soon, "12 months or less of the minimum to this date left. See Conditions.", "ending soon");
-  const passed = build(t, { records: [ringStyle()], today: "2028-01-01" }).read("devices/ring-video-doorbell-3/index.html");
-  assert.match(text(passed), /Status Minimum passed Status as at 1 Jan 2028\. The minimum period to this date has passed\. See Conditions\./);
-  assertDraftMarked(passed, "The minimum period to this date has passed. See Conditions.", "minimum passed");
-  assert.doesNotMatch(text(passed), /guaranteed minimum period has passed/);
+// Google limits the scope, TP-Link names a hardware version, Ring's purchase rule can extend the period.
+const CONDITIONS = {
+  scope: "Covers critical issues that Acme can fix with a remote software update.",
+  hardware: "Hardware version V5 only.",
+  purchase: "If bought new on acme.com, at least four years from purchase or this date, whichever is later.",
+};
+
+// acme-leap-5 (at least, 28 February 2027) with the given condition: its status note, time left, list row, search line and meta.
+function leapViews(t, conditions, today) {
+  const records = fixtures();
+  byId(records, "acme-leap-5").support.conditions = conditions;
+  const site = build(t, { records, today });
+  const page = site.read("devices/acme-leap-5/index.html");
+  const words = text(page);
+  const dom = fakeDom(t);
+  attachSearch({ ...dom, devices: site.json("search-index.json").devices, base: "" });
+  dom.type("leap 5");
+  return {
+    page,
+    words,
+    note: words.match(/Status as at [^.]+\. (.+?) Time left/)[1],
+    timeLeft: words.match(/Time left (.+?) Support period/)[1],
+    list: text(site.read("brands/acme/index.html")),
+    search: dom.lines()[0],
+    meta: meta(page),
+  };
+}
+
+test("scope and hardware conditions keep the plain at-least wording everywhere (D23)", (t) => {
+  for (const conditions of [CONDITIONS.scope, CONDITIONS.hardware]) {
+    const passed = leapViews(t, conditions, "2027-03-01");
+    assert.equal(passed.note, "The guaranteed minimum period has passed.", conditions);
+    assert.equal(passed.timeLeft, "None guaranteed. The minimum period has ended.", conditions);
+    for (const view of [passed.words, passed.list, passed.search, passed.meta]) assert.ok(view.includes(P8_LEAP), `${conditions}: ${view}`);
+    assert.equal(leapViews(t, conditions, "2026-10-21").note, "12 months or less of the guaranteed minimum left.", conditions);
+    assert.equal(leapViews(t, conditions, "2027-02-28").timeLeft, "Today is the last guaranteed day", conditions);
+  }
+});
+
+const HEDGE = "The published minimum date, 28 February 2027, has passed. Some buyers get longer: see Conditions. Acme may still provide updates. Date as published by Acme (retrieved 1 Oct 2026).";
+
+test("a condition that can extend the period (whichever is later) gets one hedge everywhere", (t) => {
+  const passed = leapViews(t, CONDITIONS.purchase, "2027-03-01");
+  assert.equal(passed.note, "The published minimum date has passed. Some buyers get longer: see Conditions.");
+  assert.equal(passed.timeLeft, "Some buyers get longer: see Conditions.");
+  for (const view of [passed.words, passed.list, passed.search, passed.meta]) {
+    assert.ok(view.includes(HEDGE), view);
+    assert.doesNotMatch(view, /None guaranteed|guaranteed minimum|to this date|Minimum support period ended/);
+  }
+  assert.ok(JSON.parse(ldJson(passed.page)).description.startsWith(HEDGE));
+  assertDraftMarked(passed.page, "The published minimum date, 28 February 2027, has passed.", "answer");
+  assertDraftMarked(passed.page, "The published minimum date has passed.", "status note");
+  assert.ok(passed.page.includes(`<dd>${DRAFT}Some buyers get longer: see Conditions.</dd>`), "time left is marked");
+
+  const soon = leapViews(t, CONDITIONS.purchase, "2026-10-21");
+  assert.equal(soon.note, "12 months or less until the published minimum date. Some buyers get longer: see Conditions.");
+  assertDraftMarked(soon.page, "12 months or less until the published minimum date.", "ending soon note");
+  assert.equal(soon.timeLeft, "At least 4 months and 7 days", "the published minimum is still a floor for every buyer");
+
+  const lastDay = leapViews(t, CONDITIONS.purchase, "2027-02-28");
+  assert.equal(lastDay.timeLeft, "Today is the published minimum date. Some buyers get longer: see Conditions.");
+  assert.ok(lastDay.page.includes(`<dd>${DRAFT}Today is the published minimum date.`), "last day is marked");
 });
 
 test("status notes for a date without at least say when updates end", (t) => {
@@ -286,6 +335,7 @@ test("quote claims cover dates, not answers that found nothing", (t) => {
   const methodology = text(site.read("methodology/index.html"));
   assert.match(methodology, /Each record that gives a date or rule quotes, word for word,/);
   assert.doesNotMatch(methodology, /Each record quotes/);
+  assert.match(text(site.read("index.html")), /Every date quotes the manufacturer's statement and links to it\./);
 });
 
 test("both JSON files carry the licence, attribution, build date and computed status", (t) => {
@@ -319,10 +369,10 @@ test("the sitemap lists every HTML page and nothing else", (t) => {
   assert.equal(site.read("robots.txt"), "User-agent: *\nAllow: /\n\nSitemap: https://patchlife.tech/sitemap.xml\n");
 });
 
-test("NOINDEX puts noindex on every page and disallows all in robots.txt", (t) => {
+test("NOINDEX puts noindex on every page and keeps them crawlable, with no sitemap in robots.txt", (t) => {
   const hidden = build(t, { noindex: true });
   for (const file of htmlFiles(hidden.outDir)) assert.match(hidden.read(file), /<meta name="robots" content="noindex">/, file);
-  assert.equal(hidden.read("robots.txt"), "User-agent: *\nDisallow: /\n");
+  assert.equal(hidden.read("robots.txt"), "User-agent: *\nAllow: /\n", "crawlers must reach the pages to see noindex");
   const open = build(t);
   for (const file of htmlFiles(open.outDir)) assert.doesNotMatch(open.read(file), /name="robots"/, file);
   assert.equal(optionsFromEnv({ NOINDEX: "1" }).noindex, true);
@@ -352,7 +402,9 @@ test("every draft legal sentence carries the H9a draft marker", (t) => {
     assertDraftMarked(page, DISCLAIMER, file);
     assertDraftMarked(page, "Quoted manufacturer statements remain the property of their owners", file);
     const body = page.slice(page.indexOf("<body>"));
-    const p8 = draftMarkedCount(page, "Minimum support period ended on", file) + draftMarkedCount(page, "The source gave a minimum period", file);
+    const p8 = ["Minimum support period ended on", "The source gave a minimum period", "The published minimum date,"]
+      .map((phrase) => draftMarkedCount(page, phrase, file))
+      .reduce((a, b) => a + b);
     assert.equal((body.match(/may still provide updates/g) ?? []).length, p8, `${file}: every P8 sentence is marked`);
   }
   assert.match(site.read("brands/acme/index.html"), /may still provide updates/, "the brand page has P8 copy to check");
@@ -484,13 +536,23 @@ test("the search loader says when search cannot load, and tries again on the nex
   assert.equal(loader.calls.fetches.length, 2, "a failed load is retried");
 });
 
-test("SITE_URL is trimmed and must be a plain http or https URL", () => {
+test("SITE_URL is trimmed and must be an http or https origin, with any path in BASE_PATH", () => {
   assert.equal(optionsFromEnv({ SITE_URL: " https://example.org/ \n" }).siteUrl, "https://example.org");
-  assert.equal(optionsFromEnv({ SITE_URL: "https://example.org/preview/" }).siteUrl, "https://example.org/preview");
+  assert.equal(optionsFromEnv({ SITE_URL: "http://localhost:8080" }).siteUrl, "http://localhost:8080");
+  assert.equal(optionsFromEnv({ SITE_URL: "HTTPS://Example.ORG:443/" }).siteUrl, "https://example.org", "normalised to the origin");
   assert.equal(optionsFromEnv({}).siteUrl, "https://patchlife.tech");
-  for (const bad of ["https://exa mple.org", "https://example.org/a b", "ftp://example.org", "https://example.org/?q=1", "https://example.org/#top", "example.org"]) {
+  for (const path of ["https://example.org/preview/", "https://sombreserotonin.github.io/Patchlife"]) {
+    assert.throws(() => optionsFromEnv({ SITE_URL: path }), /SITE_URL .* put the path in BASE_PATH/, path);
+  }
+  for (const bad of ["https://exa mple.org", "ftp://example.org", "https://example.org/?q=1", "https://example.org/#top", "example.org"]) {
     assert.throws(() => optionsFromEnv({ SITE_URL: bad }), /SITE_URL/, bad);
   }
+});
+
+test("BASE_PATH has no . or .. segments", () => {
+  assert.equal(normaliseBasePath("Patchlife/"), "/Patchlife");
+  assert.equal(normaliseBasePath("/a.b/c"), "/a.b/c");
+  for (const bad of ["/.", "/..", "/a/../b", "./x", "/a/./b", "/a b"]) assert.throws(() => normaliseBasePath(bad), /BASE_PATH/, bad);
 });
 
 test("BUILD_DATE must be a real calendar date", (t) => {
@@ -546,7 +608,7 @@ test("unsafeOutDirReason protects the repo, the cwd, their parents and the recor
 test("each unsafeOutDirReason guard refuses on its own, even for an earlier build", (t) => {
   const earlier = tempDir(t);
   mkdirSync(join(earlier, "api", "v1"), { recursive: true });
-  writeFileSync(join(earlier, "api", "v1", "devices.json"), "{}");
+  writeFileSync(join(earlier, "api", "v1", "devices.json"), JSON.stringify({ license: "ODbL-1.0", build_date: TODAY, devices: [] }));
   mkdirSync(join(earlier, "devices"));
   const elsewhere = tempDir(t);
   const safe = { cwd: elsewhere, root: elsewhere, devicesDir: join(elsewhere, "records") };
@@ -579,6 +641,57 @@ test("the CLI refuses a non-empty folder that is not an earlier build", (t) => {
   assert.equal(run.status, 1);
   assert.match(run.stderr, /^build-site: refusing to empty .+: it is not empty and is not an earlier site build\n$/);
   assert.ok(existsSync(join(outDir, "notes.txt")));
+});
+
+test("the CLI refuses an earlier build that also holds other files, and keeps them", (t) => {
+  const outDir = join(tempDir(t), "out");
+  const build = () => spawnSync(process.execPath, [SCRIPT, outDir, VALID], { encoding: "utf8", env: { ...process.env, BUILD_DATE: TODAY } });
+  assert.equal(build().status, 0);
+  mkdirSync(join(outDir, ".git"));
+  writeFileSync(join(outDir, ".git", "HEAD"), "ref: refs/heads/gh-pages\n");
+  writeFileSync(join(outDir, "CNAME"), "patchlife.tech\n");
+  const run = build();
+  assert.equal(run.status, 1);
+  assert.match(run.stderr, /^build-site: refusing to empty .+: it is not empty and is not an earlier site build\n$/);
+  assert.ok(existsSync(join(outDir, ".git", "HEAD")) && existsSync(join(outDir, "CNAME")));
+});
+
+test("a folder is an earlier build only when its feed parses with the build's licence and date", (t) => {
+  const options = { cwd: tmpdir(), root: ROOT, devicesDir: VALID };
+  for (const feed of ["{}", "not json", JSON.stringify({ license: "MIT", build_date: TODAY }), JSON.stringify({ license: "ODbL-1.0", build_date: "2027-02-31" })]) {
+    const dir = tempDir(t);
+    mkdirSync(join(dir, "api", "v1"), { recursive: true });
+    writeFileSync(join(dir, "api", "v1", "devices.json"), feed);
+    assert.match(unsafeOutDirReason(dir, options) ?? "", /not an earlier site build/, feed);
+  }
+});
+
+test("the CLI rebuilds through a symlinked output folder and keeps the link", (t) => {
+  const tmp = tempDir(t);
+  const real = join(tmp, "real");
+  const linked = join(tmp, "linked");
+  const devices = join(tmp, "devices");
+  cpSync(VALID, devices, { recursive: true });
+  const build = (outDir) => spawnSync(process.execPath, [SCRIPT, outDir, devices], { encoding: "utf8", env: { ...process.env, BUILD_DATE: TODAY } });
+  assert.equal(build(real).status, 0);
+  symlinkSync(real, linked);
+  rmSync(join(devices, "acme", "acme-hub-4.yaml"));
+  const run = build(linked);
+  assert.equal(run.status, 0, run.stderr);
+  assert.ok(lstatSync(linked).isSymbolicLink(), "the link is kept");
+  assert.ok(!existsSync(join(real, "devices", "acme-hub-4")), "the old page is gone from the target");
+  assert.ok(existsSync(join(real, "devices", "acme-cam-1", "index.html")));
+});
+
+test("the CLI runs when the script is reached through a symlink", (t) => {
+  const tmp = tempDir(t);
+  const link = join(tmp, "build-site.mjs");
+  symlinkSync(SCRIPT, link);
+  const outDir = join(tmp, "out");
+  const run = spawnSync(process.execPath, [link, outDir, VALID], { encoding: "utf8", env: { ...process.env, BUILD_DATE: TODAY } });
+  assert.equal(run.status, 0, run.stderr);
+  assert.match(run.stdout, /15 page\(s\) for 5 record\(s\)/);
+  assert.ok(existsSync(join(outDir, "index.html")));
 });
 
 test("the CLI fails on an empty devices dir, and a bad record names its file", (t) => {

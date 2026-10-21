@@ -40,7 +40,12 @@ export function regionText({ regions = [], rule }) {
   return parts.join(", ");
 }
 
-// P6: a stale or disputed record is flagged next to its date until it is settled.
+// A condition can extend the period only when it sets another date that wins if later, as Ring's purchase rule does
+// ("at least four years from purchase or this date, whichever is later"). Scope conditions (Google: "Covers critical
+// issues…") and hardware versions (TP-Link: "Hardware version V5 only.") do not, so those records keep the plain D23 wording.
+export const conditionsExtend = (conditions) => /\bwhichever is later\b/i.test(conditions ?? "");
+
+// P6 and D32: a stale or disputed record is flagged next to its date until it is settled.
 export const underReview = ({ verification }) => verification === "stale" || verification === "disputed";
 
 // The date shown after "as published by": the last automated check, else the latest date the evidence was retrieved.
@@ -67,13 +72,18 @@ export function ruleWords({ rule, years, anchor_date: anchor, brand }) {
   return null;
 }
 
-// The answer: SPEC 4's copy pattern, or the P8 wording once an "at least" date has passed.
-// Draft wording: the P8 sentence needs the owner's legal read (gate H9a). The generator marks it in the HTML.
+// The answer: SPEC 4's copy pattern, or once an "at least" date has passed, the P8 wording (D34), or for a condition that
+// can extend the period, a hedge that says some buyers get longer.
+// Draft wording: both need the owner's legal read (gate H9a). The generator marks them in the HTML; search results,
+// the meta description and the JSON-LD description carry them unmarked.
 export function answerText(device) {
   const { brand, status, end_date: end, at_least: atLeast, rule } = device;
   const source = `as published by ${brand} (${checkedPhrase(device)})`;
   if (rule === "none_published") return `No security update period published by ${brand} was found for this model (${checkedPhrase(device)}).`;
   if (!end) return `Security updates for ${atLeast ? "at least " : ""}${ruleWords(device)}, ${source}.`;
+  if (isMinimumPassed(device) && device.conditions_extend) {
+    return `The published minimum date, ${longDate(end)}, has passed. Some buyers get longer: see Conditions. ${brand} may still provide updates. Date ${source}.`;
+  }
   if (isMinimumPassed(device)) return `Minimum support period ended on ${longDate(end)}. ${brand} may still provide updates. Date ${source}.`;
   if (status === "ended") return `Security updates ended on ${longDate(end)}, ${source}.`;
   return `Security updates until ${atLeast ? "at least " : ""}${longDate(end)}, ${source}.`;

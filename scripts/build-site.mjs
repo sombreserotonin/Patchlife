@@ -1,9 +1,10 @@
 // Builds the static site (SPEC 4): HTML pages, the JSON feed, the search index, sitemap.xml and robots.txt.
 // Usage: node scripts/build-site.mjs [outDir] [devicesDir]
-// outDir defaults to _site/; an empty argument counts as absent. The CLI empties outDir before writing, and refuses one
-// that is the cwd, the repository, a parent of either, holds the device records, or is a non-empty folder that is not an
-// earlier build. Env: BASE_PATH (default ""), SITE_URL (default https://patchlife.tech), BUILD_DATE (YYYY-MM-DD, default
-// today in UTC), NOINDEX (1 or true: noindex on every page and a robots.txt that disallows all, for the preview).
+// outDir defaults to _site/; an empty argument counts as absent. The CLI empties what is inside outDir before writing,
+// and refuses one that is the cwd, the repository, a parent of either, holds the device records, or is a non-empty
+// folder that is not an earlier build (only build output at the top level, and this build's feed).
+// Env: BASE_PATH (default ""), SITE_URL (an origin, default https://patchlife.tech), BUILD_DATE (YYYY-MM-DD, default
+// today in UTC), NOINDEX (1 or true: noindex on every page and no Sitemap line in robots.txt, for the preview).
 // Status is computed against BUILD_DATE (D7). Run `npm run validate` first: this script trusts the data's shape but not
 // its text, which comes from crawled pages.
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
@@ -14,6 +15,7 @@ import { computeStatus } from "./status.mjs";
 import { listYamlFiles } from "./validate-data.mjs";
 import {
   answerText,
+  conditionsExtend,
   displayName,
   isMinimumPassed,
   listWords,
@@ -182,19 +184,21 @@ function indexEntry(record, status) {
     checked: verification.checked,
     retrieved: latestRetrieved(record),
     verification: verification.status,
+    conditions_extend: conditionsExtend(support.conditions) || null,
   };
   return Object.fromEntries(Object.entries(entry).filter(([, value]) => value !== null && value !== undefined));
 }
 
-// For an "at least" date the status describes the guaranteed minimum, not when updates stop (D23). A condition can
-// give some buyers longer (Ring's purchase rule), so with one the note only speaks of the minimum to this date.
-function statusNote({ status, at_least: atLeast }, conditions) {
+// For an "at least" date the status describes the guaranteed minimum, not when updates stop (D23). When a condition can
+// extend the period (conditionsExtend), the published date is only the minimum for some buyers, so the notes say so.
+const SOME_LONGER = "Some buyers get longer: see Conditions.";
+function statusNote({ status, at_least: atLeast, conditions_extend: extend }) {
   if (status === "supported") return atLeast ? "More than 12 months of the guaranteed minimum left." : "More than 12 months of security updates left.";
   if (status === "ending_soon" && atLeast) {
-    return conditions ? draft("12 months or less of the minimum to this date left. See Conditions.") : "12 months or less of the guaranteed minimum left.";
+    return extend ? draft(`12 months or less until the published minimum date. ${SOME_LONGER}`) : "12 months or less of the guaranteed minimum left.";
   }
   if (status === "ending_soon") return "12 months or less of security updates left.";
-  if (status === "ended" && atLeast) return draft(conditions ? "The minimum period to this date has passed. See Conditions." : "The guaranteed minimum period has passed.");
+  if (status === "ended" && atLeast) return draft(extend ? `The published minimum date has passed. ${SOME_LONGER}` : "The guaranteed minimum period has passed.");
   if (status === "ended") return "The end date has passed.";
   return "No end date can be worked out from what the manufacturer has published.";
 }
@@ -206,16 +210,18 @@ function supportPeriod(record, entry) {
   return `${atLeast ? "At least " : ""}${ruleWords(entry)}`;
 }
 
-function timeLeftText(record, status, today) {
-  const { rule, end_date: end, at_least: atLeast, conditions } = record.support;
+// "At least <time left>" stays true for every buyer when a condition extends the period, since the published date is a floor.
+function timeLeftText(record, entry, today) {
+  const { rule, end_date: end, at_least: atLeast } = record.support;
+  const extend = entry.conditions_extend;
   if (rule === "years_after_purchase") return "Depends on when you bought the device";
   if (rule === "years_after_manufacture") return "Depends on when the device was made";
   if (!end) return rule === "none_published" ? "Not known" : html`Not known until ${record.brand} publishes the date`;
-  // A condition can give some buyers longer (Ring's purchase rule), so never say "none guaranteed" when there is one.
-  if (status === "ended" && atLeast) return draft(conditions ? "The minimum period to this date has ended. See Conditions." : "None guaranteed. The minimum period has ended.");
-  if (status === "ended") return "None. Security updates have ended.";
+  if (entry.status === "ended" && atLeast) return draft(extend ? SOME_LONGER : "None guaranteed. The minimum period has ended.");
+  if (entry.status === "ended") return "None. Security updates have ended.";
   const left = timeLeft(today, end);
-  if (!left) return atLeast ? "Today is the last guaranteed day" : "Today is the last day";
+  if (!left && atLeast) return extend ? draft(`Today is the published minimum date. ${SOME_LONGER}`) : "Today is the last guaranteed day";
+  if (!left) return "Today is the last day";
   return atLeast ? `At least ${left}` : left;
 }
 
@@ -232,7 +238,7 @@ function sourceLink(url) {
   return safe ? html`<a class="url" href="${safe}">${safe}</a>` : html`<span class="url">${url} (not linked: not an https address)</span>`;
 }
 
-// The answer as HTML: the P8 sentence is draft legal copy.
+// The answer as HTML: the P8 sentence and the extending-condition hedge are draft legal copy.
 const answerHtml = (entry) => (isMinimumPassed(entry) ? draft(answerText(entry)) : answerText(entry));
 const reviewFlag = (entry) => (underReview(entry) ? html` <strong>Under review.</strong>` : "");
 const statusBadge = (entry) => html`<span class="status ${statusKey(entry)}">${statusLabel(entry)}</span>`;
@@ -367,7 +373,7 @@ ${statusBadge(entry)} ${answerHtml(entry)} <span class="muted">${regionText(entr
 }
 
 // ---------- Pages ----------
-function modelPage(ctx, { record, status, entry }) {
+function modelPage(ctx, { record, entry }) {
   const name = displayName(record.brand, record.model);
   const path = `/devices/${record.id}/`;
   const brandPath = `/brands/${record.brand_slug}/`;
@@ -409,9 +415,9 @@ function modelPage(ctx, { record, status, entry }) {
 ${disclaimerNote(ctx)}
 <dl>
 <dt>Status</dt>
-<dd>${statusBadge(entry)} Status as at ${shortTime(ctx.today)}. ${statusNote(entry, conditions)}</dd>
+<dd>${statusBadge(entry)} Status as at ${shortTime(ctx.today)}. ${statusNote(entry)}</dd>
 <dt>Time left</dt>
-<dd>${timeLeftText(record, status, ctx.today)}</dd>
+<dd>${timeLeftText(record, entry, ctx.today)}</dd>
 <dt>Support period</dt>
 <dd>${supportPeriod(record, entry)}</dd>
 ${conditions ? html`<dt>Conditions</dt>
@@ -587,24 +593,27 @@ export function loadRecords(devicesDir) {
 export function normaliseBasePath(value = "") {
   const trimmed = value.trim().replace(/\/+$/, "");
   const base = trimmed && !trimmed.startsWith("/") ? `/${trimmed}` : trimmed;
-  if (!/^(\/[A-Za-z0-9._~-]+)*$/.test(base)) throw new Error(`BASE_PATH ${JSON.stringify(value)} may only hold path segments of letters, digits, ".", "_", "~" and "-"`);
+  const segments = base.split("/").slice(1);
+  if (!/^(\/[A-Za-z0-9._~-]+)*$/.test(base) || segments.some((s) => s === "." || s === "..")) {
+    throw new Error(`BASE_PATH ${JSON.stringify(value)} may only hold path segments of letters, digits, ".", "_", "~" and "-", and no "." or ".." segment`);
+  }
   return base;
 }
 
-// A plain http or https URL with no query, fragment, credentials or spaces, without its trailing slash.
+// An http or https origin such as https://patchlife.tech, with no path, query, fragment, credentials or spaces. Links use
+// BASE_PATH and absolute URLs use SITE_URL plus BASE_PATH, so a path here would put the two out of step.
 export function normaliseSiteUrl(value) {
-  const trimmed = String(value).trim().replace(/\/+$/, "");
+  const trimmed = String(value).trim();
   let url = null;
   try {
     url = new URL(trimmed);
   } catch {
     // reported below
   }
-  const clean = url ? `${url.origin}${url.pathname}`.replace(/\/+$/, "") : null;
-  if (!url || !["http:", "https:"].includes(url.protocol) || url.search || url.hash || url.username || url.password || clean !== trimmed) {
-    throw new Error(`SITE_URL ${JSON.stringify(String(value).trim())} must be a plain http or https URL with no spaces, query or fragment`);
-  }
-  return clean;
+  const web = url && ["http:", "https:"].includes(url.protocol) && !url.search && !url.hash && !url.username && !url.password;
+  if (!web) throw new Error(`SITE_URL ${JSON.stringify(trimmed)} must be a plain http or https origin with no spaces, query or fragment`);
+  if (url.pathname !== "/") throw new Error(`SITE_URL ${JSON.stringify(trimmed)} must be an origin such as https://patchlife.tech: put the path in BASE_PATH`);
+  return url.origin;
 }
 
 export function optionsFromEnv(env = process.env) {
@@ -633,6 +642,20 @@ const within = (dir, path) => {
   return !(rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel));
 };
 
+// The top-level names buildSite writes. A folder holding anything else (.git, CNAME, src) is not an earlier build.
+const BUILD_ENTRIES = new Set(["about", "api", "brands", "categories", "corrections", "devices", "index.html", "methodology", "robots.txt", "search-index.json", "search.js", "sitemap.xml"]);
+
+// True when every top-level entry is one the build writes and api/v1/devices.json is this build's feed.
+function isEarlierBuild(dir) {
+  if (!readdirSync(dir).every((name) => BUILD_ENTRIES.has(name))) return false;
+  try {
+    const feed = JSON.parse(readFileSync(join(dir, "api", "v1", "devices.json"), "utf8"));
+    return feed.license === "ODbL-1.0" && isRealDate(feed.build_date);
+  } catch {
+    return false;
+  }
+}
+
 // Why the CLI must not empty outDir, or null when it may.
 export function unsafeOutDirReason(outDir, { cwd = process.cwd(), root = ROOT, devicesDir = join(ROOT, "data/devices") } = {}) {
   const out = realPath(outDir);
@@ -641,8 +664,15 @@ export function unsafeOutDirReason(outDir, { cwd = process.cwd(), root = ROOT, d
   if (within(out, realPath(devicesDir))) return "it holds the device records";
   if (!existsSync(out)) return null;
   if (!statSync(out).isDirectory()) return "it is a file";
-  if (readdirSync(out).length && !existsSync(join(out, "api", "v1", "devices.json"))) return "it is not empty and is not an earlier site build";
+  if (readdirSync(out).length && !isEarlierBuild(out)) return "it is not empty and is not an earlier site build";
   return null;
+}
+
+// Removes what is inside dir, keeping dir itself, so a symlinked or mounted output folder stays in place. A missing dir
+// is left for buildSite to create.
+function emptyDir(dir) {
+  if (!existsSync(dir)) return;
+  for (const name of readdirSync(dir)) rmSync(join(dir, name), { recursive: true, force: true });
 }
 
 const byName = (a, b) =>
@@ -726,12 +756,22 @@ export function buildSite({ records, outDir, basePath = "", siteUrl = DEFAULT_SI
 
   const urls = pages.map((path) => `  <url><loc>${escapeHtml(absolute(ctx, path))}</loc></url>`).join("\n");
   write("/sitemap.xml", `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`);
-  write("/robots.txt", ctx.noindex ? "User-agent: *\nDisallow: /\n" : `User-agent: *\nAllow: /\n\nSitemap: ${absolute(ctx, "/sitemap.xml")}\n`);
+  // With noindex, pages stay crawlable so search engines can see the tag; only the Sitemap line is left out.
+  write("/robots.txt", ctx.noindex ? "User-agent: *\nAllow: /\n" : `User-agent: *\nAllow: /\n\nSitemap: ${absolute(ctx, "/sitemap.xml")}\n`);
 
   return { records: items.length, pages: pages.length };
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+// Real paths, so the CLI also runs when the script is reached through a symlink.
+const isMain = () => {
+  try {
+    return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return false;
+  }
+};
+
+if (process.argv[1] && isMain()) {
   try {
     const outDir = resolveOutDir(process.argv[2]);
     const devicesDir = resolve(process.argv[3] || join(ROOT, "data/devices"));
@@ -740,7 +780,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     const options = optionsFromEnv();
     const reason = unsafeOutDirReason(outDir, { devicesDir });
     if (reason) throw new Error(`refusing to empty ${outDir}: ${reason}`);
-    rmSync(outDir, { recursive: true, force: true });
+    emptyDir(outDir);
     const result = buildSite({ records, outDir, ...options });
     console.log(`${result.pages} page(s) for ${result.records} record(s) written to ${relative(process.cwd(), outDir) || "."}`);
   } catch (err) {
