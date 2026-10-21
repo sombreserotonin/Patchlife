@@ -1,29 +1,32 @@
 # Tasks
 
-## Active: M1 and M2 done (2026-10-21); M3 is next
-The coordinating session writes the M3 tasks.
-
-The plan and the reasons for this order are in `docs/PLAN.md`. Data tasks need a `Crawl` session (D17), which only the owner or a coordinating session can start until decision P1 is made, so they are marked waiting.
+## Active: M3 Unattended data (target December 2026)
+M1 and M2 are done (2026-10-21). The plan is `docs/PLAN.md` (M3) and the cost pivot is `docs/COSTS.md` (stages 1 and 2 fall in M3).
 
 Rules for the daily build:
 - Never start a task under **Waiting**: those need a `Crawl` session or the owner.
-- When every task under **Next** is done, do housekeeping only and end the run with `WAITING: no Default task; waiting on #23 and a Crawl session`.
-- Never mark M1 done or write M2 tasks. Only the `Crawl` session that runs the M1 exit check may do that, and only if it passes.
+- When every task under **Next** is done, do housekeeping only and end the run with `WAITING: no Default task`.
+- Never mark M3 done. Only the session that runs the M3 exit check may do that, and only if it passes.
 
 Next for the daily build (`Default`), in order:
 - [ ] Validator: make numeric dates unambiguous. `mentionsDate` in `scripts/validate-data.mjs` accepts both day/month/year and month/day/year, so "3/4/2027" passes for both 2027-04-03 and 2027-03-04 (Google's quotes are month/day, TP-Link AU's are day/month). Add an optional `date_order: dmy | mdy` to source registry entries (`data/sources/*.yaml`, schema in `data/schema/source.schema.json`); for evidence whose URL starts with one of an entry's URLs, accept only that numeric order. A numeric date whose day and month are both 12 or under and differ, on evidence no entry covers, fails validation. Set `date_order` on the Google (mdy) and TP-Link (dmy) entries. Tests for both orders and the uncovered case. No change to `data/devices`.
-- [ ] Validator: every record's `model` or one of its `aliases` must appear in at least one evidence quote (normalised as the verifier does), and no alias or model may be shared by two records of the same brand unless they are region-date splits of one product (D33: same `model`, different regions). Tests. All 122 current records should pass; if any fails, list it in the PR instead of editing data.
+- [ ] Validator: every record's `model` or one of its `aliases` must appear in at least one evidence quote (normalised as the verifier does), and no alias or model may be shared by two records of the same brand unless they are region-date splits of one product (D33: same `model`, different regions). Tests. All 338 current records should pass; if any fails, list it in the PR instead of editing data.
+- [ ] Change detection (COSTS stage 1): today `verification.text_sha256` hashes all of a record's pages together, so it can't say which page changed. Store one hash per evidence URL of the normalised page text (never the page), for example in a single `data/sources/page-hashes.json` the verifier writes, and have the verifier report "page changed" per URL. Tests with the fake fetcher. No change to the record schema unless needed; say why in the PR if it is.
+- [ ] Probe workflow (protected; split per RUNBOOKS A6): `.github/workflows/probe-hosts.yml`, `workflow_dispatch` only, `contents: read`. It runs a small script that, for each distinct host in `data/devices` evidence URLs, fetches robots.txt and the first evidence URL with the polite fetcher and prints host, robots result and HTTP status. The script itself is a normal PR with tests; the workflow file is the protected PR. Purpose: learn which hosts block GitHub's runners before moving the nightly re-verify to Actions (COSTS stage 1).
+- [ ] PDF text (D29, protected dependency split per A6): pick one PDF text library whose licence fits D9 and D30, extract text from a fixture PDF in tests, and make `htmlToText`'s counterpart feed the same quote check. The `package.json` change is the protected PR; the code and tests can wait in a normal PR until it merges.
 
 Waiting:
-- [ ] EZVIZ camera records per RUNBOOKS A2, then an A8 audit by a second session: the fourth brand. Hosts added (#23); a `Crawl` session started by the coordinating session on 21 Oct is doing it.
-- [ ] Audit and merge #49 (GL.iNet, 24 router, mesh and hub records from the nightly task's first run): an A8 session started on 21 Oct. Routers don't count toward M1's camera and doorbell exit.
+- [ ] Owner decision: Velica GL-B2200 (left out of #49). GL.iNet's PSTI page says "June 11, 2027 or later"; its EOL page says maintenance ends "Oct 10th, 2026". Which to record, or none.
+- [ ] Owner decision P9: how to store month-only dates, which A2 skips today (PLAN M3; the EU Cyber Resilience Act will make many statements month and year only).
+- [ ] Coverage for M4 (the nightly task, one source a night): at least 40 verified small-office records (routers, printers, NVRs). GL.iNet gave routers (#49); next in the registry are Kyocera, ASUS, GoPro, Lenovo, Motorola, NETGEAR, Samsung and Grandstream.
+- [ ] Archive snapshots (D29): test the Wayback "save" endpoint from `Crawl` (web.archive.org is allowlisted) and, if it works, fill `archive_url` on new evidence.
+- [ ] M3 exit check (a `Crawl` session, after the tasks above): three consecutive nightly runs each end in a correct PR or a correct "nothing to do", and a deliberately broken fixture source is caught and flagged.
 
-
-Leads for after M1 (need `Crawl`): Google's regulatory page `https://support.google.com/chromecast/answer/10367042` also links Australian statements for Google TV Streamer (4K), Google Nest Mini, Google Nest Wifi Pro and Nest x Yale Lock (found by the #36 audit).
-
-Moved to M3 (D29): PDF text (needs a `package.json` dependency PR) and archive snapshots (test in `Crawl`).
+Leads (need `Crawl`): Google's regulatory page `https://support.google.com/chromecast/answer/10367042` also links Australian statements for Google TV Streamer (4K), Google Nest Mini, Google Nest Wifi Pro and Nest x Yale Lock (#36 audit). TP-Link's TC and TD rows (PLAN M3). Ring renames not settled by Ring's pages (#44, #45).
 
 Done:
+- [x] EZVIZ, the fourth brand: 193 records (168 camera, 19 doorbell, 4 other, 2 smart-lock) from EZVIZ's EOL list, with its "expected" and "subject to change" wording as conditions, audited twice (#51).
+- [x] GL.iNet: 23 router and hub records from the nightly task's first run, audited (#49); Velica left out for a decision.
 - [x] M1 exit check (2026-10-21): full `npm run verify:evidence` reported "338 record(s) checked, 0 problem(s)"; 309 verified camera and doorbell records from four brands (EZVIZ 187, TP-Link 60, Ring 50, Google 12). M1 and M2 marked done in ROADMAP.md.
 - [x] Status computation as in SPEC 2 (`scripts/status.mjs`), tested at the 12-month boundary and for relative rules without anchors.
 - [x] Evidence verifier core as in SPEC 3 for HTML (`scripts/verify-evidence.mjs`), with offline fixture tests.

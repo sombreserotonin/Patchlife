@@ -64,3 +64,7 @@ Two critic agents reviewed the first draft of the plan and found 52 issues, 19 o
 - #47 merged by the owner; the preview is live at https://sombreserotonin.github.io/Patchlife/ with noindex, and M2's exit checks pass.
 - Nightly data task live (#41); its first run opened #49 (GL.iNet), now being audited. EZVIZ records in progress.
 - Owner is on Max, aiming for Pro: D37 and COSTS.md "Getting to Pro".
+
+## Update: M1 and M2 done
+- EZVIZ (#51, 193 records) and GL.iNet (#49, 23) merged after audits. The M1 exit check (#54) verified all 338 records: 309 camera and doorbell records from four brands. M1 and M2 are done.
+- M3 tasks written in TASKS.md: two validator fixes, per-URL change detection, a host probe workflow, PDF text, and waiting items for the owner (Velica, month-only dates) and the nightly task (small-office coverage).
