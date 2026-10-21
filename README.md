@@ -34,9 +34,9 @@ Patchlife collects those statements in one place, with a quote and a link for ev
 
 ## Status
 As of 21 October 2026:
-- **Done:** M0, the foundation.
-- **In progress:** M1, the evidence engine and the first 50 verified records. The engine is built, and 120 audited, verified records from Ring, Google Nest and TP-Link are on `main`. A fourth brand is next.
-- **Site:** not live yet. The public site is M2.
+- **Done:** M0, the foundation; M1, the evidence engine and the first records (338 audited, verified records from Ring, Google Nest, TP-Link, EZVIZ and GL.iNet); M2, the site.
+- **In progress:** M3, unattended data: the nightly data task, re-verification, PDF sources, and 40 or more small-office records.
+- **Site:** a preview is live at https://sombreserotonin.github.io/Patchlife/ (not indexed by search engines). It moves to patchlife.tech after the owner's legal read.
 
 [`docs/PLAN.md`](docs/PLAN.md) has the plan, the decisions and the 14-day action plan; [`docs/COSTS.md`](docs/COSTS.md) has the plan for moving off subscription AI. Live progress is in [`.agent/progress/TASKS.md`](.agent/progress/TASKS.md), and the exit checks for each milestone are in [`.agent/progress/ROADMAP.md`](.agent/progress/ROADMAP.md).
 

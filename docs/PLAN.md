@@ -3,7 +3,7 @@
 _As at Wednesday 21 October 2026. Dates are Sydney dates unless they say UTC. Review this at every milestone close and at least monthly. Milestone exit checks are in [`ROADMAP.md`](../.agent/progress/ROADMAP.md), the next tasks are in [`TASKS.md`](../.agent/progress/TASKS.md), and the procedures are in [`RUNBOOKS.md`](RUNBOOKS.md)._
 
 ## Summary
-- **Where we are.** M0 is done. M1 is close: the evidence engine is built, and 122 audited, verified camera and doorbell records from three brands are on `main`. M1 needs a fourth brand.
+- **Where we are.** M0, M1 and M2 are done (21 Oct 2026): 338 audited, verified records from five brands, and a preview site at https://sombreserotonin.github.io/Patchlife/. M3, unattended data, is next.
 - **Costs.** How to move off subscription AI later, and what the RX 9070 XT can take over: [`COSTS.md`](COSTS.md).
 - **The strategy.**
   1. Collect evidence-backed data.
@@ -201,8 +201,8 @@ Monthly report and alerts as in SPEC 7, once there's an audience.
 
 | Measure | Now | M1 | M3 | M4 start |
 | --- | --- | --- | --- | --- |
-| Verified records on `main` | 120 | 50 or more | 150 or more | 150 or more |
-| Brands with verified records | 3 | 4 | 6 or more | 6 or more |
+| Verified records on `main` | 338 | 50 or more | 150 or more | 150 or more |
+| Brands with verified records | 5 | 4 | 6 or more | 6 or more |
 | Share with a computable status | 100% | n/a | 60% or more | 60% or more |
 | Stale records | 0 | 0 | under 2% | under 2% |
 | Daily build heartbeats reporting OK (counted from 22 Oct) | n/a | n/a | 5 or more a week | 5 or more a week |
