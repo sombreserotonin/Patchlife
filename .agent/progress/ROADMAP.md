@@ -9,10 +9,13 @@ A milestone ends only when every exit check has been run and has passed. Human g
 
 Exit: link to a green CI run in the PR; issue numbers recorded in TASKS.md.
 
+Status: done 2026-10-21. Issues #2 to #7; CI run links in the M0 PR.
+
 ## M1 Evidence engine and first 50 records
 - `npm run verify:evidence` as in SPEC 3, with offline fixture tests.
 - Status computation as in SPEC 2, tested at the 12-month boundary and for relative rules without anchors.
 - 50 verified camera and doorbell records from at least four brands, starting from `data/sources/seed.yaml`.
+- Fetching sources from a script needs the `crawl` environment (H5) and the crawler contact URL (H9) earlier than first planned.
 
 Exit: `npm run validate`, `npm test` and `npm run verify:evidence` pass; 50 records are `verified`.
 

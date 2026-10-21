@@ -12,3 +12,5 @@ One line each: the rule, then why. Newest last; the newest wins on conflict.
 - D8 User-facing copy in Australian English with no em dashes. Why: owner preference.
 - D9 Code is AGPL-3.0-or-later, data is ODbL-1.0. Add only dependencies with GPLv3-compatible licences (MIT, BSD, ISC, Apache-2.0, LGPL, GPL-3.0, AGPL-3.0). Why: keeps the project FOSS and stops closed forks of the service or the dataset.
 - D10 Accept outside code or data contributions only once a CLA exists (gate H12). Why: keeps the option to sell a non-share-alike data licence.
+- D11 Call GitHub through `gh api` on `repos/{owner}/{repo}/...` paths only. Why: cloud sessions block `/user/...` paths and `gh auth status` reports the token invalid even though repo-scoped REST calls work.
+- D12 In the Default environment, research sources with Claude Code's fetch tool; run scripts that fetch manufacturer pages only in the `crawl` environment. Why: the Default network blocks those hosts from the shell, and DATA-POLICY requires a contact URL for script crawling.
