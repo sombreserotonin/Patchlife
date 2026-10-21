@@ -199,3 +199,8 @@ All dates in records and logs are UTC (`date -u +%F`). Scheduled runs at 06:08 S
    - that aliases come from the maker's pages.
 4. Fix blocking problems before merging, through the authoring session or a follow-up commit, and re-run A1 if any quote changed.
 5. Comment the result on the PR: records checked, problems found and how they were fixed. Then add the `audited` label: `gh api -X POST repos/sombreserotonin/Patchlife/issues/<n>/labels -f "labels[]=audited"`. The PR then merges per CLAUDE.md.
+
+### A9 Merge a re-verification (`Default`)
+A re-verification changes no data but `verification` blocks and `data/sources/page-hashes.json`, so it merges without an A8 audit (D20). Check that before merging:
+1. Check out the PR branch and run `node scripts/verification-only.mjs $(git merge-base origin/main HEAD)`. It must print `Only verification changed`; anything else needs A8.
+2. Merge once every check has passed. Records it marked `stale` get repaired per A4 by the next `Crawl` run.
