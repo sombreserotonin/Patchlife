@@ -12,7 +12,7 @@ Exit: link to a green CI run in the PR; issue numbers recorded in TASKS.md.
 Status: done 2026-10-21. Issues #2 to #7; CI run links in the M0 PR.
 
 ## M1 Evidence engine and first 50 records
-- `npm run verify:evidence` as in SPEC 3 for HTML sources, with offline fixture tests. PDF text and archive snapshots move to M3 if decision P3 is approved.
+- `npm run verify:evidence` as in SPEC 3 for HTML sources, with offline fixture tests. PDF text and archive snapshots moved to M3 (D29).
 - Status computation as in SPEC 2, tested at the 12-month boundary and for relative rules without anchors.
 - 50 verified camera and doorbell records from at least four brands, starting from `data/sources/seed.yaml`.
 - Fetching sources needs the `Crawl` environment (D17): data work runs in `Crawl` sessions, not in the daily build.
@@ -30,7 +30,7 @@ Exit: live preview URL; automated accessibility check passes on the home page an
 ## M3 Unattended data
 - Nightly data refresh scheduled task live in the `Crawl` environment (decision P1, RUNBOOKS O6); the prompt fixes it needs are merged (#29).
 - Re-verify every record checked more than 60 days ago (so none passes 90) and report dead sources.
-- PDF text and archive snapshots, if decision P3 moves them here.
+- PDF text and archive snapshots (moved from M1, D29).
 - Coverage for M4: at least 150 verified records, at least 40 in small-office categories (routers, printers, NVRs).
 
 Exit: three consecutive nightly runs each end in a correct PR or a correct no-op; a deliberately broken fixture source is detected and flagged.
