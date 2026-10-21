@@ -17,6 +17,7 @@ import {
   answerText,
   conditionsExtend,
   displayName,
+  isMonthOnly,
   listWords,
   longDate,
   plural,
@@ -34,6 +35,8 @@ const REPO_URL = "https://github.com/sombreserotonin/Patchlife";
 const CORRECTION_URL = `${REPO_URL}/issues/new/choose`;
 const CRAWLER_URL = `${REPO_URL}/blob/main/docs/CRAWLER.md`;
 const NOTICE_URL = `${REPO_URL}/blob/main/data/NOTICE.md`;
+const GITHUB_PRIVACY_URL = "https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement";
+const CONTACT_EMAIL = "admin@sombrexo.com";
 const AGPL_URL = `${REPO_URL}/blob/main/LICENSE`;
 const ODBL_URL = "https://opendatacommons.org/licenses/odbl/1-0/";
 const HOME_AFFAIRS_URL = "https://www.homeaffairs.gov.au/about-us/our-portfolios/cyber-security/security-standards-for-smart-devices";
@@ -214,6 +217,7 @@ function timeLeftText(record, entry, today) {
   if (!end) return rule === "none_published" ? "Not known" : html`Not known until ${record.brand} publishes the date`;
   if (entry.status === "ended" && atLeast) return extend ? SOME_LONGER : "None guaranteed. The minimum period has ended.";
   if (entry.status === "ended") return "None. Security updates have ended.";
+  if (isMonthOnly(end)) return `${atLeast ? "At least until" : "Until"} ${longDate(end)}. ${record.brand} gives the month, not the day.`;
   const left = timeLeft(today, end);
   if (!left && atLeast) return extend ? `Today is the published minimum date. ${SOME_LONGER}` : "Today is the last guaranteed day";
   if (!left) return "Today is the last day";
@@ -319,6 +323,7 @@ function footer(ctx) {
 <li><a href="${link(ctx, "/methodology/")}">Methodology</a></li>
 <li><a href="${link(ctx, "/corrections/")}">Corrections</a></li>
 <li><a href="${link(ctx, "/about/")}">About</a></li>
+<li><a href="${link(ctx, "/privacy/")}">Privacy</a></li>
 <li><a href="${link(ctx, "/api/v1/devices.json")}">Data feed (JSON)</a></li>
 </ul></nav>
 </footer>`;
@@ -501,10 +506,10 @@ function methodologyPage(ctx) {
 <h2>Regions</h2>
 <p>Each record lists the regions its statement covers, labelled for example "UK statement" or "Australian statement". When a manufacturer's policy names no region, the page says so. A statement for one region may not apply to the same model sold elsewhere.</p>
 <h2>Status</h2>
-<p>Status is worked out from the dates each time the site is built, and each page shows the date it applies to. An end date is the last day of the stated period. When the source says "at least", the date is the minimum the manufacturer publishes: updates may continue after it, and some manufacturers give some buyers longer.</p>
+<p>Status is worked out from the dates each time the site is built, and each page shows the date it applies to. An end date is the last day of the stated period. When the source says "at least", the date is the minimum the manufacturer publishes: updates may continue after it, and some manufacturers give some buyers longer. When the source gives only a month and year, the page shows the month, and the period counts as ended only after that month's last day.</p>
 <dl>
 <dt>Supported</dt><dd>More than 12 months of the stated period left.</dd>
-<dt>Ending soon</dt><dd>12 months or less of the stated period left, up to and including the end date.</dd>
+<dt>Ending soon</dt><dd>12 months or less of the stated period left, up to and including the end date. For a month-only date, from 12 months before the month starts.</dd>
 <dt>Minimum passed</dt><dd>The source gave a minimum period and its end date has passed. The manufacturer may still provide updates.</dd>
 <dt>Ended</dt><dd>The end date has passed, and the source gave no minimum.</dd>
 <dt>Unknown</dt><dd>No end date can be worked out, for example when a rule's anchor date has not been published.</dd>
@@ -558,6 +563,27 @@ function aboutPage(ctx, { coverage }) {
 <p>Claude Code, an AI coding tool, builds and runs Patchlife. A human owner makes the decisions that need a person, such as money, accounts, legal text and publishing.</p>
 <h2>Disclaimer</h2>
 <p>${DISCLAIMER}</p>`,
+  });
+}
+
+// The owner approved this text in #60, with the email and GitHub issues as the contacts.
+function privacyPage(ctx) {
+  return layout(ctx, {
+    path: "/privacy/",
+    title: "Privacy | Patchlife",
+    description: "Patchlife doesn't collect information about you. How search, hosting, corrections and questions work.",
+    body: html`<h1>Privacy</h1>
+<p>Last updated: 22 October 2026.</p>
+<p>Patchlife doesn't collect information about you.</p>
+<ul>
+<li><strong>No accounts, forms or tracking.</strong> The site sets no cookies and runs no analytics, advertising or tracking scripts.</li>
+<li><strong>Search stays on your device.</strong> The search box works in your browser. What you type isn't sent to us.</li>
+<li><strong>Hosting.</strong> The site is hosted on GitHub Pages. GitHub says: "When a GitHub Pages site is visited, the visitor's IP address is logged and stored for security purposes, regardless of whether the visitor has signed into GitHub or not." Patchlife can't see those logs. <a href="${GITHUB_PRIVACY_URL}">GitHub's privacy statement</a> explains how GitHub handles them.</li>
+<li><strong>Links to other sites.</strong> Links to manufacturers' pages and to GitHub take you to their sites, which have their own privacy policies.</li>
+<li><strong>Corrections.</strong> Reporting a correction uses a GitHub issue, which needs a GitHub account and is public.</li>
+<li><strong>Questions.</strong> Email <a href="mailto:${CONTACT_EMAIL}">${CONTACT_EMAIL}</a>, or open an issue at <a href="${REPO_URL}/issues">github.com/sombreserotonin/Patchlife/issues</a>.</li>
+</ul>
+<p>If this ever changes, for example when a waitlist collects email addresses, this page will say so before it happens.</p>`,
   });
 }
 
@@ -639,8 +665,8 @@ const within = (dir, path) => {
 
 // Every path buildSite writes, relative to the output folder: its files, and the folders that hold them.
 const BUILD_FILE =
-  /^(?:index\.html|robots\.txt|sitemap\.xml|search-index\.json|search\.js|(?:about|methodology|corrections)\/index\.html|(?:devices|brands|categories)\/[a-z0-9]+(?:-[a-z0-9]+)*\/index\.html|api\/v1\/devices\.json|api\/v1\/devices\/[a-z0-9]+(?:-[a-z0-9]+)*\.json)$/;
-const BUILD_FOLDER = /^(?:about|methodology|corrections|devices|brands|categories|api|api\/v1|api\/v1\/devices|(?:devices|brands|categories)\/[a-z0-9]+(?:-[a-z0-9]+)*)$/;
+  /^(?:index\.html|robots\.txt|sitemap\.xml|search-index\.json|search\.js|(?:about|methodology|corrections|privacy)\/index\.html|(?:devices|brands|categories)\/[a-z0-9]+(?:-[a-z0-9]+)*\/index\.html|api\/v1\/devices\.json|api\/v1\/devices\/[a-z0-9]+(?:-[a-z0-9]+)*\.json)$/;
+const BUILD_FOLDER = /^(?:about|methodology|corrections|privacy|devices|brands|categories|api|api\/v1|api\/v1\/devices|(?:devices|brands|categories)\/[a-z0-9]+(?:-[a-z0-9]+)*)$/;
 
 // True when everything under dir is a file or folder buildSite writes (so no symlinks, dotfiles, .git, CNAME or notes)
 // and api/v1/devices.json has the shape of this build's feed.
@@ -765,6 +791,7 @@ export function buildSite({ records, outDir, basePath = "", siteUrl = DEFAULT_SI
   writePage("/methodology/", methodologyPage(ctx));
   writePage("/corrections/", correctionsPage(ctx));
   writePage("/about/", aboutPage(ctx, { coverage }));
+  writePage("/privacy/", privacyPage(ctx));
 
   // JSON feed (SPEC 4): every response carries the licence, the attribution line and the build date.
   const licence = { license: "ODbL-1.0", license_url: ODBL_URL, attribution, notice_url: NOTICE_URL, build_date: today };

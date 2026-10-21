@@ -31,11 +31,15 @@ export function normalise(text) {
 // True when the text writes this YYYY-MM-DD date in a common form: 31 December 2027, 31st Dec 2027,
 // December 31, 2027, 2027-12-31, 2027/12/31, or numerically as 31/12/2027 or 12/31/2027 (with / or .).
 // order ("dmy" or "mdy") is how the source writes numeric dates, and only that order counts. With no order, a
-// numeric date counts only when its day and month can't swap. Catches a date retyped wrongly from its quote.
+// numeric date counts only when its day and month can't swap. A YYYY-MM month (D38) counts as December 2027,
+// Dec. 2027 or 2027-12. Catches a date retyped wrongly from its quote.
 export function mentionsDate(text, isoDate, order) {
   const [y, m, d] = isoDate.split("-").map(Number);
   const month = MONTHS[m - 1];
   const names = `(?:${month}|${month.slice(0, 3)}${month === "september" ? "|sept" : ""})\\.?`;
+  if (d === undefined) {
+    return new RegExp(`(?:^|[^0-9a-z])(?:${names},?\\s+${y}|${y}-${String(m).padStart(2, "0")})(?![0-9])`, "i").test(text.normalize("NFKC"));
+  }
   const day = `0?${d}(?:st|nd|rd|th)?`;
   const unambiguous = !order && (d > 12 || d === m);
   const forms = [
@@ -132,6 +136,13 @@ export function validateDevices(
     if (support.rule === "fixed_date" && !quoted(support.end_date)) fail(`end_date ${support.end_date} is not written in any evidence quote`);
     if (support.anchor_date && !quoted(support.anchor_date)) fail(`anchor_date ${support.anchor_date} is not written in any evidence quote`);
     if (support.years && !mentionsYears(quotes, support.years)) fail(`years ${support.years} is not stated in any evidence quote`);
+    // A month-only end date is for a source that gives no day (D38): when a quote gives a day in that month, use it.
+    if (/^\d{4}-\d{2}$/.test(support.end_date ?? "")) {
+      const [y, m] = support.end_date.split("-").map(Number);
+      const days = Array.from({ length: new Date(Date.UTC(y, m, 0)).getUTCDate() }, (_, i) => `${support.end_date}-${String(i + 1).padStart(2, "0")}`);
+      const day = days.find(quoted);
+      if (day) fail(`end_date ${support.end_date} gives only the month, but a quote states ${day}: use the full date`);
+    }
     for (const ev of record.evidence) {
       if (orderFor(ev.url)) continue;
       for (const date of ambiguousDates(ev.quote ?? "")) {

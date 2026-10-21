@@ -1,7 +1,7 @@
 name: Pages
 
 # Builds the site (D28) on every merge to main and daily just after 00:00 UTC, so status stays current (D7).
-# The preview at sombreserotonin.github.io/Patchlife carries noindex until it moves to patchlife.tech (PLAN M2).
+# Served at https://patchlife.tech from the site root, indexed, with a sitemap (PLAN M2).
 on:
   push:
     branches: [main]
@@ -29,30 +29,33 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run validate
-      - name: Build the preview
+      - name: Build the site
         run: npm run build:site
         env:
-          BASE_PATH: /Patchlife
-          SITE_URL: https://sombreserotonin.github.io
-          NOINDEX: '1'
+          SITE_URL: https://patchlife.tech
       - name: Lighthouse (M2 exit check)
-        # Scored on a root build without noindex, as the site will be served on patchlife.tech.
+        # Scored on a root build served locally, so canonical links point at the server being tested. Each page runs
+        # three times and the gate uses the median, because one run on a shared runner can score far below the page
+        # (Lighthouse docs/variability.md).
         run: |
           BASE_PATH= SITE_URL=http://localhost:8080 npm run build:site -- "$RUNNER_TEMP/lh-site"
           python3 -m http.server 8080 --bind 127.0.0.1 --directory "$RUNNER_TEMP/lh-site" > /dev/null 2>&1 &
           sleep 2
-          npx lighthouse http://localhost:8080/ --only-categories=performance,accessibility,seo --output=json --output-path="$RUNNER_TEMP/lh-home.json" --chrome-flags="--headless=new --no-sandbox" --quiet
-          npx lighthouse http://localhost:8080/devices/ring-video-doorbell-3/ --only-categories=performance,accessibility,seo --output=json --output-path="$RUNNER_TEMP/lh-model.json" --chrome-flags="--headless=new --no-sandbox" --quiet
+          for run in 1 2 3; do
+            npx lighthouse http://localhost:8080/ --only-categories=performance,accessibility,seo --output=json --output-path="$RUNNER_TEMP/lh-home-$run.json" --chrome-flags="--headless=new --no-sandbox" --quiet
+            npx lighthouse http://localhost:8080/devices/ring-video-doorbell-3/ --only-categories=performance,accessibility,seo --output=json --output-path="$RUNNER_TEMP/lh-model-$run.json" --chrome-flags="--headless=new --no-sandbox" --quiet
+          done
           node -e '
             let failed = false;
             for (const name of ["home", "model"]) {
-              const { categories } = JSON.parse(require("fs").readFileSync(`${process.env.RUNNER_TEMP}/lh-${name}.json`, "utf8"));
-              for (const [id, { score }] of Object.entries(categories)) {
-                console.log(`${name} ${id}: ${Math.round(score * 100)}`);
-                if (score < 0.9) failed = true;
+              const runs = [1, 2, 3].map((run) => JSON.parse(require("fs").readFileSync(`${process.env.RUNNER_TEMP}/lh-${name}-${run}.json`, "utf8")).categories);
+              for (const id of Object.keys(runs[0])) {
+                const scores = runs.map((categories) => Math.round(categories[id].score * 100)).sort((a, b) => a - b);
+                console.log(`${name} ${id}: median ${scores[1]} (runs ${scores.join(", ")})`);
+                if (scores[1] < 90) failed = true;
               }
             }
-            if (failed) { console.error("A Lighthouse score is under 90"); process.exit(1); }'
+            if (failed) { console.error("A median Lighthouse score is under 90"); process.exit(1); }'
       - if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v5
         with:

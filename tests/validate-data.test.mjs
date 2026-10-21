@@ -39,7 +39,16 @@ const rejected = [
   ["years-not-in-quote", /years 2 is not stated in any evidence quote/],
   ["date-wrong-order", /^end_date 2027-03-04 is not written in any evidence quote$/],
   ["name-not-in-quote", /^neither model "Cam 1" nor an alias appears in any evidence quote$/],
+  ["month-not-in-quote", /^end_date 2027-07 is not written in any evidence quote$/],
+  ["month-hides-day", /^end_date 2027-06 gives only the month, but a quote states 2027-06-30: use the full date$/],
+  ["bad-month", /schema: \/support\/end_date must match pattern/],
 ];
+
+test("a month-only end date passes when a quote states that month and no day in it (D38)", () => {
+  const { files, errors } = run("month-only");
+  assert.equal(files, 1);
+  assert.deepEqual(errors, [], messages(errors));
+});
 
 for (const [name, pattern] of rejected) {
   test(`rejects ${name}`, () => {
@@ -195,6 +204,14 @@ test("mentionsDate reads a numeric date only in the given order, or with no orde
   for (const order of [undefined, "dmy", "mdy"]) {
     assert.ok(mentionsDate("CS-T1C-A0-BG Europe 2028/1/20", "2028-01-20", order), `year first, ${order}`);
     assert.ok(mentionsDate("June 11, 2027 or later", "2027-06-11", order), `month name, ${order}`);
+  }
+});
+
+test("mentionsDate finds a month-only date as the month and year, and nowhere else", () => {
+  for (const text of ["until June 2027", "Jun 2027", "Jun. 2027", "June, 2027", "2027-06", "30 June 2027"]) assert.ok(mentionsDate(text, "2027-06"), text);
+  assert.ok(mentionsDate("Sept 2026", "2026-09"));
+  for (const [text, date] of [["July 2027", "2027-06"], ["June 2026", "2027-06"], ["June 20271", "2027-06"], ["2027-061", "2027-06"], ["12027-06", "2027-06"]]) {
+    assert.equal(mentionsDate(text, date), false, `${text} / ${date}`);
   }
 });
 

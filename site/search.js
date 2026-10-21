@@ -11,8 +11,13 @@ export const statusLabel = (device) => (isMinimumPassed(device) ? "Minimum passe
 
 const LONG_DATE = new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 const SHORT_DATE = new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
-// "2027-12-31" becomes "31 December 2027" (long) or "31 Dec 2027" (short).
-export const longDate = (isoDate) => LONG_DATE.format(new Date(`${isoDate}T00:00:00Z`));
+const MONTH_YEAR = new Intl.DateTimeFormat("en-AU", { month: "long", year: "numeric", timeZone: "UTC" });
+// A month-only end date (YYYY-MM, D38), for a source that gives no day.
+export const isMonthOnly = (isoDate) => /^\d{4}-\d{2}$/.test(isoDate);
+// "2027-12-31" becomes "31 December 2027" (long) or "31 Dec 2027" (short); "2027-12" becomes "December 2027".
+export const longDate = (isoDate) => (isMonthOnly(isoDate) ? MONTH_YEAR.format(new Date(`${isoDate}-01T00:00:00Z`)) : LONG_DATE.format(new Date(`${isoDate}T00:00:00Z`)));
+// "on 31 December 2027", or "in December 2027" for a month-only date.
+const onDate = (isoDate) => `${isMonthOnly(isoDate) ? "in" : "on"} ${longDate(isoDate)}`;
 export const shortDate = (isoDate) => SHORT_DATE.format(new Date(`${isoDate}T00:00:00Z`));
 export const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 export const listWords = (items) => (items.length > 1 ? `${items.slice(0, -1).join(", ")} and ${items.at(-1)}` : (items[0] ?? ""));
@@ -82,8 +87,8 @@ export function answerText(device) {
   if (isMinimumPassed(device) && device.conditions_extend) {
     return `The published minimum date, ${longDate(end)}, has passed. Some buyers get longer: see Conditions. ${brand} may still provide updates. Date ${source}.`;
   }
-  if (isMinimumPassed(device)) return `Minimum support period ended on ${longDate(end)}. ${brand} may still provide updates. Date ${source}.`;
-  if (status === "ended") return `Security updates ended on ${longDate(end)}, ${source}.`;
+  if (isMinimumPassed(device)) return `Minimum support period ended ${onDate(end)}. ${brand} may still provide updates. Date ${source}.`;
+  if (status === "ended") return `Security updates ended ${onDate(end)}, ${source}.`;
   return `Security updates until ${atLeast ? "at least " : ""}${longDate(end)}, ${source}.`;
 }
 
