@@ -17,6 +17,8 @@ News, forums, retailers, distributors and AI answers are leads only, never evide
 ## Accuracy
 - Never infer a date. A relative rule without a published anchor stays relative.
 - Record the regions a statement covers. Show a UK statement elsewhere only when labelled as a UK statement.
+- When a maker gives different dates for the same model in different regions, write one record per region-date (D33).
+- Mark a record `disputed` only when a correction cites a primary source that conflicts with ours and the conflict can't be settled from primary sources; the site shows "Under review" until it is settled (D32).
 - Re-verify every record at least every 90 days. When a quote no longer matches, mark the record `stale` and open a PR with new evidence or `none_published`.
 - Corrections: anyone can report through the issue form. The fix must come from a primary source, never from the report itself.
 

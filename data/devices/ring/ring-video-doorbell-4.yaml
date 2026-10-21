@@ -28,4 +28,4 @@ verification:
   status: verified
   checked: "2026-10-21"
   text_sha256: d60cb408c74e5831e1fccee3277904660eedb87653cd390b71869ad820a74c64
-notes: Ring's US page gives 31 December 2029 for this model, so this record covers only the regions with the 2027 date.
+notes: Ring's US page gives 31 December 2029 for this model (record ring-video-doorbell-4-us), so this record covers only the regions with the 2027 date.

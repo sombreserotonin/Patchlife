@@ -15,11 +15,12 @@ Waiting:
 - [ ] EZVIZ camera records per RUNBOOKS A2, then an A8 audit by a second session: the fourth brand (waiting on #23, then the owner starting `Crawl` sessions, O1).
 - [ ] M1 exit check (waiting on the EZVIZ task, then a `Crawl` session): run a full `npm run verify:evidence`. Mark M1 done in ROADMAP.md and write the M2 tasks only if at least 50 records are `verified` across at least four brands. With fewer brands, leave M1 open and say why in the PR.
 
-- [ ] Draft #34, the M2 site generator: merge after decision P2 (#30) and a re-review of its fixes. It stays a draft until then.
+- [ ] Region-date records (D33): add `ring-video-doorbell-4-us` for Ring's US date (31 December 2029), and any other Ring model whose US date differs from its UK and AU date, per RUNBOOKS A2, then an A8 audit (needs `Crawl`).
+- [ ] Draft #34, the M2 site generator: P2 is decided (D28); merge after the final re-review of its fixes. It stays a draft until then.
 
 Leads for after M1 (need `Crawl`): Google's regulatory page `https://support.google.com/chromecast/answer/10367042` also links Australian statements for Google TV Streamer (4K), Google Nest Mini, Google Nest Wifi Pro and Nest x Yale Lock (found by the #36 audit).
 
-Moved to M3 if decision P3 is approved: PDF text (needs a `package.json` dependency PR) and archive snapshots (test in `Crawl`).
+Moved to M3 (D29): PDF text (needs a `package.json` dependency PR) and archive snapshots (test in `Crawl`).
 
 Done:
 - [x] Status computation as in SPEC 2 (`scripts/status.mjs`), tested at the 12-month boundary and for relative rules without anchors.
@@ -50,8 +51,8 @@ Done:
 - H2 Connect GitHub to Claude Code (claude.ai/code onboarding) and install the Claude GitHub App on this repo. Done (#3).
 - H3 Ruleset on `main`: require a pull request and the `test` status check; block force pushes and deletion. Done (#4): repo made public; ruleset `main` active, no bypass actors.
 - H4 Daily build scheduled task at claude.ai/code/routines: this repo, Default environment, daily at a few minutes past the hour, prompt `Follow .agent/prompts/daily-build.md`. Done (#5): `Patchlife daily build`, 06:08 Australia/Sydney.
-- H5 `Crawl` cloud environment with the Custom allowlist in ARCHITECTURE.md (done, #9), plus a nightly scheduled task with prompt `Follow .agent/prompts/data-refresh.md` (decision P1 in docs/PLAN.md; steps in RUNBOOKS O6). EZVIZ hosts: #23.
-- H6 (M2) If decision P2 is GitHub Pages: set Settings > Pages > Source to GitHub Actions, then verify `patchlife.tech`, set its DNS records and tick Enforce HTTPS (no account, token or secret). Steps in docs/PLAN.md M2.
+- H5 `Crawl` cloud environment with the Custom allowlist in ARCHITECTURE.md (done, #9), plus a nightly scheduled task with prompt `Follow .agent/prompts/data-refresh.md` (P1 is B, D27; steps in RUNBOOKS O6; waiting on the owner, #41). EZVIZ hosts: #23.
+- H6 (M2) P2 is GitHub Pages (D28): set Settings > Pages > Source to GitHub Actions, then verify `patchlife.tech`, set its DNS records and tick Enforce HTTPS (no account, token or secret). Steps in docs/PLAN.md M2.
 - H7 (M2 launch, not M4) Google Search Console Domain property for `patchlife.tech` (DNS TXT record), then submit the sitemap. Indexing needs weeks before M4 can start.
 - H8 Optional: `@claude` in issues. Run `/install-github-app` in Claude Code, or add a `CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY` Actions secret. Not planned (#6).
 - H9 Legal, in three stages (checklists in docs/PLAN.md): H9a before the site moves to `patchlife.tech` (disclaimer next to dates, privacy policy, quote and brand use, UK GDPR); H9b before the M4 waitlist collects emails (collection notice, provider DPA, Spam Act unsubscribe, retention); H9c before charging (ABN, GST, terms and refunds, Stripe, data licence, overseas tax). Crawler contact URL done (#10).
