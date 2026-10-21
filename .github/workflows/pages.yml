@@ -1,0 +1,74 @@
+name: Pages
+
+# Builds the site (D28) on every merge to main and daily just after 00:00 UTC, so status stays current (D7).
+# The preview at sombreserotonin.github.io/Patchlife carries noindex until it moves to patchlife.tech (PLAN M2).
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '17 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.event_name == 'pull_request' && github.ref || 'deploy' }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
+      - run: npm run validate
+      - name: Build the preview
+        run: npm run build:site
+        env:
+          BASE_PATH: /Patchlife
+          SITE_URL: https://sombreserotonin.github.io
+          NOINDEX: '1'
+      - name: Lighthouse (M2 exit check)
+        # Scored on a root build without noindex, as the site will be served on patchlife.tech.
+        run: |
+          BASE_PATH= SITE_URL=http://localhost:8080 npm run build:site -- "$RUNNER_TEMP/lh-site"
+          python3 -m http.server 8080 --bind 127.0.0.1 --directory "$RUNNER_TEMP/lh-site" > /dev/null 2>&1 &
+          sleep 2
+          npx lighthouse http://localhost:8080/ --only-categories=performance,accessibility,seo --output=json --output-path="$RUNNER_TEMP/lh-home.json" --chrome-flags="--headless=new --no-sandbox" --quiet
+          npx lighthouse http://localhost:8080/devices/ring-video-doorbell-3/ --only-categories=performance,accessibility,seo --output=json --output-path="$RUNNER_TEMP/lh-model.json" --chrome-flags="--headless=new --no-sandbox" --quiet
+          node -e '
+            let failed = false;
+            for (const name of ["home", "model"]) {
+              const { categories } = JSON.parse(require("fs").readFileSync(`${process.env.RUNNER_TEMP}/lh-${name}.json`, "utf8"));
+              for (const [id, { score }] of Object.entries(categories)) {
+                console.log(`${name} ${id}: ${Math.round(score * 100)}`);
+                if (score < 0.9) failed = true;
+              }
+            }
+            if (failed) { console.error("A Lighthouse score is under 90"); process.exit(1); }'
+      - if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
