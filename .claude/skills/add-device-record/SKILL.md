@@ -17,7 +17,7 @@ Runs only in the `Crawl` environment (D17); `Default` cannot reach manufacturer 
    - the regions the statement covers. Every region needs evidence from a page that covers it.
 4. Quote the shortest verbatim span that states the date or rule for that model, 300 characters at most. For table rows, join the cell texts with single spaces. The quotes must contain the record's end date, anchor date and number of years; `npm run validate` checks this. When a table states the rule in one place and the models in another, use two evidence items from the same URL.
 5. Write `data/devices/<brand_slug>/<id>.yaml` to match `data/schema/device.schema.json`. The `id` is `<brand_slug>-<model-slug>` and matches the filename. Copy the shape of `data/devices/ring/ring-video-doorbell-3.yaml`, quote dates, and use UTC dates.
-6. Relative rule with no published anchor: leave `anchor_date` and `end_date` null. Never estimate. A date with no day (month or year only) is not a `fixed_date`: skip the model and report it.
+6. Relative rule with no published anchor: leave `anchor_date` and `end_date` null. Never estimate. A `fixed_date` source that gives a month and year but no day is stored as `end_date: "YYYY-MM"` (D38); never pick a day. A date with only a year: skip the model and report it.
 7. Nothing published after a real search: `rule: none_published`, with evidence listing the pages checked and no quote.
 8. Run `npm run verify:evidence -- <id>` until it reports `verified` (RUNBOOKS A1). If a quote does not match, re-copy it from the page text; never change a date to make it match.
 9. Run `npm run validate` and `npm test`, then commit as `data(<brand_slug>): add <model>` or `data(<brand_slug>): update <model>` and open the PR per RUNBOOKS A2.
