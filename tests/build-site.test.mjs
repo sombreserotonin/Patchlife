@@ -4,7 +4,7 @@ import { spawnSync } from "node:child_process";
 import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { buildSite, loadRecords, normaliseBasePath, optionsFromEnv, resolveOutDir, timeLeft, unsafeOutDirReason } from "../scripts/build-site.mjs";
 import { attachSearch, matchDevices } from "../site/search.js";
 
@@ -321,10 +321,14 @@ test("anchors are described as the date the brand gives", (t) => {
   assert.match(text(site.read("devices/acme-router-2/index.html")), /Support period 3 years after the end-of-sale or end-of-life date Acme gives for this model, 31 March 2025/);
 });
 
-test("the methodology says an at-least end date is the last guaranteed day", (t) => {
-  const words = text(build(t).read("methodology/index.html"));
-  assert.ok(words.includes('An end date is the last day of the stated period. When the source says "at least", it is the last guaranteed day, and updates may continue after it.'), words);
-  assert.doesNotMatch(words, /An end date is the last day of support\./);
+test("the methodology says an at-least end date is a published minimum, which some buyers may outlast", (t) => {
+  const page = build(t).read("methodology/index.html");
+  const words = text(page);
+  const sentence =
+    'An end date is the last day of the stated period. When the source says "at least", the date is the minimum the manufacturer publishes: updates may continue after it, and some manufacturers give some buyers longer.';
+  assert.ok(words.includes(sentence), words);
+  assertDraftMarked(page, "An end date is the last day of the stated period.", "methodology");
+  assert.doesNotMatch(words, /An end date is the last day of support\.|it is the last guaranteed day/);
 });
 
 test("quote claims cover dates, not answers that found nothing", (t) => {
@@ -373,6 +377,7 @@ test("NOINDEX puts noindex on every page and keeps them crawlable, with no sitem
   const hidden = build(t, { noindex: true });
   for (const file of htmlFiles(hidden.outDir)) assert.match(hidden.read(file), /<meta name="robots" content="noindex">/, file);
   assert.equal(hidden.read("robots.txt"), "User-agent: *\nAllow: /\n", "crawlers must reach the pages to see noindex");
+  assert.ok(!existsSync(join(hidden.outDir, "sitemap.xml")), "no sitemap for a site that asks not to be indexed");
   const open = build(t);
   for (const file of htmlFiles(open.outDir)) assert.doesNotMatch(open.read(file), /name="robots"/, file);
   assert.equal(optionsFromEnv({ NOINDEX: "1" }).noindex, true);
@@ -555,9 +560,10 @@ test("BASE_PATH has no . or .. segments", () => {
   for (const bad of ["/.", "/..", "/a/../b", "./x", "/a/./b", "/a b"]) assert.throws(() => normaliseBasePath(bad), /BASE_PATH/, bad);
 });
 
-test("BUILD_DATE must be a real calendar date", (t) => {
+test("BUILD_DATE must be a real calendar date, and the error names it", (t) => {
   for (const bad of ["2027-02-31", "2026-02-29", "2026-13-45", "2026-1-01"]) {
-    assert.throws(() => build(t, { today: bad }), /build date/, bad);
+    assert.throws(() => build(t, { today: bad }), /BUILD_DATE/, bad);
+    assert.throws(() => optionsFromEnv({ BUILD_DATE: bad }), new RegExp(`^Error: BUILD_DATE "${bad}" must be a real date`), bad);
   }
   assert.doesNotThrow(() => build(t, { today: "2028-02-29" }));
 });
@@ -584,8 +590,9 @@ test("the CLI refuses an output dir that holds the device records", (t) => {
   assert.equal(loadRecords(devices).length, 5);
 });
 
-test("an empty outDir argument means the default, never the cwd", (t) => {
+test("an empty or blank outDir argument means the default, never the cwd", (t) => {
   assert.equal(resolveOutDir(""), join(ROOT, "_site"));
+  assert.equal(resolveOutDir("  \t"), join(ROOT, "_site"));
   assert.equal(resolveOutDir(undefined), join(ROOT, "_site"));
   const work = tempDir(t);
   writeFileSync(join(work, "canary.txt"), "keep");
@@ -605,10 +612,16 @@ test("unsafeOutDirReason protects the repo, the cwd, their parents and the recor
   }
 });
 
+// The feed an empty build would write: the fields isEarlierBuild checks.
+const FEED = { license: "ODbL-1.0", license_url: "https://opendatacommons.org/licenses/odbl/1-0/", attribution: ATTRIBUTION, notice_url: "https://example.org/NOTICE.md", build_date: TODAY, count: 0, devices: [] };
+
+// Every path under dir, sorted, so a test can check that a refused folder is left exactly as it was.
+const snapshot = (dir) => readdirSync(dir, { recursive: true }).map((p) => p.split("\\").join("/")).sort();
+
 test("each unsafeOutDirReason guard refuses on its own, even for an earlier build", (t) => {
   const earlier = tempDir(t);
   mkdirSync(join(earlier, "api", "v1"), { recursive: true });
-  writeFileSync(join(earlier, "api", "v1", "devices.json"), JSON.stringify({ license: "ODbL-1.0", build_date: TODAY, devices: [] }));
+  writeFileSync(join(earlier, "api", "v1", "devices.json"), JSON.stringify(FEED));
   mkdirSync(join(earlier, "devices"));
   const elsewhere = tempDir(t);
   const safe = { cwd: elsewhere, root: elsewhere, devicesDir: join(elsewhere, "records") };
@@ -656,14 +669,110 @@ test("the CLI refuses an earlier build that also holds other files, and keeps th
   assert.ok(existsSync(join(outDir, ".git", "HEAD")) && existsSync(join(outDir, "CNAME")));
 });
 
-test("a folder is an earlier build only when its feed parses with the build's licence and date", (t) => {
+test("a folder is an earlier build only when its feed has the shape the build writes", (t) => {
   const options = { cwd: tmpdir(), root: ROOT, devicesDir: VALID };
-  for (const feed of ["{}", "not json", JSON.stringify({ license: "MIT", build_date: TODAY }), JSON.stringify({ license: "ODbL-1.0", build_date: "2027-02-31" })]) {
+  const withFeed = (feed) => {
     const dir = tempDir(t);
     mkdirSync(join(dir, "api", "v1"), { recursive: true });
     writeFileSync(join(dir, "api", "v1", "devices.json"), feed);
-    assert.match(unsafeOutDirReason(dir, options) ?? "", /not an earlier site build/, feed);
+    return dir;
+  };
+  assert.equal(unsafeOutDirReason(withFeed(JSON.stringify(FEED)), options), null, "the full shape passes");
+  const forged = [
+    "{}",
+    "not json",
+    "[]",
+    JSON.stringify({ license: "ODbL-1.0", build_date: TODAY }),
+    JSON.stringify({ ...FEED, license: "MIT" }),
+    JSON.stringify({ ...FEED, build_date: "2027-02-31" }),
+    JSON.stringify({ ...FEED, devices: {} }),
+    JSON.stringify({ ...FEED, devices: "abc", count: 3 }),
+    JSON.stringify({ ...FEED, count: 3 }),
+    JSON.stringify({ ...FEED, attribution: "" }),
+    JSON.stringify({ ...FEED, license_url: undefined }),
+    JSON.stringify({ ...FEED, notice_url: 7 }),
+  ];
+  for (const feed of forged) assert.match(unsafeOutDirReason(withFeed(feed), options) ?? "", /not an earlier site build/, feed);
+});
+
+test("a folder is an earlier build only when every path in it is one the build writes", (t) => {
+  const options = { cwd: tmpdir(), root: ROOT, devicesDir: VALID };
+  const earlier = () => {
+    const dir = join(tempDir(t), "out");
+    buildSite({ records: fixtures(), outDir: dir, today: TODAY });
+    return dir;
+  };
+  assert.equal(unsafeOutDirReason(earlier(), options), null, "a real build passes");
+  const extras = {
+    "nested file": (dir) => writeFileSync(join(dir, "devices", "notes.txt"), "keep"),
+    "file in a model folder": (dir) => writeFileSync(join(dir, "devices", "acme-cam-1", "draft.md"), "keep"),
+    "nested .git": (dir) => mkdirSync(join(dir, "api", ".git")),
+    "dotfile at the top": (dir) => writeFileSync(join(dir, ".nojekyll"), ""),
+    "extra api file": (dir) => writeFileSync(join(dir, "api", "v1", "keys.json"), "{}"),
+    "folder named like a slug file": (dir) => mkdirSync(join(dir, "api", "v1", "devices", "acme-x.json")),
+    "file where a model folder goes": (dir) => writeFileSync(join(dir, "brands", "acme-x"), "keep"),
+    "symlink inside": (dir) => symlinkSync(tmpdir(), join(dir, "devices", "acme-link")),
+    "symlink at a build file's path": (dir) => {
+      rmSync(join(dir, "robots.txt"));
+      symlinkSync(join(tmpdir(), "elsewhere.txt"), join(dir, "robots.txt"));
+    },
+  };
+  for (const [name, add] of Object.entries(extras)) {
+    const dir = earlier();
+    add(dir);
+    assert.match(unsafeOutDirReason(dir, options) ?? "", /not an earlier site build/, name);
   }
+});
+
+test("the CLI refuses an earlier build with a nested extra, a nested .git or a forged feed, and keeps every file", (t) => {
+  const cases = {
+    "nested extra file": (dir) => writeFileSync(join(dir, "devices", "notes.txt"), "keep"),
+    "nested .git": (dir) => {
+      mkdirSync(join(dir, "api", ".git"));
+      writeFileSync(join(dir, "api", ".git", "HEAD"), "ref: refs/heads/main\n");
+    },
+  };
+  for (const [name, add] of Object.entries(cases)) {
+    const outDir = join(tempDir(t), "out");
+    assert.equal(spawnSync(process.execPath, [SCRIPT, outDir, VALID], { encoding: "utf8", env: { ...process.env, BUILD_DATE: TODAY } }).status, 0);
+    add(outDir);
+    const before = snapshot(outDir);
+    const run = spawnSync(process.execPath, [SCRIPT, outDir, VALID], { encoding: "utf8", env: { ...process.env, BUILD_DATE: TODAY } });
+    assert.equal(run.status, 1, name);
+    assert.match(run.stderr, /^build-site: refusing to empty .+: it is not empty and is not an earlier site build\n$/, name);
+    assert.deepEqual(snapshot(outDir), before, `${name}: every file survives`);
+  }
+  const forged = tempDir(t);
+  mkdirSync(join(forged, "api", "v1"), { recursive: true });
+  writeFileSync(join(forged, "api", "v1", "devices.json"), JSON.stringify({ license: "ODbL-1.0", build_date: TODAY }));
+  mkdirSync(join(forged, "devices", "work"), { recursive: true });
+  writeFileSync(join(forged, "devices", "work", "index.html"), "my own page");
+  writeFileSync(join(forged, "index.html"), "my own home page");
+  const before = snapshot(forged);
+  const run = spawnSync(process.execPath, [SCRIPT, forged, VALID], { encoding: "utf8" });
+  assert.equal(run.status, 1);
+  assert.match(run.stderr, /not an earlier site build\n$/);
+  assert.deepEqual(snapshot(forged), before, "forged feed: every file survives");
+  assert.equal(readFileSync(join(forged, "index.html"), "utf8"), "my own home page");
+});
+
+test("the CLI refuses a symlinked output folder whose target is missing", (t) => {
+  const tmp = tempDir(t);
+  const link = join(tmp, "out");
+  symlinkSync(join(tmp, "missing"), link);
+  const run = spawnSync(process.execPath, [SCRIPT, link, VALID], { encoding: "utf8" });
+  assert.equal(run.status, 1);
+  assert.match(run.stderr, /^build-site: refusing to empty .+: it is a symlink whose target is missing\n$/);
+  assert.ok(lstatSync(link).isSymbolicLink());
+});
+
+test("importing the module never runs the CLI", (t) => {
+  const outDir = join(tempDir(t), "out");
+  const code = `await import(${JSON.stringify(pathToFileURL(SCRIPT).href)});`;
+  const run = spawnSync(process.execPath, ["--input-type=module", "-e", code, SCRIPT, outDir, VALID], { encoding: "utf8", env: { ...process.env, BUILD_DATE: TODAY } });
+  assert.equal(run.status, 0, run.stderr);
+  assert.equal(run.stdout, "");
+  assert.ok(!existsSync(outDir), "nothing was built");
 });
 
 test("the CLI rebuilds through a symlinked output folder and keeps the link", (t) => {

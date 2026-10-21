@@ -1,13 +1,13 @@
 // Builds the static site (SPEC 4): HTML pages, the JSON feed, the search index, sitemap.xml and robots.txt.
 // Usage: node scripts/build-site.mjs [outDir] [devicesDir]
-// outDir defaults to _site/; an empty argument counts as absent. The CLI empties what is inside outDir before writing,
-// and refuses one that is the cwd, the repository, a parent of either, holds the device records, or is a non-empty
-// folder that is not an earlier build (only build output at the top level, and this build's feed).
+// outDir defaults to _site/; an empty or blank argument counts as absent. The CLI empties what is inside outDir before
+// writing, and refuses one that is the cwd, the repository, a parent of either, holds the device records, is a symlink
+// to nothing, or is a non-empty folder that is not an earlier build (only paths the build writes, and its feed's shape).
 // Env: BASE_PATH (default ""), SITE_URL (an origin, default https://patchlife.tech), BUILD_DATE (YYYY-MM-DD, default
-// today in UTC), NOINDEX (1 or true: noindex on every page and no Sitemap line in robots.txt, for the preview).
+// today in UTC), NOINDEX (1 or true: noindex on every page, no sitemap.xml, for the preview).
 // Status is computed against BUILD_DATE (D7). Run `npm run validate` first: this script trusts the data's shape but not
 // its text, which comes from crawled pages.
-import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import YAML from "yaml";
@@ -508,7 +508,7 @@ function methodologyPage(ctx) {
 <h2>Regions</h2>
 <p>Each record lists the regions its statement covers, labelled for example "UK statement" or "Australian statement". When a manufacturer's policy names no region, the page says so. A statement for one region may not apply to the same model sold elsewhere.</p>
 <h2>Status</h2>
-<p>Status is worked out from the dates each time the site is built, and each page shows the date it applies to. An end date is the last day of the stated period. When the source says "at least", it is the last guaranteed day, and updates may continue after it.</p>
+<p>Status is worked out from the dates each time the site is built, and each page shows the date it applies to. ${draft('An end date is the last day of the stated period. When the source says "at least", the date is the minimum the manufacturer publishes: updates may continue after it, and some manufacturers give some buyers longer.')}</p>
 <dl>
 <dt>Supported</dt><dd>More than 12 months of the stated period left.</dd>
 <dt>Ending soon</dt><dd>12 months or less of the stated period left, up to and including the end date.</dd>
@@ -618,7 +618,7 @@ export function normaliseSiteUrl(value) {
 
 export function optionsFromEnv(env = process.env) {
   const today = (env.BUILD_DATE ?? "").trim() || new Date().toISOString().slice(0, 10);
-  if (!isRealDate(today)) throw new Error(`build date ${JSON.stringify(today)} must be a real date in YYYY-MM-DD form`);
+  if (!isRealDate(today)) throw new Error(`BUILD_DATE ${JSON.stringify(today)} must be a real date in YYYY-MM-DD form`);
   return {
     basePath: normaliseBasePath(env.BASE_PATH ?? ""),
     siteUrl: normaliseSiteUrl(env.SITE_URL || DEFAULT_SITE_URL),
@@ -627,7 +627,9 @@ export function optionsFromEnv(env = process.env) {
   };
 }
 
-export const resolveOutDir = (arg) => resolve(arg || join(ROOT, "_site"));
+// A missing, empty or blank argument means the default.
+const given = (arg, fallback) => resolve(arg?.trim() ? arg : fallback);
+export const resolveOutDir = (arg) => given(arg, join(ROOT, "_site"));
 
 const realPath = (path) => {
   try {
@@ -642,19 +644,45 @@ const within = (dir, path) => {
   return !(rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel));
 };
 
-// The top-level names buildSite writes. A folder holding anything else (.git, CNAME, src) is not an earlier build.
-const BUILD_ENTRIES = new Set(["about", "api", "brands", "categories", "corrections", "devices", "index.html", "methodology", "robots.txt", "search-index.json", "search.js", "sitemap.xml"]);
+// Every path buildSite writes, relative to the output folder: its files, and the folders that hold them.
+const BUILD_FILE =
+  /^(?:index\.html|robots\.txt|sitemap\.xml|search-index\.json|search\.js|(?:about|methodology|corrections)\/index\.html|(?:devices|brands|categories)\/[a-z0-9]+(?:-[a-z0-9]+)*\/index\.html|api\/v1\/devices\.json|api\/v1\/devices\/[a-z0-9]+(?:-[a-z0-9]+)*\.json)$/;
+const BUILD_FOLDER = /^(?:about|methodology|corrections|devices|brands|categories|api|api\/v1|api\/v1\/devices|(?:devices|brands|categories)\/[a-z0-9]+(?:-[a-z0-9]+)*)$/;
 
-// True when every top-level entry is one the build writes and api/v1/devices.json is this build's feed.
+// True when everything under dir is a file or folder buildSite writes (so no symlinks, dotfiles, .git, CNAME or notes)
+// and api/v1/devices.json has the shape of this build's feed.
 function isEarlierBuild(dir) {
-  if (!readdirSync(dir).every((name) => BUILD_ENTRIES.has(name))) return false;
+  const onlyBuildOutput = (rel) =>
+    readdirSync(join(dir, rel), { withFileTypes: true }).every((entry) => {
+      const path = rel ? `${rel}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) return BUILD_FOLDER.test(path) && onlyBuildOutput(path);
+      return entry.isFile() && BUILD_FILE.test(path);
+    });
+  if (!onlyBuildOutput("")) return false;
   try {
     const feed = JSON.parse(readFileSync(join(dir, "api", "v1", "devices.json"), "utf8"));
-    return feed.license === "ODbL-1.0" && isRealDate(feed.build_date);
+    const named = (value) => typeof value === "string" && value !== "";
+    return (
+      feed?.license === "ODbL-1.0" &&
+      named(feed.license_url) &&
+      named(feed.attribution) &&
+      named(feed.notice_url) &&
+      isRealDate(feed.build_date) &&
+      Array.isArray(feed.devices) &&
+      feed.count === feed.devices.length
+    );
   } catch {
     return false;
   }
 }
+
+const isSymlink = (path) => {
+  try {
+    return lstatSync(path).isSymbolicLink();
+  } catch {
+    return false;
+  }
+};
 
 // Why the CLI must not empty outDir, or null when it may.
 export function unsafeOutDirReason(outDir, { cwd = process.cwd(), root = ROOT, devicesDir = join(ROOT, "data/devices") } = {}) {
@@ -662,7 +690,7 @@ export function unsafeOutDirReason(outDir, { cwd = process.cwd(), root = ROOT, d
   if (within(out, realPath(cwd))) return "it is the current directory or one of its parents";
   if (within(out, realPath(root))) return "it is the repository or one of its parents";
   if (within(out, realPath(devicesDir))) return "it holds the device records";
-  if (!existsSync(out)) return null;
+  if (!existsSync(out)) return isSymlink(outDir) ? "it is a symlink whose target is missing" : null;
   if (!statSync(out).isDirectory()) return "it is a file";
   if (readdirSync(out).length && !isEarlierBuild(out)) return "it is not empty and is not an earlier site build";
   return null;
@@ -691,7 +719,7 @@ function groupBy(items, key) {
 
 // Writes the site into outDir and returns { records, pages }. Paths come from ids and slugs, which must be plain slugs.
 export function buildSite({ records, outDir, basePath = "", siteUrl = DEFAULT_SITE_URL, today, noindex = false, attribution = readAttribution() }) {
-  if (!isRealDate(today)) throw new Error(`build date ${JSON.stringify(today)} must be a real date in YYYY-MM-DD form`);
+  if (!isRealDate(today)) throw new Error(`BUILD_DATE ${JSON.stringify(today)} must be a real date in YYYY-MM-DD form`);
   const ctx = { base: normaliseBasePath(basePath), siteUrl: normaliseSiteUrl(siteUrl), today, noindex, attribution };
   for (const record of records) {
     if (!SLUG.test(record.id ?? "") || !SLUG.test(record.brand_slug ?? "")) throw new Error(`record "${record.id}" needs a slug id and brand_slug`);
@@ -754,27 +782,24 @@ export function buildSite({ records, outDir, basePath = "", siteUrl = DEFAULT_SI
   write("/search-index.json", JSON.stringify({ license: "ODbL-1.0", attribution, build_date: today, devices: items.map((item) => item.entry) }));
   copyFileSync(join(ROOT, "site/search.js"), join(outDir, "search.js"));
 
-  const urls = pages.map((path) => `  <url><loc>${escapeHtml(absolute(ctx, path))}</loc></url>`).join("\n");
-  write("/sitemap.xml", `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`);
-  // With noindex, pages stay crawlable so search engines can see the tag; only the Sitemap line is left out.
-  write("/robots.txt", ctx.noindex ? "User-agent: *\nAllow: /\n" : `User-agent: *\nAllow: /\n\nSitemap: ${absolute(ctx, "/sitemap.xml")}\n`);
+  // With noindex, pages stay crawlable so search engines can see the tag, but there is no sitemap to offer them.
+  if (ctx.noindex) {
+    write("/robots.txt", "User-agent: *\nAllow: /\n");
+  } else {
+    const urls = pages.map((path) => `  <url><loc>${escapeHtml(absolute(ctx, path))}</loc></url>`).join("\n");
+    write("/sitemap.xml", `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`);
+    write("/robots.txt", `User-agent: *\nAllow: /\n\nSitemap: ${absolute(ctx, "/sitemap.xml")}\n`);
+  }
 
   return { records: items.length, pages: pages.length };
 }
 
-// Real paths, so the CLI also runs when the script is reached through a symlink.
-const isMain = () => {
-  try {
-    return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
-  } catch {
-    return false;
-  }
-};
-
-if (process.argv[1] && isMain()) {
+// import.meta.main (Node 22.18 and later) is true only for the entry point, so importing this module never runs the CLI,
+// and a run through a symlinked path still does.
+if (import.meta.main) {
   try {
     const outDir = resolveOutDir(process.argv[2]);
-    const devicesDir = resolve(process.argv[3] || join(ROOT, "data/devices"));
+    const devicesDir = given(process.argv[3], join(ROOT, "data/devices"));
     const records = loadRecords(devicesDir);
     if (!records.length) throw new Error(`no device records found in ${devicesDir}`);
     const options = optionsFromEnv();
