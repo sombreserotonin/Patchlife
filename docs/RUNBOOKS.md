@@ -95,8 +95,9 @@ All dates in records and logs are UTC (`date -u +%F`). Scheduled runs at 06:08 S
 ### A1 Run the verifier (`Crawl`)
 1. Run `npm ci`, and check that `node --version` is 22.21 or later.
 2. Run `npm run verify:evidence -- <ids>`, passing only the records you touched or that are due.
-   - `--due <days>` checks only records whose `checked` date is empty or more than `<days>` days before today (UTC), oldest first, and `--limit <n>` checks at most `<n>` of them. For example: `npm run verify:evidence -- --due 60 --limit 20`.
-   - With ids as well, the options choose only among those ids. With either option, `none_published` and `disputed` records are left out instead of being listed as skipped.
+   - `--due <days>` and `--limit <n>` choose only `verified` records. `--due` keeps those whose `checked` date is more than `<days>` days before today (UTC). `--limit` keeps the `<n>` oldest of them, and on its own takes the `<n>` oldest `verified` records. Oldest first only decides which records the limit keeps: the chosen records are then checked and printed in file order. For example: `npm run verify:evidence -- --due 60 --limit 40`.
+   - With ids as well, the options choose only among those ids. Unverified, `stale`, `disputed` and `none_published` records are never chosen: they need repair (A4 or A5), not a re-check.
+   - A `verified` record whose fetch keeps ending in `error` keeps its old `checked` date, so it stays at the front of every run. After repeated errors, follow A4 or A5 instead of waiting.
 3. Read each outcome:
 
 | Output | Meaning | Action |

@@ -76,16 +76,16 @@ export function verifyRecord(record, texts, today = new Date().toISOString().sli
   return { ok: true, verification: { status: "verified", checked: today, text_sha256 } };
 }
 
-// Returns the ids to check: those named in ids, or all. With due or limit, it leaves out none_published and disputed
-// records (always skipped), keeps those whose `checked` is empty or more than `due` days before today (UTC dates),
-// sorts them oldest first with empty first, and keeps the first `limit`.
+// Returns the ids to check: those named in ids, or all. With due or limit, it keeps only verified records (others need
+// repair, not a re-check), then those whose `checked` is more than `due` days before today (UTC dates), sorts them
+// oldest first (a missing date counts as oldest), and keeps the first `limit`.
 export function selectRecords(records, { ids = [], due, limit, today = new Date().toISOString().slice(0, 10) } = {}) {
   const named = ids.length ? records.filter((r) => ids.includes(r.id)) : records;
   if (due == null && limit == null) return named.map((r) => r.id);
   const cutoff = due == null ? null : new Date(Date.parse(today) - due * 86_400_000).toISOString().slice(0, 10);
   const checked = (r) => r.verification.checked ?? "";
   return named
-    .filter((r) => r.support.rule !== "none_published" && r.verification.status !== "disputed")
+    .filter((r) => r.verification.status === "verified" && r.support.rule !== "none_published")
     .filter((r) => cutoff == null || checked(r) < cutoff)
     .sort((a, b) => (checked(a) < checked(b) ? -1 : checked(a) > checked(b) ? 1 : 0))
     .slice(0, limit ?? Infinity)
@@ -149,23 +149,28 @@ export async function verifyDevices(devicesDir, { ids = [], due, limit, get = cr
       results.push({ id, outcome: "failed", reason: result.reason });
     }
   }
-  for (const id of ids) {
+  for (const id of new Set(ids)) {
     if (!records.some((r) => r.id === id)) results.push({ id, outcome: "error", reason: "no record with this id" });
   }
   return results;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const { values, positionals } = parseArgs({ allowPositionals: true, options: { due: { type: "string" }, limit: { type: "string" } } });
-  const count = (name) => {
-    const value = values[name];
-    if (value !== undefined && !/^\d+$/.test(value)) {
-      console.error(`--${name} takes a whole number, not "${value}"`);
-      process.exit(2);
-    }
-    return value === undefined ? undefined : Number(value);
-  };
-  const results = await verifyDevices(join(ROOT, "data/devices"), { ids: positionals, due: count("due"), limit: count("limit") });
+  let options;
+  try {
+    const { values, positionals } = parseArgs({ allowPositionals: true, options: { due: { type: "string" }, limit: { type: "string" } } });
+    // Up to five digits, so a huge --due cannot push the cutoff outside the range of Date.
+    const count = (name) => {
+      const value = values[name];
+      if (value !== undefined && !/^\d{1,5}$/.test(value)) throw new Error(`--${name} takes a whole number up to 99999, not "${value}"`);
+      return value === undefined ? undefined : Number(value);
+    };
+    options = { ids: positionals, due: count("due"), limit: count("limit") };
+  } catch (err) {
+    console.error(err.message);
+    process.exit(2);
+  }
+  const results = await verifyDevices(join(ROOT, "data/devices"), options);
   for (const r of results) console.log(`${r.id}: ${r.outcome}${r.reason ? ` (${r.reason})` : ""}`);
   const problems = results.filter((r) => ["failed", "stale", "error"].includes(r.outcome)).length;
   console.log(`${results.length} record(s) checked, ${problems} problem(s)`);
