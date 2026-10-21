@@ -1,0 +1,17 @@
+id: acme-cam-6
+brand: Acme
+brand_slug: acme
+model: Cam 6
+category: camera
+regions: [AU]
+support:
+  rule: fixed_date
+  end_date: "2027-03-04"
+  at_least: true
+evidence:
+  - url: https://example.com/acme/security
+    quote: Acme Cam 6 3/4/2027
+    retrieved: "2026-10-01"
+    regime: au_smart_device_rules
+verification:
+  status: unverified

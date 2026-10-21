@@ -120,8 +120,8 @@ Step down when all of these hold:
 If usage runs out on Pro, scheduled runs are rejected until the window resets (usage credits are off, #7). The daily build and nightly task then skip a run; nothing breaks.
 
 ## Found along the way
-- **Validator gap (a daily build task):** `mentionsDate` accepts both day/month/year and month/day/year, so "3/4/2027" passes for both 3 April and 4 March. Google's quotes are month/day ("10/5/2021" is 5 October) and TP-Link's are day/month. A swapped day and month would pass validation whenever both are 12 or under.
-- **Two more cheap validator rules** that make a weaker extractor safer: every record's model name or an alias appears in a quote (all 122 pass today), and no alias is shared by two records of the same brand, except region-date splits of one product (D33).
+- **Validator gap (closed):** `mentionsDate` accepted both day/month/year and month/day/year, so "3/4/2027" passed for both 3 April and 4 March. Google's quotes are month/day ("10/5/2021" is 5 October) and TP-Link's are day/month. Source registry entries now give a `date_order`, and an ambiguous numeric date on a URL without one fails validation (DATA-POLICY, Quotes).
+- **Two more cheap validator rules (in place)** that make a weaker extractor safer: every record's model name or an alias appears in a quote, and no alias is shared by two records of the same brand, except region-date splits of one product (D33). All 338 records passed when they were added.
 - **Before any automation of commercial work on a consumer plan:** Anthropic's consumer terms forbid scripted access except through an API key or where Anthropic explicitly permits it [30]. Scheduled tasks in claude.ai are a first-party feature, but whether a commercial product's pipeline fits the consumer terms is a legal reading for you.
 
 ## Sources

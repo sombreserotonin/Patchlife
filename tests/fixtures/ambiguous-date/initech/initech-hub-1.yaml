@@ -1,0 +1,16 @@
+id: initech-hub-1
+brand: Initech
+brand_slug: initech
+model: Hub 1
+category: hub
+regions: [UK]
+support:
+  rule: none_published
+  at_least: false
+evidence:
+  - url: https://example.com/initech/psti
+    quote: Initech Hub 1 sold from 10.11.2024
+    retrieved: "2026-10-01"
+    regime: uk_psti
+verification:
+  status: unverified

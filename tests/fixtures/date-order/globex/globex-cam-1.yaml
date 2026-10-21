@@ -1,0 +1,19 @@
+id: globex-cam-1
+brand: Globex
+brand_slug: globex
+model: Cam 1
+category: camera
+regions: [US]
+support:
+  rule: years_after_eol
+  years: 2
+  anchor_date: "2025-03-04"
+  end_date: "2027-03-04"
+  at_least: false
+evidence:
+  - url: https://example.com/globex/end-of-life
+    quote: Globex Cam 1 end of life 3/4/2025, updates for 2 years after
+    retrieved: "2026-10-01"
+    regime: vendor_policy
+verification:
+  status: unverified

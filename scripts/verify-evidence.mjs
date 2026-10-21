@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import YAML from "yaml";
 import { createFetcher } from "./polite-fetch.mjs";
-import { listYamlFiles } from "./validate-data.mjs";
+import { listYamlFiles, normalise } from "./validate-data.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const TEXT_TYPES = new Set(["text/html", "application/xhtml+xml", "text/plain"]);
@@ -52,10 +52,7 @@ export function htmlToText(html) {
   return decodeEntities(stripped);
 }
 
-// Invisible characters (soft hyphen, zero-width spaces and joiners, word joiner, BOM) are dropped before comparing.
-export function normalise(text) {
-  return text.normalize("NFKC").replace(/[\u00ad\u200b-\u200d\u2060\ufeff]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
-}
+export { normalise };
 
 export function quoteMatches(quote, text) {
   const wanted = normalise(quote);

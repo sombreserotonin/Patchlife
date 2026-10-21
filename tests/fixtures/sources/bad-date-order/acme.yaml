@@ -1,0 +1,6 @@
+- brand: Acme
+  brand_slug: acme
+  kind: per_model_dates
+  urls: [https://example.com/acme/security]
+  date_order: ymd
+  last_checked: null

@@ -4,6 +4,7 @@
   urls:
     - https://example.com/acme/security
     - https://example.com/acme/us/security
+  date_order: dmy
   note: Per-model dates in a table.
   last_checked: "2026-10-21"
 
@@ -11,5 +12,6 @@
   brand_slug: globex
   kind: eol_list
   urls: [https://example.com/globex/end-of-life]
+  date_order: mdy
   note: End-of-life list.
   last_checked: null

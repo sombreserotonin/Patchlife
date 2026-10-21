@@ -1,0 +1,19 @@
+id: globex-cam-1
+brand: Globex
+brand_slug: globex
+model: Cam 1
+aliases: [AC-1, GX-1]
+category: camera
+regions: [AU, UK]
+support:
+  rule: fixed_date
+  end_date: "2027-12-31"
+  at_least: false
+evidence:
+  - url: https://example.com/globex/end-of-life
+    quote: GX-1 12/31/2027
+    retrieved: "2026-10-01"
+    regime: vendor_policy
+verification:
+  status: unverified
+notes: Another brand may use the same names, and the alias GX-1 is the only name its quote gives.

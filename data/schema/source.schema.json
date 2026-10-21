@@ -24,6 +24,10 @@
           "uniqueItems": true,
           "items": { "type": "string", "format": "uri", "pattern": "^https://" }
         },
+        "date_order": {
+          "description": "How these pages write numeric dates: dmy (31/12/2027) or mdy (12/31/2027). npm run validate reads numeric dates in quotes from evidence URLs starting with one of these URLs in this order only.",
+          "enum": ["dmy", "mdy"]
+        },
         "note": { "type": "string", "minLength": 1, "maxLength": 500 },
         "last_checked": {
           "description": "Date the data refresh last fetched these URLs; null means never.",
