@@ -9,12 +9,6 @@ Rules for the daily build:
 - Never mark M1 done or write M2 tasks. Only the `Crawl` session that runs the M1 exit check may do that, and only if it passes.
 
 Next for the daily build (`Default`), in order:
-- [ ] Update `data/sources/seed.yaml` with the research leads from 21 Oct 2026 (leads, not evidence):
-  - Google: add `https://support.google.com/product-documentation/answer/10231940?hl=en` (the URL the Google records cite) and change the entry's kind to `per_model_dates`.
-  - TP-Link: add `https://www.tp-link.com/au/landing/au-cyber-compliance/` to the existing entry and change its kind to `per_model_dates`. In its note, say the UK pages give 3 years after end of life, with the UK per-model periods only in a PDF.
-  - Arlo: in its note, say kb.arlo.com's robots.txt disallows all bots and www.arlo.com serves a bot challenge (D18), so it can't be used.
-  - EZVIZ: add an entry for `https://support.ezviz.com/faq/article/EZVIZ-EOL-Product-List` (kind `eol_list`; hosts waiting on #23).
-  - Aqara and Reolink: add entries for `https://www.aqara.com/en/security-certifications/` and `https://reolink.com/product-compliance-psti/` (kind `unknown`, note "PDF only; hosts not allowlisted").
 - [ ] `scripts/data-report.mjs`: print counts by brand, category, status and verification state, plus the oldest `checked` date, with tests. Run it as `node scripts/data-report.mjs`, with no `package.json` change. Use it to refresh the Measures table in docs/PLAN.md.
 - [ ] Verifier: add `--due <days>` and `--limit <n>` options that select records whose `checked` is empty or older than that many days, oldest first, with tests. This is for the nightly re-verify.
 
@@ -34,6 +28,7 @@ Done:
 - [x] First real verifier run in `Crawl`: both Ring seed records verified (#19).
 - [x] `npm run validate` checks that quotes state each record's dates and years (#20).
 - [x] Source registry format, validated by `npm run validate` (#26).
+- [x] `data/sources/seed.yaml` updated with the research leads of 21 Oct 2026: Google and TP-Link URLs and kinds, the Arlo exclusion, and EZVIZ, Aqara and Reolink entries.
 - [x] Data, audited per RUNBOOKS A8: Ring 48 (#24), Google Nest 12 (#21), TP-Link Tapo 60 (#22). 120 verified records from three brands on `main`.
 - [x] Verifier reports `error (redirected to <final url>)` when the cited page redirects to another origin or path, and leaves the record unchanged (#33).
 - [x] `needs-human` issues for the `Crawl` environment (#9) and the crawler contact URL (#10).
