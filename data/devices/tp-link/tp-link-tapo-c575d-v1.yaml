@@ -4,7 +4,6 @@ brand_slug: tp-link
 model: Tapo C575D (V1)
 aliases:
   - Tapo C575D V1
-  - C575D
 category: camera
 regions: [AU]
 support:
@@ -20,8 +19,13 @@ evidence:
     retrieved: "2026-10-21"
     archive_url: null
     regime: au_smart_device_rules
+  - url: https://www.tp-link.com/au/landing/au-cyber-compliance/
+    quote: "*The non-EOL product’s defined support period may be refreshed to extend specified date."
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: au_smart_device_rules
 verification:
   status: verified
   checked: "2026-10-21"
-  text_sha256: a4337c7ad21ccddaf8a6d352a81901ef82a2c49bba82f7a707198d5ac2d69799
-notes: Australian statement of compliance. Its footnote says the period for a product not yet at end of life may be extended.
+  text_sha256: 9ca0301c111c959545c1041f5e3d5e0da8e333a457a1ec57eef507bda9a36ac9
+notes: The statement's footnote says the date may be extended for products not yet at end of life.
