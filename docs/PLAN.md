@@ -13,11 +13,10 @@ _As at Wednesday 21 October 2026. Dates are Sydney dates unless they say UTC. Re
 - **Next 30 days.**
   - Close M1 (a fourth brand plus the exit check).
   - Settle the decisions below.
-  - Merge the prompt fixes that stop the automation's known traps.
   - Ship the M2 preview site on GitHub Pages.
   - Start the nightly `Crawl` data run.
 - **What we need from you.**
-  - **This week:** decisions P1 to P4; the EZVIZ allowlist ([#23](https://github.com/sombreserotonin/Patchlife/issues/23)); the GitHub settings in G1 and G3 (TASKS.md); reviewing and merging the prompt-fix PR (O2); starting three `Crawl` sessions (O1): EZVIZ records, their audit, and the M1 exit check. That's about 90 minutes.
+  - **This week:** decisions P1 to P4; the EZVIZ allowlist ([#23](https://github.com/sombreserotonin/Patchlife/issues/23)); the GitHub settings in G1 and G3 (TASKS.md); starting three `Crawl` sessions (O1): EZVIZ records, their audit, and the M1 exit check. The prompt fixes are merged (#29).
   - **Later:** P5 to P8 before M2 launch and M4.
   - **Then:** a 10-minute check each week (O5).
 
@@ -45,7 +44,7 @@ _As at Wednesday 21 October 2026. Dates are Sydney dates unless they say UTC. Re
 
 Facts that shape every plan below:
 - **`Default`'s network can't reach manufacturer pages,** and connectors that can (such as Firecrawl) must not be used for them (D17). So data work and audits can't happen in the daily build.
-- **Merges:** today the daily build merges any green, unlabelled agent PR, data PRs included. The prompt-fix PR makes it merge a data PR only with the `audited` label (D20). Until then, every open data PR must be audited and merged before the next 06:08 Sydney run (19:08 UTC), or the daily build paused (O4).
+- **Merges:** the daily build merges a green agent PR without `needs-human-merge`, but a data PR only with the `audited` label or when it changes only `verification:` fields (D20, #29).
 - **Protected files** (`.github/`, `.claude/`, `.agent/prompts/`, `CLAUDE.md`, `package.json`, `package-lock.json`) always wait for you, so each batch of them goes in one PR.
 - **Usage limits:** usage credits are off, so a heavy day of sessions can push the scheduled runs past their limit until the usage window resets. Avoid long sessions between 17:00 and 19:30 UTC.
 
@@ -103,9 +102,9 @@ Targets are estimates. Each milestone closes only when its exit checks in ROADMA
 
 ### M3 Unattended data
 **Target:** December 2026.
-- **Nightly task:** the nightly `Crawl` task (P1, O6) once the prompt-fix PR is merged.
+- **Nightly task:** the nightly `Crawl` task (P1, O6), which the prompt fixes (#29) made safe to run.
 - **Re-verifying:**
-  - re-verify any record checked more than 60 days ago, passing ids so a quiet night ends with nothing to change;
+  - re-verify verified records checked more than 60 days ago with `npm run verify:evidence -- --due 60 --limit 40`, so a quiet night ends with nothing to change;
   - report dead sources;
   - mark `stale` records and repair them (A4).
 - **PDF and archive (if P3):** PDF text through one dependency (protected PR); archive snapshots tested in `Crawl`; then the PDF-only brands (Aqara, Reolink, TP-Link UK, GoPro).
@@ -161,7 +160,7 @@ Monthly report and alerts as in SPEC 7, once there's an audience.
 
 ## Running it unattended (next 30 days)
 1. **Heartbeat.**
-   - After the prompt-fix PR, every daily build run comments its one-line result on [#27](https://github.com/sombreserotonin/Patchlife/issues/27).
+   - Every daily build run comments its one-line result on [#27](https://github.com/sombreserotonin/Patchlife/issues/27) (from 22 Oct, #29).
    - With own-activity emails on (G1), each comment reaches your inbox.
    - No comment for two days means O4.
 2. **Security settings (G3):**
@@ -206,7 +205,7 @@ Monthly report and alerts as in SPEC 7, once there's an audience.
 | Brands with verified records | 3 | 4 | 6 or more | 6 or more |
 | Share with a computable status | 100% | n/a | 60% or more | 60% or more |
 | Stale records | 0 | 0 | under 2% | under 2% |
-| Daily build heartbeats reporting OK (counted once the prompt fix lands) | n/a | n/a | 5 or more a week | 5 or more a week |
+| Daily build heartbeats reporting OK (counted from 22 Oct) | n/a | n/a | 5 or more a week | 5 or more a week |
 | Oldest open `needs-human` item | under 1 day | under 7 days | under 7 days | under 7 days |
 
 The first four rows of **Now** are the first four lines of `node scripts/data-report.mjs`, run on 21 Oct 2026 (UTC).
@@ -218,17 +217,17 @@ Who: **A** = agent (daily build or coordinating session), **O** = owner.
 | --- | --- | --- | --- | --- | --- |
 | 1 | Wed 21 Oct, before 19:08 UTC | Merge #21 and #22 after their audit fixes (the authoring `Crawl` sessions re-verify; the coordinating session checks and merges under your standing approval). If not done in time, pause the daily build (O4). | A | Crawl, Default | Both merged, or the daily build paused |
 | 2 | Wed 21 Oct, before 19:08 UTC | Merge this plan, so `main`'s TASKS.md no longer starts with the PDF task (which would loop on a protected PR) | A | Default | On `main` |
-| 3 | Thu 22 Oct | Open the decisions issue (P1 to P8) and the prompt-fix PR (see the list below) | A | Default | Issue and PR open |
-| 4 | Fri 23 Oct | Add the EZVIZ hosts (#23); decide P1 to P4; review and merge the prompt-fix PR (O2) | O | claude.ai, GitHub | Issues closed, PR merged |
+| 3 | Thu 22 Oct | Open the decisions issue (P1 to P8) and the prompt-fix PR (see the list below) | A | Default | Done 21 Oct (#30, #29) |
+| 4 | Fri 23 Oct | Add the EZVIZ hosts (#23); decide P1 to P4; review and merge the prompt-fix PR (O2) | O | claude.ai, GitHub | PR merged 21 Oct; #23 and P1 to P4 still open |
 | 5 | Fri 23 Oct | GitHub settings G1 and G3, and pin #27 | O | GitHub | All on |
 | 6 | Mon 26 Oct | EZVIZ records: you start a `Crawl` session (O1, A2), then a second one for the audit (A8) | O starts, then A | Crawl | Fourth brand merged |
 | 7 | Mon 26 Oct | Weekly check (O5) | O | GitHub, claude.ai | Done |
 | 8 | Tue 27 Oct | M1 exit check: you start a `Crawl` session for a full `npm run verify:evidence`, then M1 is closed in ROADMAP and the M2 tasks written | O starts, then A | Crawl | M1 marked done |
-| 9 | Fri 30 Oct | Create the nightly `Crawl` task (O6), if P1 is B and the prompt-fix PR is merged | O | claude.ai | First run reported |
+| 9 | Fri 30 Oct | Create the nightly `Crawl` task (O6), if P1 is B | O | claude.ai | First run reported |
 | 10 | Mon 2 Nov | M2: site generator and search PRs (held until P2) | A | Default | Merged with tests |
 | 11 | Wed 4 Nov | M2 protected PR (scripts, Lighthouse, Pages workflow, CLAUDE.md); set Pages source to GitHub Actions | A, then O | GitHub | PR open; Pages source set (preview target 20 Nov) |
 
-**What the prompt-fix PR contains (action 3; you check it against this list):**
+**What the prompt-fix PR contains (action 3; merged 21 Oct as #29):**
 - **`.agent/prompts/daily-build.md`:**
   - the real environment name;
   - merge a data PR only with the `audited` label, or if it's a re-verification that changes only `verification:` fields;
@@ -239,7 +238,7 @@ Who: **A** = agent (daily build or coordinating session), **O** = owner.
 - **`.agent/prompts/data-refresh.md`:**
   - `Crawl`;
   - one source per run;
-  - re-verify records checked more than 60 days ago, by id;
+  - re-verify verified records checked more than 60 days ago, with `--due 60 --limit 40`;
   - quotes only from the polite fetcher's text;
   - skip robots-blocked and bot-walled sources;
   - never merge its own PR;
