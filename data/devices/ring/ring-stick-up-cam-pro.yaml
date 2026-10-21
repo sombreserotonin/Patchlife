@@ -4,8 +4,9 @@ brand_slug: ring
 model: "Stick Up Cam Pro"
 aliases:
   - "Ring Stick Up Cam Pro"
+  - "Stick Up Cam Pro, Battery, Plug-In or Solar"
 category: camera
-regions: [UK, AU]
+regions: [UK, AU, US]
 support:
   rule: fixed_date
   end_date: "2029-12-31"
@@ -24,8 +25,13 @@ evidence:
     retrieved: "2026-10-21"
     archive_url: null
     regime: vendor_policy
+  - url: https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "Stick Up Cam Pro, Battery, Plug-In or Solar 31 December 2029"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
 verification:
   status: verified
   checked: "2026-10-21"
-  text_sha256: d60cb408c74e5831e1fccee3277904660eedb87653cd390b71869ad820a74c64
+  text_sha256: 0601354d95f1e9c47d83a5e1944f713bc81cf501fc7078fe1b7fc2bcbd2ec4cf
 notes: null

@@ -4,8 +4,12 @@ brand_slug: ring
 model: "Spotlight Cam Plus"
 aliases:
   - "Ring Spotlight Cam Plus"
+  - "Spotlight Cam Plus Solar"
+  - "Spotlight Cam Plus Wired"
+  - "Spotlight Cam Plus Plug-In"
+  - "Spotlight Cam Plus Battery"
 category: camera
-regions: [UK, AU]
+regions: [UK, AU, US]
 support:
   rule: fixed_date
   end_date: "2030-12-31"
@@ -24,8 +28,13 @@ evidence:
     retrieved: "2026-10-21"
     archive_url: null
     regime: vendor_policy
+  - url: https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "Spotlight Cam Plus Solar, Spotlight Cam Plus Wired, Spotlight Cam Plus Plug-In, Spotlight Cam Plus Battery 31 December 2030"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
 verification:
   status: verified
   checked: "2026-10-21"
-  text_sha256: d60cb408c74e5831e1fccee3277904660eedb87653cd390b71869ad820a74c64
+  text_sha256: 0601354d95f1e9c47d83a5e1944f713bc81cf501fc7078fe1b7fc2bcbd2ec4cf
 notes: null
