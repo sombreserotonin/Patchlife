@@ -2,7 +2,8 @@
 
 ## Active: M1
 - [x] Status computation as in SPEC 2 (`scripts/status.mjs`), tested at the 12-month boundary and for relative rules without anchors.
-- [ ] Evidence verifier core as in SPEC 3 (fetch, HTML and PDF to text, normalise, match, hash), with offline fixture tests.
+- [x] Evidence verifier core as in SPEC 3 for HTML (`scripts/verify-evidence.mjs`: text extraction, normalise, match, hash), with offline fixture tests.
+- [ ] Verifier remainder: fetch (needs `crawl` #9, contact URL #10), PDF to text (needs a dependency, so a `package.json` PR with a human merge), archive snapshot, CLI that writes `verification` back to the YAML.
 - [ ] Wire `npm run verify:evidence` into `package.json` and CLAUDE.md. Protected paths: its own PR, human merge.
 - [x] Open `needs-human` issues for the network the verifier needs: the `crawl` environment (H5, pulled forward from M3) #9 and the crawler contact URL (from H9) #10. Cloud sessions in the Default environment cannot reach manufacturer sites from the shell.
 - [ ] Formalise the source registry format in `data/sources/*.yaml` and validate it.
