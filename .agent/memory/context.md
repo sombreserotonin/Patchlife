@@ -1,7 +1,7 @@
 # Context (current state)
 
 - 2026-10-21: Repo created from the starter kit. Nothing deployed.
-- M0 done. M1 active: the evidence engine (status, polite fetcher, verifier CLI with the redirect check and `--due`/`--limit`, quote-date check, source registry, data report) is merged. Every `Default` task in TASKS.md is done; M1 waits on a fourth brand. The M2 site generator is draft #34, held for decision P2. The plan is `docs/PLAN.md`; the procedures are `docs/RUNBOOKS.md`.
+- M0 done. M1 active: the evidence engine (status, polite fetcher, verifier CLI with the redirect check and `--due`/`--limit`, quote-date check, source registry, data report) is merged. Every `Default` task in TASKS.md is done; M1 waits on a fourth brand. The M2 site generator is merged (#34); its protected Pages workflow is #47, waiting on the owner (H6). The plan is `docs/PLAN.md`; the procedures are `docs/RUNBOOKS.md`.
 - Data on `main`: 122 verified records from three brands, all audited: Ring 50 (#24, region-date records and regions from #43 to #45), Google Nest 12 (#21, 6 with Australian evidence from #36), TP-Link Tapo 60 (#22). Arlo can't be used (robots.txt and a bot challenge, D18). The fourth brand is EZVIZ, waiting on its allowlist hosts (#23).
 - Decisions P1 to P8 settled 21 Oct (#30; D27 to D34). Waiting on the owner: #23, the settings in G1 and G3 (TASKS.md), and starting `Crawl` sessions (RUNBOOKS O1). The prompt fixes are merged (#29, 21 Oct).
 - Labels: `audited` marks a data PR that passed RUNBOOKS A8. Heartbeat issue #27 gets one comment per daily build run (from 22 Oct, #29). The daily build merges a data PR only with `audited` or when it changes only `verification:` fields.

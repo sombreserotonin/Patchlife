@@ -16,7 +16,7 @@ Waiting:
 - [ ] EZVIZ camera records per RUNBOOKS A2, then an A8 audit by a second session: the fourth brand (waiting on #23, then the owner starting `Crawl` sessions, O1).
 - [ ] M1 exit check (waiting on the EZVIZ task, then a `Crawl` session): run a full `npm run verify:evidence`. Mark M1 done in ROADMAP.md and write the M2 tasks only if at least 50 records are `verified` across at least four brands. With fewer brands, leave M1 open and say why in the PR.
 
-- [ ] Draft #34, the M2 site generator: P2 is decided (D28); merge after the final re-review of its fixes. It stays a draft until then.
+- [ ] Protected M2 PR #47 (Pages workflow, Lighthouse gate, `build:site`): waiting on the owner to set Settings > Pages > Source to GitHub Actions (H6), then merge.
 
 Leads for after M1 (need `Crawl`): Google's regulatory page `https://support.google.com/chromecast/answer/10367042` also links Australian statements for Google TV Streamer (4K), Google Nest Mini, Google Nest Wifi Pro and Nest x Yale Lock (found by the #36 audit).
 
@@ -35,6 +35,7 @@ Done:
 - [x] Verifier options `--due <days>` and `--limit <n>` select the verified records to re-verify, oldest first (#37).
 - [x] Data, audited per RUNBOOKS A8: Ring 48 (#24), Google Nest 12 (#21), TP-Link Tapo 60 (#22). 120 verified records from three brands on `main`.
 - [x] Google's Australian statements added to 6 Google Nest records, audited (#36).
+- [x] M2 site generator (`scripts/build-site.mjs`, `site/search.js`), held for P2 and merged after three review rounds and two independent pre-merge checks (#34): 131 pages for 122 records, Lighthouse 100 in every category locally.
 - [x] Ring region-date records (D33): `ring-video-doorbell-4-us` and `ring-spotlight-cam-4k-pro-au-us` (#43); missing regions added to 7 Ring records (#44); former product names from Ring's name-change article added as aliases to 14 records (#45). All audited. Not settled from Ring's own pages, so unchanged: the AU "Ring Video Doorbell" row (no generation named) and the US Battery Doorbell, Battery Doorbell Plus, Battery Doorbell Pro, Floodlight Cam Plus and Floodlight Cam Pro rows.
 - [x] `node scripts/data-report.mjs` prints counts by brand, category, status and verification state, plus the oldest `checked` date; the Measures table in docs/PLAN.md cites it (#35).
 - [x] Verifier reports `error (redirected to <final url>)` when the cited page redirects to another origin or path, and leaves the record unchanged (#33).
