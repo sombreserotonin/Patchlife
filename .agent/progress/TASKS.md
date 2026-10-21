@@ -67,6 +67,6 @@ Done:
 - H10 (M5 to M7) Stripe, browser store developer accounts, email provider.
 - H11 Usage: watch claude.ai/settings/usage and decide whether to allow usage credits. Done (#7): usage credits off, so runs stop when usage runs out until the window resets.
 - H12 (before accepting outside contributions) A contributor licence agreement, so the owner keeps the right to relicense.
-- G1 GitHub settings the agent cannot change (the proxy blocks settings writes): turn on Settings > General > Automatically delete head branches, and turn on emails about your own activity at https://github.com/settings/notifications (agents act as you, so you are not emailed about their issues and PRs otherwise).
+- G1 Done 21 Oct 2026 (owner; auto-delete of head branches confirmed by the API). GitHub settings the agent cannot change (the proxy blocks settings writes): turn on Settings > General > Automatically delete head branches, and turn on emails about your own activity at https://github.com/settings/notifications (agents act as you, so you are not emailed about their issues and PRs otherwise).
 - G2 Decisions P1 to P8 in docs/PLAN.md.
-- G3 Security settings: turn on Dependabot alerts and secret scanning with push protection (Settings > Code security), and auto-renew plus two-factor sign-in at the domain registrar for `patchlife.tech`.
+- G3 Done 21 Oct 2026 (owner; secret scanning and push protection confirmed by the API, Dependabot alerts not visible to the agent). Security settings: turn on Dependabot alerts and secret scanning with push protection (Settings > Code security), and auto-renew plus two-factor sign-in at the domain registrar for `patchlife.tech`.
