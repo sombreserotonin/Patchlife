@@ -17,6 +17,7 @@ import {
   answerText,
   conditionsExtend,
   displayName,
+  isMonthOnly,
   listWords,
   longDate,
   plural,
@@ -214,6 +215,7 @@ function timeLeftText(record, entry, today) {
   if (!end) return rule === "none_published" ? "Not known" : html`Not known until ${record.brand} publishes the date`;
   if (entry.status === "ended" && atLeast) return extend ? SOME_LONGER : "None guaranteed. The minimum period has ended.";
   if (entry.status === "ended") return "None. Security updates have ended.";
+  if (isMonthOnly(end)) return `${atLeast ? "At least until" : "Until"} ${longDate(end)}. ${record.brand} gives the month, not the day.`;
   const left = timeLeft(today, end);
   if (!left && atLeast) return extend ? `Today is the published minimum date. ${SOME_LONGER}` : "Today is the last guaranteed day";
   if (!left) return "Today is the last day";
@@ -501,10 +503,10 @@ function methodologyPage(ctx) {
 <h2>Regions</h2>
 <p>Each record lists the regions its statement covers, labelled for example "UK statement" or "Australian statement". When a manufacturer's policy names no region, the page says so. A statement for one region may not apply to the same model sold elsewhere.</p>
 <h2>Status</h2>
-<p>Status is worked out from the dates each time the site is built, and each page shows the date it applies to. An end date is the last day of the stated period. When the source says "at least", the date is the minimum the manufacturer publishes: updates may continue after it, and some manufacturers give some buyers longer.</p>
+<p>Status is worked out from the dates each time the site is built, and each page shows the date it applies to. An end date is the last day of the stated period. When the source says "at least", the date is the minimum the manufacturer publishes: updates may continue after it, and some manufacturers give some buyers longer. When the source gives only a month and year, the page shows the month, and the period counts as ended only after that month's last day.</p>
 <dl>
 <dt>Supported</dt><dd>More than 12 months of the stated period left.</dd>
-<dt>Ending soon</dt><dd>12 months or less of the stated period left, up to and including the end date.</dd>
+<dt>Ending soon</dt><dd>12 months or less of the stated period left, up to and including the end date. For a month-only date, from 12 months before the month starts.</dd>
 <dt>Minimum passed</dt><dd>The source gave a minimum period and its end date has passed. The manufacturer may still provide updates.</dd>
 <dt>Ended</dt><dd>The end date has passed, and the source gave no minimum.</dd>
 <dt>Unknown</dt><dd>No end date can be worked out, for example when a rule's anchor date has not been published.</dd>
