@@ -1,8 +1,9 @@
 // Checks that each evidence quote appears in the source page (SPEC 3) and records the result in the YAML.
-// Stores hashes, never pages. PDF extraction and archive snapshots are not built yet.
+// Also keeps one hash per evidence URL in data/sources/page-hashes.json and reports which pages changed since the
+// last run. Stores hashes, never pages. PDF extraction and archive snapshots are not built yet.
 // Usage: node --use-env-proxy scripts/verify-evidence.mjs [--due <days>] [--limit <n>] [id ...]
 import { createHash } from "node:crypto";
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
@@ -76,6 +77,35 @@ export function verifyRecord(record, texts, today = new Date().toISOString().sli
   return { ok: true, verification: { status: "verified", checked: today, text_sha256 } };
 }
 
+// The hash of one page's normalised text. For a record with one evidence URL it equals the record's text_sha256.
+function pageHash(html) {
+  return createHash("sha256").update(normalise(htmlToText(html))).digest("hex");
+}
+
+// Reads the stored page hashes: a JSON object of evidence URL to hash, or {} when the file does not exist yet.
+function readPageHashes(file) {
+  if (!file || !existsSync(file)) return {};
+  let hashes;
+  try {
+    hashes = JSON.parse(readFileSync(file, "utf8"));
+  } catch (err) {
+    throw new Error(`${file}: ${err.message}`);
+  }
+  if (typeof hashes !== "object" || hashes === null || Array.isArray(hashes)) throw new Error(`${file}: not a JSON object of URL to hash`);
+  return hashes;
+}
+
+const PAGE_CHANGES = { changed: "page changed", unchanged: "page unchanged", new: "page not seen before" };
+
+// One line per page read, in the order read, then a count of each kind.
+export function pageReport(pages) {
+  const count = (change) => pages.filter((p) => p.change === change).length;
+  return [
+    ...pages.map((p) => `${p.url}: ${PAGE_CHANGES[p.change]}`),
+    `${pages.length} page(s) read: ${count("changed")} changed, ${count("unchanged")} unchanged, ${count("new")} not seen before`,
+  ];
+}
+
 // Returns the ids to check: those named in ids, or all. With due or limit, it keeps only verified records (others need
 // repair, not a re-check), then those whose `checked` is more than `due` days before today (UTC dates), sorts them
 // oldest first (a missing date counts as oldest), and keeps the first `limit`.
@@ -102,14 +132,21 @@ function samePage(cited, final) {
 }
 
 // Updates records in place: verified when every quote matches, stale when a verified record's quote no longer
-// matches or the cited page itself is gone (404 or 410). Any other fetch failure leaves the file unchanged. Returns one { id, outcome, reason } per record checked.
-export async function verifyDevices(devicesDir, { ids = [], due, limit, get = createFetcher(), today = new Date().toISOString().slice(0, 10) } = {}) {
+// matches or the cited page itself is gone (404 or 410). Any other fetch failure leaves the file unchanged.
+// With hashFile, it compares each page read with the hash stored for its URL, then stores the new hashes, keeping
+// those of pages it could not read and dropping those of URLs no record cites. Returns { results, pages }: one
+// { id, outcome, reason } per record checked, and one { url, change } per page read, where change is "changed",
+// "unchanged" or "new" (no stored hash).
+export async function verifyDevices(devicesDir, { ids = [], due, limit, get = createFetcher(), today = new Date().toISOString().slice(0, 10), hashFile } = {}) {
+  const stored = readPageHashes(hashFile);
+  const hashes = new Map();
   const pages = new Map();
   const page = (url) => {
     if (!pages.has(url)) {
       pages.set(url, get(url).then(({ url: finalUrl, contentType, text }) => {
         if (!samePage(url, finalUrl)) throw new Error(`redirected to ${finalUrl}`);
         if (!TEXT_TYPES.has(contentType)) throw new Error(`unsupported content type "${contentType}" at ${url}`);
+        hashes.set(url, pageHash(text));
         return text;
       }, (err) => {
         // An HTTP error from the page redirected to says nothing about the cited page, so it never marks a record stale.
@@ -163,7 +200,20 @@ export async function verifyDevices(devicesDir, { ids = [], due, limit, get = cr
   for (const id of new Set(ids)) {
     if (!records.some((r) => r.id === id)) results.push({ id, outcome: "error", reason: "no record with this id" });
   }
-  return results;
+
+  const changes = [...hashes].map(([url, hash]) => ({
+    url,
+    change: !Object.hasOwn(stored, url) ? "new" : stored[url] === hash ? "unchanged" : "changed",
+  }));
+  if (hashFile) {
+    const cited = new Set(records.flatMap((r) => r.evidence.map((item) => item.url)));
+    const kept = Object.entries({ ...stored, ...Object.fromEntries(hashes) }).filter(([url]) => cited.has(url));
+    const next = Object.fromEntries(kept.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
+    const json = `${JSON.stringify(next, null, 2)}\n`;
+    // Writes only on a change, so a run that reads no page creates no file.
+    if (json !== (existsSync(hashFile) ? readFileSync(hashFile, "utf8") : "{}\n")) writeFileSync(hashFile, json);
+  }
+  return { results, pages: changes };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -181,8 +231,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     console.error(err.message);
     process.exit(2);
   }
-  const results = await verifyDevices(join(ROOT, "data/devices"), options);
+  const { results, pages } = await verifyDevices(join(ROOT, "data/devices"), { ...options, hashFile: join(ROOT, "data/sources/page-hashes.json") });
   for (const r of results) console.log(`${r.id}: ${r.outcome}${r.reason ? ` (${r.reason})` : ""}`);
+  for (const line of pageReport(pages)) console.log(line);
   const problems = results.filter((r) => ["failed", "stale", "error"].includes(r.outcome)).length;
   console.log(`${results.length} record(s) checked, ${problems} problem(s)`);
   process.exit(problems ? 1 : 0);

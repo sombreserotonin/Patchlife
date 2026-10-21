@@ -117,7 +117,15 @@ All dates in records and logs are UTC (`date -u +%F`). Scheduled runs at 06:08 S
 | `error (more than 5 redirects ...)`, a timeout or `fetch failed` | Network or site problem | Retry in a later run; change nothing |
 | `skipped (none_published)` or `skipped (disputed)` | Not checked by design | None |
 
-4. Run `npm run validate` and `npm test`, then paste the verifier output into the PR.
+   After the record lines comes one line per page read, compared with the hash stored for its URL in `data/sources/page-hashes.json`, then a count of each kind. A page that could not be read gets no line and keeps its stored hash.
+
+| Output | Meaning | Action |
+| --- | --- | --- |
+| `<url>: page unchanged` | The page text is the same as at the last read | None |
+| `<url>: page changed` | The page text differs from the last read, whether or not its quotes still match | If every record citing it verified, something else on the page changed, such as a new model or another model's date: name the page in the PR |
+| `<url>: page not seen before` | No hash is stored for this URL yet, such as a new source or a moved statement | None |
+
+4. Run `npm run validate` and `npm test`, then paste the verifier output into the PR. Commit `data/sources/page-hashes.json` with the records.
 
 ### A2 Add records from one source (`Crawl`)
 1. Create a branch `claude/data-<brand_slug>-<what>` from `main`, and run `npm ci`.
