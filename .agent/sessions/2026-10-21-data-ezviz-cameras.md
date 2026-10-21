@@ -6,7 +6,7 @@ What the page states: a table of "Day of firmware update cessation" per model an
 
 Added 191 records: 171 "Smart Home Camera" rows (camera) and 20 "Smart Video Doorbell" rows (doorbell), one per row, model number as EZVIZ writes it and no aliases (the page gives no marketing names). All dates have a day (YYYY/M/D, year first, so no DD/MM ambiguity). Validator: `mentionsDate` now accepts `2027/12/31` and `2028/1/20`, with tests.
 
-Skipped: other product lines (Action Camera, NVR, Smart Entry locks, sensors, networking, vacuums, gateways, controls).
+Skipped: other product lines (Action Camera, NVR, the other Smart Entry rows, sensors, networking, vacuums, gateways, controls).
 
 Judgement calls for the auditor: "Europe" recorded as EU, not UK; category follows the page's product line, so two chimes (CS-CMT-*) and CS-DL01CP-BT / CS-DL01P-BT are doorbells, and CS-DB2-A0-1B3WPMFBR / CS-DP1-* are cameras; the page calls the dates "expected", noted in each record.
 
