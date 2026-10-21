@@ -1,0 +1,43 @@
+id: google-nest-doorbell-battery
+brand: Google
+brand_slug: google
+model: "Nest Doorbell (battery)"
+aliases:
+  - "Google Nest Doorbell (battery)"
+  - "Nest Doorbell battery"
+  - "GWX3T"
+category: doorbell
+regions: [GLOBAL, UK]
+support:
+  rule: years_after_launch
+  end_date: "2026-08-24"
+  years: 5
+  anchor_date: "2021-08-24"
+  at_least: true
+  conditions: null
+evidence:
+  - url: https://support.google.com/product-documentation/answer/10231940?hl=en
+    quote: "Nest Doorbell (battery) 8/24/2021 8/24/2026"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://support.google.com/product-documentation/answer/10231940?hl=en
+    quote: "Google Nest connected home devices will receive automatic security updates for at least 5 years from the date we start selling them on the US Google Store."
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://support.google.com/product-documentation/answer/14869041?hl=en
+    quote: "Nest Doorbell battery (GWX3T)"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: uk_psti
+  - url: https://support.google.com/product-documentation/answer/14869041?hl=en
+    quote: "Group 2: At least five years from when the device first became available on the Google Store in the US"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: uk_psti
+verification:
+  status: verified
+  checked: "2026-10-21"
+  text_sha256: 571dfbcbbc68f3d59489093a98d3966911fca59b3c09f1aad2f00b7fd4583376
+notes: "Google's table gives the US Google Store release date and the release date plus 5 years (minimum), in US month/day/year format. Also listed in Google's UK PSTI statement of compliance (April 2024), which applies where sold in the UK."

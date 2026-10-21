@@ -1,0 +1,31 @@
+id: google-nest-cam-indoor
+brand: Google
+brand_slug: google
+model: "Nest Cam Indoor"
+aliases:
+  - "Google Nest Cam Indoor"
+category: camera
+regions: [GLOBAL]
+support:
+  rule: years_after_launch
+  end_date: "2020-06-15"
+  years: 5
+  anchor_date: "2015-06-15"
+  at_least: true
+  conditions: null
+evidence:
+  - url: https://support.google.com/product-documentation/answer/10231940?hl=en
+    quote: "Nest Cam Indoor 6/15/2015 6/15/2020"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://support.google.com/product-documentation/answer/10231940?hl=en
+    quote: "Google Nest connected home devices will receive automatic security updates for at least 5 years from the date we start selling them on the US Google Store."
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+verification:
+  status: verified
+  checked: "2026-10-21"
+  text_sha256: 9188c406b1619d5fe7aa81602277dcdd7bc69f8f42f49fb7162c29760b071a49
+notes: "Google's table gives the US Google Store release date and the release date plus 5 years (minimum), in US month/day/year format."
