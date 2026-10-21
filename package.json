@@ -10,7 +10,8 @@
   },
   "scripts": {
     "validate": "node scripts/validate-data.mjs",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "verify:evidence": "node --use-env-proxy --disable-warning=UNDICI-EHPA scripts/verify-evidence.mjs"
   },
   "devDependencies": {
     "ajv": "^8.20.0",
