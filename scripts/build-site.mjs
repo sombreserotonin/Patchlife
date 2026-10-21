@@ -17,7 +17,6 @@ import {
   answerText,
   conditionsExtend,
   displayName,
-  isMinimumPassed,
   listWords,
   longDate,
   plural,
@@ -105,10 +104,6 @@ export function html(strings, ...values) {
   return new Html(out);
 }
 
-// Copy that needs the owner's legal read before launch (gate H9a) is marked in the HTML so the review can find it.
-const DRAFT = html`<!-- Draft wording: needs the owner's legal read (gate H9a). -->`;
-const draft = (content) => html`${DRAFT}${content}`;
-
 // JSON-LD block. <, >, & and the two Unicode line separators become backslash-u escapes, which keeps "</script>" and
 // "<!--" out of the script element while the JSON stays valid.
 const JSON_LD_UNSAFE = new RegExp(`[<>&${String.fromCharCode(0x2028, 0x2029)}]`, "g");
@@ -195,10 +190,10 @@ const SOME_LONGER = "Some buyers get longer: see Conditions.";
 function statusNote({ status, at_least: atLeast, conditions_extend: extend }) {
   if (status === "supported") return atLeast ? "More than 12 months of the guaranteed minimum left." : "More than 12 months of security updates left.";
   if (status === "ending_soon" && atLeast) {
-    return extend ? draft(`12 months or less until the published minimum date. ${SOME_LONGER}`) : "12 months or less of the guaranteed minimum left.";
+    return extend ? `12 months or less until the published minimum date. ${SOME_LONGER}` : "12 months or less of the guaranteed minimum left.";
   }
   if (status === "ending_soon") return "12 months or less of security updates left.";
-  if (status === "ended" && atLeast) return draft(extend ? `The published minimum date has passed. ${SOME_LONGER}` : "The guaranteed minimum period has passed.");
+  if (status === "ended" && atLeast) return extend ? `The published minimum date has passed. ${SOME_LONGER}` : "The guaranteed minimum period has passed.";
   if (status === "ended") return "The end date has passed.";
   return "No end date can be worked out from what the manufacturer has published.";
 }
@@ -217,10 +212,10 @@ function timeLeftText(record, entry, today) {
   if (rule === "years_after_purchase") return "Depends on when you bought the device";
   if (rule === "years_after_manufacture") return "Depends on when the device was made";
   if (!end) return rule === "none_published" ? "Not known" : html`Not known until ${record.brand} publishes the date`;
-  if (entry.status === "ended" && atLeast) return draft(extend ? SOME_LONGER : "None guaranteed. The minimum period has ended.");
+  if (entry.status === "ended" && atLeast) return extend ? SOME_LONGER : "None guaranteed. The minimum period has ended.";
   if (entry.status === "ended") return "None. Security updates have ended.";
   const left = timeLeft(today, end);
-  if (!left && atLeast) return extend ? draft(`Today is the published minimum date. ${SOME_LONGER}`) : "Today is the last guaranteed day";
+  if (!left && atLeast) return extend ? `Today is the published minimum date. ${SOME_LONGER}` : "Today is the last guaranteed day";
   if (!left) return "Today is the last day";
   return atLeast ? `At least ${left}` : left;
 }
@@ -238,8 +233,6 @@ function sourceLink(url) {
   return safe ? html`<a class="url" href="${safe}">${safe}</a>` : html`<span class="url">${url} (not linked: not an https address)</span>`;
 }
 
-// The answer as HTML: the P8 sentence and the extending-condition hedge are draft legal copy.
-const answerHtml = (entry) => (isMinimumPassed(entry) ? draft(answerText(entry)) : answerText(entry));
 const reviewFlag = (entry) => (underReview(entry) ? html` <strong>Under review.</strong>` : "");
 const statusBadge = (entry) => html`<span class="status ${statusKey(entry)}">${statusLabel(entry)}</span>`;
 // "Cameras" becomes "cameras" inside a sentence; "TVs" stays as it is.
@@ -315,13 +308,13 @@ form.addEventListener("submit", (event) => event.preventDefault());
 
 const link = (ctx, path) => `${ctx.base}${path}`;
 const absolute = (ctx, path) => `${ctx.siteUrl}${ctx.base}${path}`;
-const disclaimerNote = (ctx) => draft(html`<p class="disclaimer">${DISCLAIMER} <a href="${link(ctx, "/methodology/")}">How the dates are checked</a>.</p>`);
+const disclaimerNote = (ctx) => html`<p class="disclaimer">${DISCLAIMER} <a href="${link(ctx, "/methodology/")}">How the dates are checked</a>.</p>`;
 
 function footer(ctx) {
   return html`<footer>
 <p>Status as at ${shortTime(ctx.today)}.</p>
-${draft(html`<p>${DISCLAIMER}</p>`)}
-<p><a href="${REPO_URL}">Source code on GitHub</a> under the <a href="${AGPL_URL}">AGPL-3.0-or-later</a> licence. Data licence: <a href="${ODBL_URL}">ODbL 1.0</a>. ${ctx.attribution} ${draft("Quoted manufacturer statements remain the property of their owners.")}</p>
+<p>${DISCLAIMER}</p>
+<p><a href="${REPO_URL}">Source code on GitHub</a> under the <a href="${AGPL_URL}">AGPL-3.0-or-later</a> licence. Data licence: <a href="${ODBL_URL}">ODbL 1.0</a>. ${ctx.attribution} Quoted manufacturer statements remain the property of their owners.</p>
 <nav aria-label="Site"><ul>
 <li><a href="${link(ctx, "/methodology/")}">Methodology</a></li>
 <li><a href="${link(ctx, "/corrections/")}">Corrections</a></li>
@@ -368,7 +361,7 @@ function breadcrumbs(ctx, trail) {
 function deviceList(ctx, items) {
   return html`<ul class="devices">${items.map(
     ({ record, entry }) => html`<li><a href="${link(ctx, `/devices/${record.id}/`)}">${displayName(record.brand, record.model)}</a><br>
-${statusBadge(entry)} ${answerHtml(entry)} <span class="muted">${regionText(entry)}.</span>${reviewFlag(entry)}</li>`,
+${statusBadge(entry)} ${answerText(entry)} <span class="muted">${regionText(entry)}.</span>${reviewFlag(entry)}</li>`,
   )}</ul>`;
 }
 
@@ -410,7 +403,7 @@ function modelPage(ctx, { record, entry }) {
   const searched = record.evidence.filter((ev) => !ev.quote);
   const body = html`${breadcrumbs(ctx, [["Home", "/"], [record.brand, brandPath], [name, path]])}
 <h1>${name}</h1>
-<p class="answer">${answerHtml(entry)}</p>
+<p class="answer">${answerText(entry)}</p>
 <p class="regions">${regionText(entry)}.${reviewFlag(entry)}</p>
 ${disclaimerNote(ctx)}
 <dl>
@@ -508,18 +501,18 @@ function methodologyPage(ctx) {
 <h2>Regions</h2>
 <p>Each record lists the regions its statement covers, labelled for example "UK statement" or "Australian statement". When a manufacturer's policy names no region, the page says so. A statement for one region may not apply to the same model sold elsewhere.</p>
 <h2>Status</h2>
-<p>Status is worked out from the dates each time the site is built, and each page shows the date it applies to. ${draft('An end date is the last day of the stated period. When the source says "at least", the date is the minimum the manufacturer publishes: updates may continue after it, and some manufacturers give some buyers longer.')}</p>
+<p>Status is worked out from the dates each time the site is built, and each page shows the date it applies to. An end date is the last day of the stated period. When the source says "at least", the date is the minimum the manufacturer publishes: updates may continue after it, and some manufacturers give some buyers longer.</p>
 <dl>
 <dt>Supported</dt><dd>More than 12 months of the stated period left.</dd>
 <dt>Ending soon</dt><dd>12 months or less of the stated period left, up to and including the end date.</dd>
-<dt>Minimum passed</dt><dd>${draft("The source gave a minimum period and its end date has passed. The manufacturer may still provide updates.")}</dd>
+<dt>Minimum passed</dt><dd>The source gave a minimum period and its end date has passed. The manufacturer may still provide updates.</dd>
 <dt>Ended</dt><dd>The end date has passed, and the source gave no minimum.</dd>
 <dt>Unknown</dt><dd>No end date can be worked out, for example when a rule's anchor date has not been published.</dd>
 </dl>
 <h2>Checking quotes</h2>
 <p>An automated check fetches each source page, normalises the text (Unicode NFKC, collapsed spaces, ignoring case) and confirms the quote is still there. When the quote is found, the record shows the date of that check. When a quote disappears, the record is marked "Under review" until new evidence is found. The policy is to re-check every record at least every 90 days.</p>
 <h2>Disclaimer</h2>
-${draft(html`<p>${DISCLAIMER}</p>`)}`,
+<p>${DISCLAIMER}</p>`,
   });
 }
 
@@ -552,19 +545,19 @@ function aboutPage(ctx, { coverage }) {
     body: html`<h1>About Patchlife</h1>
 <p>Smart devices stop getting security updates long before they stop working, and buyers rarely know when. Patchlife looks up when a smart device stops getting security updates, and quotes the manufacturer's own words as evidence. So far it covers ${coverage}.</p>
 <h2>Why</h2>
-${draft(html`<p>Australia's smart device rules apply to most household smart devices made from 4 March 2026, and makers must publish how long a device gets security updates (<a href="${HOME_AFFAIRS_URL}">Department of Home Affairs</a>). The UK has required a statement of compliance since 29 April 2024 under its PSTI regulations (<a href="${PSTI_URL}">Cooley</a>). These statements are spread across many support pages and PDFs, often as a rule such as "3 years after end of life" rather than a date. Patchlife collects them in one place, with a quote and a link for every date.</p>`)}
+<p>Australia's smart device rules apply to most household smart devices made from 4 March 2026, and makers must publish how long a device gets security updates (<a href="${HOME_AFFAIRS_URL}">Department of Home Affairs</a>). The UK has required a statement of compliance since 29 April 2024 under its PSTI regulations (<a href="${PSTI_URL}">Cooley</a>). These statements are spread across many support pages and PDFs, often as a rule such as "3 years after end of life" rather than a date. Patchlife collects them in one place, with a quote and a link for every date.</p>
 <h2>What Patchlife doesn't do</h2>
-${draft(html`<p>Patchlife doesn't publish reviews, ratings or brand rankings without a published methodology, give legal advice, certify compliance, or collect retailer prices or reviews.</p>`)}
+<p>Patchlife doesn't publish reviews, ratings or brand rankings without a published methodology, give legal advice, certify compliance, or collect retailer prices or reviews.</p>
 <h2>Open code and data</h2>
 <ul>
 <li>The code is free software under the <a href="${AGPL_URL}">GNU Affero General Public License v3.0 or later</a>: <a href="${REPO_URL}">source code on GitHub</a>.</li>
-<li>The data is available under the <a href="${ODBL_URL}">Open Database License v1.0</a>. Attribute it as: "${ctx.attribution}" ${draft("Quoted manufacturer statements remain the property of their owners and are included only as evidence.")} <a href="${NOTICE_URL}">Data licence details</a>.</li>
+<li>The data is available under the <a href="${ODBL_URL}">Open Database License v1.0</a>. Attribute it as: "${ctx.attribution}" Quoted manufacturer statements remain the property of their owners and are included only as evidence. <a href="${NOTICE_URL}">Data licence details</a>.</li>
 <li>Every record as JSON: <a href="${link(ctx, "/api/v1/devices.json")}">${link(ctx, "/api/v1/devices.json")}</a>. One record: ${link(ctx, "/api/v1/devices/")}&lt;id&gt;.json.</li>
 </ul>
 <h2>Who runs it</h2>
-${draft(html`<p>Claude Code, an AI coding tool, builds and runs Patchlife. A human owner makes the decisions that need a person, such as money, accounts, legal text and publishing.</p>`)}
+<p>Claude Code, an AI coding tool, builds and runs Patchlife. A human owner makes the decisions that need a person, such as money, accounts, legal text and publishing.</p>
 <h2>Disclaimer</h2>
-${draft(html`<p>${DISCLAIMER}</p>`)}`,
+<p>${DISCLAIMER}</p>`,
   });
 }
 
