@@ -95,11 +95,24 @@ Other providers' open-model prices (DeepSeek, OpenRouter) came only from search 
 ## The pivot, in stages
 | Stage | When | What | Needs from you |
 | --- | --- | --- | --- |
-| 0 | Now | Keep building. When cost starts to matter, keep multi-agent reviews for risky code. Note your plan tier and weekly usage once a week. | Tell us your plan tier |
+| 0 | Now | Keep building. When cost starts to matter, keep multi-agent reviews for risky code. Note your plan tier and weekly usage once a week. | Done: on Max, aiming for Pro |
 | 1 | After M2 | Move the no-model jobs to Actions in one protected PR: merge script, nightly re-verify with per-URL change detection, heartbeat, Measures report. Probe host reachability first. | Merge the protected PR; maybe a GitHub App or token (secret) |
 | 2 | M3 | Per-source table parsers for Ring, Google and TP-Link, so new rows become candidate records by code. Harden the validator (see below). | Nothing |
 | 3 | M3 | A gold-set test of the 9070 XT (and of Haiku 5.5) on the 122 audited records. Switch extraction to whichever passes. Audits stay on a hosted model, different from the extractor. | Linux on the PC, or API credits set up (an account and terms: human gates) |
-| 4 | After M3 | Drop to a lower plan, or pay per use, and use a frontier model only when building features. | Choose the plan |
+| 4 | After M3 | Move to Pro once the checks under "Getting to Pro" hold, and use a frontier model only when building features. | Change the plan |
+
+## Getting to Pro
+You are on Max and want to move to Pro (US$20 a month) once the pivot allows it. Max 5x gives five times Pro's usage [16], and Pro has no included API credits [18]. That target changes two things:
+- **Stage 1 matters most.** Once merging, re-verification and reports run on Actions, the daily build and the nightly task stop spending session usage on routine work.
+- **Stage 3 favours the 9070 XT.** On Pro, the Haiku route means pay-per-use API spend, which needs an account and money (human gates). The local card needs neither.
+
+Step down when all of these hold:
+1. Stages 1 and 2 are live, and the nightly task opens a session only when a page has changed.
+2. Extraction runs on the 9070 XT, or on pay-per-use API calls if you approve the spend.
+3. For two weeks, weekly usage on claude.ai stays under about a fifth of your Max limit (*estimate*, since Max 5x is five times Pro), with room for a feature-building session.
+4. No coordinating sessions with multi-agent reviews in that time.
+
+If usage runs out on Pro, scheduled runs are rejected until the window resets (usage credits are off, #7). The daily build and nightly task then skip a run; nothing breaks.
 
 ## Found along the way
 - **Validator gap (a daily build task):** `mentionsDate` accepts both day/month/year and month/day/year, so "3/4/2027" passes for both 3 April and 4 March. Google's quotes are month/day ("10/5/2021" is 5 October) and TP-Link's are day/month. A swapped day and month would pass validation whenever both are 12 or under.
