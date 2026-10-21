@@ -19,6 +19,32 @@ export function addYears(isoDate, years) {
   return `${String(year).padStart(4, "0")}-${String(m).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
+const MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+const NUMBER_WORDS = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
+
+// True when the text writes this YYYY-MM-DD date in a common form: 31 December 2027, 31st Dec 2027,
+// December 31, 2027, 2027-12-31, 31/12/2027 or 12/31/2027. Catches a date retyped wrongly from its quote.
+export function mentionsDate(text, isoDate) {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  const month = MONTHS[m - 1];
+  const names = `(?:${month}|${month.slice(0, 3)}${month === "september" ? "|sept" : ""})\\.?`;
+  const day = `0?${d}(?:st|nd|rd|th)?`;
+  const forms = [
+    `${day}\\s+(?:of\\s+)?${names},?\\s+${y}`,
+    `${names}\\s+${day},?\\s+${y}`,
+    `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`,
+    `0?${d}[/.]0?${m}[/.]${y}`,
+    `0?${m}/0?${d}/${y}`,
+  ];
+  return new RegExp(`(?:^|[^0-9a-z])(?:${forms.join("|")})(?![0-9])`, "i").test(text.normalize("NFKC"));
+}
+
+// True when the text states this number of years: "3 years", "three years", "3-year", "a year".
+export function mentionsYears(text, years) {
+  const words = [String(years), NUMBER_WORDS[years], years === 1 ? "a" : ""].filter(Boolean).join("|");
+  return new RegExp(`\\b(?:${words})[\\s-]+years?\\b`, "i").test(text.normalize("NFKC"));
+}
+
 export function loadValidator(schemaPath = join(ROOT, "data/schema/device.schema.json")) {
   const ajv = new Ajv2020({ allErrors: true, strict: true });
   addFormats(ajv);
@@ -74,6 +100,11 @@ export function validateDevices(devicesDir, { today = new Date().toISOString().s
         fail("end_date needs a published anchor_date for this rule");
       }
     }
+
+    const quotes = record.evidence.map((ev) => ev.quote ?? "").join("\n");
+    if (support.rule === "fixed_date" && !mentionsDate(quotes, support.end_date)) fail(`end_date ${support.end_date} is not written in any evidence quote`);
+    if (support.anchor_date && !mentionsDate(quotes, support.anchor_date)) fail(`anchor_date ${support.anchor_date} is not written in any evidence quote`);
+    if (support.years && !mentionsYears(quotes, support.years)) fail(`years ${support.years} is not stated in any evidence quote`);
 
     for (const ev of record.evidence) {
       if (ev.retrieved > today) fail(`evidence retrieved date ${ev.retrieved} is in the future`);
