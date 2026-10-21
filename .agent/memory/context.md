@@ -15,3 +15,4 @@
 - `gh api` works for `repos/sombreserotonin/Patchlife/...` paths only; repo settings writes and branch deletions are blocked from cloud sessions.
 - Licences: code AGPL-3.0-or-later, data ODbL-1.0.
 - Draft PRs: the REST API cannot mark a draft ready. The GitHub MCP tool `update_pull_request` with `draft: false` can, so the coordinating session marks an audited data PR ready before merging it.
+- Scheduled tasks: an agent can create one with the session tools, but it gets no repository and no connectors, so its runs have no checkout. The owner creates scheduled tasks in the claude.ai routines UI (nightly data task: #41).

@@ -68,7 +68,7 @@ All dates in records and logs are UTC (`date -u +%F`). Scheduled runs at 06:08 S
 9. **Scheduled tasks:** at https://claude.ai/code/routines, check that each Patchlife task lists no connectors (Edit > Advanced settings > Connectors).
 
 ### O6 Create the nightly `Crawl` scheduled task
-**When:** decision P1 is B. The prompt fixes (#29) make `data-refresh.md` do one source per run, re-verify with `--due 60 --limit 40`, and leave new records for an audit.
+**When:** decision P1 is B (D27). The prompt fixes (#29) make `data-refresh.md` do one source per run, re-verify with `--due 60 --limit 40`, and leave new records for an audit. Create it in the UI: a scheduled task an agent creates from a session has no repository attached (tested 21 Oct 2026).
 1. Go to https://claude.ai/code/routines and select **New task**, then **Set up manually**.
 2. Name it `Patchlife nightly data`. Prompt: `Follow .agent/prompts/data-refresh.md`.
 3. Trigger: **Schedule**, **Daily**, a few minutes past the hour and away from 06:08 Sydney, for example 01:17 Sydney time.
