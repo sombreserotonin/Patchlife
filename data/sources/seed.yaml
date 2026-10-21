@@ -34,8 +34,9 @@
   kind: years_after_eol
   urls:
     - https://www.gl-inet.com/en-us/pages/psti
-  note: Support period runs 2 years from a product's end-of-life date.
-  last_checked: null
+    - https://www.gl-inet.com/en-us/pages/psti-support-period
+  note: Support period runs 2 years from a product's end-of-life date. The second URL is the per-model table the GL.iNet records cite (24 models, "June 11, 2027 or later"). Legacy products have a separate page (/en-us/collections/legacy-products), not yet read.
+  last_checked: "2026-10-21"
 
 - brand: Kyocera
   brand_slug: kyocera
