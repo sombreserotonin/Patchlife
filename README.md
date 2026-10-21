@@ -1,11 +1,13 @@
-# LastPatch (working name)
+# Patchlife
+
+**The best-before date for your smart devices.**
 
 When does a smart device stop getting security updates? This project answers that for cameras, doorbells, routers, printers, smart plugs and more, with the manufacturer's own words as evidence.
 
 Claude Code builds and runs everything. Humans only handle the gates listed in `.agent/progress/TASKS.md` (accounts, money, secrets, legal, publishing) and merge PRs that touch workflows, agent config or dependencies.
 
 ## Start here
-1. Put this folder in a new private GitHub repo.
+1. Push this folder to a new GitHub repo with `git`. GitHub's web uploader drops dot-folders such as `.github`.
 2. Open Claude Code on the repo: the Code tab in the Claude app, claude.ai/code, or `claude` in a local clone.
 3. Paste the prompt in `KICKOFF.md`.
 4. Work through the `needs-human` issues it opens (the daily build scheduled task is H4).
@@ -31,3 +33,7 @@ npm ci            # install
 npm run validate  # check every record against the schema and integrity rules
 npm test          # unit tests
 ```
+
+## Licence
+- Code: GNU AGPL v3 or later (`LICENSE`).
+- Data in `data/`: Open Database License v1.0 (`data/LICENSE`; scope and attribution in `data/NOTICE.md`).

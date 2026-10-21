@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
+      - run: npm run validate
+      - run: npm test
+
+  protected-paths:
+    # Labels PRs that change workflows, agent config or dependencies so only a human merges them.
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+      PR: ${{ github.event.pull_request.number }}
+    steps:
+      - name: Label protected-path changes
+        run: |
+          files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename')
+          if printf '%s\n' "$files" | grep -qE '^(\.github/|\.claude/|\.agent/prompts/|CLAUDE\.md$|package(-lock)?\.json$)'; then
+            gh api -X POST "repos/$REPO/issues/$PR/labels" -f "labels[]=needs-human-merge" > /dev/null
+            echo "::warning::Protected paths changed. A human must merge this PR."
+          else
+            gh api -X DELETE "repos/$REPO/issues/$PR/labels/needs-human-merge" > /dev/null 2>&1 || true
+          fi
