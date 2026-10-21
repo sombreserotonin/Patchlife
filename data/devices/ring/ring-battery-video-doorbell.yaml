@@ -1,0 +1,31 @@
+id: ring-battery-video-doorbell
+brand: Ring
+brand_slug: ring
+model: "Battery Video Doorbell"
+aliases:
+  - "Ring Battery Video Doorbell"
+category: doorbell
+regions: [UK, AU]
+support:
+  rule: fixed_date
+  end_date: "2030-12-31"
+  years: null
+  anchor_date: null
+  at_least: true
+  conditions: "If bought new on ring.com, or on amazon.com where Amazon is the seller, at least four years from purchase or this date, whichever is later."
+evidence:
+  - url: https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "Ring Battery Video Doorbell 31 December 2030"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://ring.com/au/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "Ring Battery Video Doorbell 31 December 2030"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+verification:
+  status: verified
+  checked: "2026-10-21"
+  text_sha256: d60cb408c74e5831e1fccee3277904660eedb87653cd390b71869ad820a74c64
+notes: null

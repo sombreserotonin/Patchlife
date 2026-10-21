@@ -12,7 +12,7 @@ support:
   years: null
   anchor_date: null
   at_least: true
-  conditions: null
+  conditions: "If bought new on ring.com, or on amazon.com where Amazon is the seller, at least four years from purchase or this date, whichever is later."
 evidence:
   - url: https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
     quote: Ring Video Doorbell 3 31 December 2027
@@ -23,4 +23,4 @@ verification:
   status: verified
   checked: "2026-10-21"
   text_sha256: 12cbdeafbaccb60df3d8e9b1f95596a60fbbe5ad478f90ed0c49e37c9210fc31
-notes: Seed record. The page also describes a purchase-channel rule; record it in conditions once the UK wording is confirmed by the M1 verifier.
+notes: Seed record.
