@@ -74,8 +74,6 @@ export function ruleWords({ rule, years, anchor_date: anchor, brand }) {
 
 // The answer: SPEC 4's copy pattern, or once an "at least" date has passed, the P8 wording (D34), or for a condition that
 // can extend the period, a hedge that says some buyers get longer.
-// Draft wording: both need the owner's legal read (gate H9a). The generator marks them in the HTML; search results,
-// the meta description and the JSON-LD description carry them unmarked.
 export function answerText(device) {
   const { brand, status, end_date: end, at_least: atLeast, rule } = device;
   const source = `as published by ${brand} (${checkedPhrase(device)})`;

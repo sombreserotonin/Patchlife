@@ -17,7 +17,8 @@ const NOTICE = readFileSync(join(ROOT, "data", "NOTICE.md"), "utf8");
 const ATTRIBUTION = NOTICE.match(/Attribute it as: "([^"]+)"/)[1];
 const HOSTILE = '</script><script>alert(1)</script> "><img onerror=alert(2)>';
 const DISCLAIMER = "Support information is as published by each manufacturer. It may change and is not advice.";
-const DRAFT = "<!-- Draft wording: needs the owner's legal read (gate H9a). -->";
+// The owner approved the H9a wording in #52, so no built file may still flag it as draft.
+const H9A_MARKER = /Draft wording|gate H9a/;
 const P8_LEAP = "Minimum support period ended on 28 February 2027. Acme may still provide updates. Date as published by Acme (retrieved 1 Oct 2026).";
 
 const fixtures = () => loadRecords(VALID);
@@ -62,20 +63,11 @@ const ldJson = (page) => {
   return blocks[0];
 };
 
-// Asserts that every time the phrase starts a piece of body text, the draft marker comes right before it, with only tags
-// between. Returns how many times the phrase appears.
-function draftMarkedCount(page, phrase, label) {
-  const body = page.slice(page.indexOf("<body>"));
-  let count = 0;
-  for (let at = body.indexOf(phrase); at >= 0; at = body.indexOf(phrase, at + 1), count++) {
-    const before = body.slice(0, at);
-    const gap = before.slice(before.lastIndexOf("<!--"));
-    const ok = gap.startsWith(DRAFT) && gap.slice(DRAFT.length).replace(/<[^>]*>/g, "").trim() === "";
-    assert.ok(ok, `${label}: "${phrase}" at ${at} has no draft marker right before it`);
-  }
-  return count;
+// Asserts that the approved wording is in the page body as it was, and that the page carries no H9a draft marker.
+function assertApproved(page, phrase, label) {
+  assert.ok(page.slice(page.indexOf("<body>")).includes(phrase), `${label}: "${phrase}" not found`);
+  assert.doesNotMatch(page, H9A_MARKER, `${label} still has an H9a draft marker`);
 }
-const assertDraftMarked = (page, phrase, label) => assert.ok(draftMarkedCount(page, phrase, label) > 0, `${label}: "${phrase}" not found`);
 
 // Just enough DOM for attachSearch: elements record children, href and text.
 function fakeDom(t) {
@@ -294,18 +286,18 @@ test("a condition that can extend the period (whichever is later) gets one hedge
     assert.doesNotMatch(view, /None guaranteed|guaranteed minimum|to this date|Minimum support period ended/);
   }
   assert.ok(JSON.parse(ldJson(passed.page)).description.startsWith(HEDGE));
-  assertDraftMarked(passed.page, "The published minimum date, 28 February 2027, has passed.", "answer");
-  assertDraftMarked(passed.page, "The published minimum date has passed.", "status note");
-  assert.ok(passed.page.includes(`<dd>${DRAFT}Some buyers get longer: see Conditions.</dd>`), "time left is marked");
+  assertApproved(passed.page, "The published minimum date, 28 February 2027, has passed.", "answer");
+  assertApproved(passed.page, "The published minimum date has passed.", "status note");
+  assert.ok(passed.page.includes("<dd>Some buyers get longer: see Conditions.</dd>"), "time left has no marker");
 
   const soon = leapViews(t, CONDITIONS.purchase, "2026-10-21");
   assert.equal(soon.note, "12 months or less until the published minimum date. Some buyers get longer: see Conditions.");
-  assertDraftMarked(soon.page, "12 months or less until the published minimum date.", "ending soon note");
+  assertApproved(soon.page, "12 months or less until the published minimum date.", "ending soon note");
   assert.equal(soon.timeLeft, "At least 4 months and 7 days", "the published minimum is still a floor for every buyer");
 
   const lastDay = leapViews(t, CONDITIONS.purchase, "2027-02-28");
   assert.equal(lastDay.timeLeft, "Today is the published minimum date. Some buyers get longer: see Conditions.");
-  assert.ok(lastDay.page.includes(`<dd>${DRAFT}Today is the published minimum date.`), "last day is marked");
+  assert.ok(lastDay.page.includes("<dd>Today is the published minimum date."), "last day has no marker");
 });
 
 test("status notes for a date without at least say when updates end", (t) => {
@@ -327,7 +319,7 @@ test("the methodology says an at-least end date is a published minimum, which so
   const sentence =
     'An end date is the last day of the stated period. When the source says "at least", the date is the minimum the manufacturer publishes: updates may continue after it, and some manufacturers give some buyers longer.';
   assert.ok(words.includes(sentence), words);
-  assertDraftMarked(page, "An end date is the last day of the stated period.", "methodology");
+  assertApproved(page, "An end date is the last day of the stated period.", "methodology");
   assert.doesNotMatch(words, /An end date is the last day of support\.|it is the last guaranteed day/);
 });
 
@@ -400,23 +392,21 @@ test("every page has the licence footer, the attribution line and the status dat
   }
 });
 
-test("every draft legal sentence carries the H9a draft marker", (t) => {
+test("no built file carries an H9a draft marker, and the approved wording stays", (t) => {
   const site = build(t, { today: "2027-03-01" });
+  const files = readdirSync(site.outDir, { recursive: true }).filter((name) => lstatSync(join(site.outDir, name)).isFile());
+  assert.ok(files.includes("search.js"), "the copied search script is checked too");
+  for (const file of files) assert.doesNotMatch(site.read(file), H9A_MARKER, `${file} still has an H9a draft marker`);
   for (const file of htmlFiles(site.outDir)) {
     const page = site.read(file);
-    assertDraftMarked(page, DISCLAIMER, file);
-    assertDraftMarked(page, "Quoted manufacturer statements remain the property of their owners", file);
-    const body = page.slice(page.indexOf("<body>"));
-    const p8 = ["Minimum support period ended on", "The source gave a minimum period", "The published minimum date,"]
-      .map((phrase) => draftMarkedCount(page, phrase, file))
-      .reduce((a, b) => a + b);
-    assert.equal((body.match(/may still provide updates/g) ?? []).length, p8, `${file}: every P8 sentence is marked`);
+    assertApproved(page, DISCLAIMER, file);
+    assertApproved(page, "Quoted manufacturer statements remain the property of their owners", file);
   }
-  assert.match(site.read("brands/acme/index.html"), /may still provide updates/, "the brand page has P8 copy to check");
+  assertApproved(site.read("brands/acme/index.html"), "Minimum support period ended on", "brand page P8 copy");
   const about = site.read("about/index.html");
-  assertDraftMarked(about, "Australia's smart device rules apply", "about");
-  assertDraftMarked(about, "Claude Code, an AI coding tool", "about");
-  assertDraftMarked(site.read("methodology/index.html"), "The source gave a minimum period", "methodology");
+  assertApproved(about, "Australia's smart device rules apply", "about");
+  assertApproved(about, "Claude Code, an AI coding tool", "about");
+  assertApproved(site.read("methodology/index.html"), "The source gave a minimum period", "methodology");
 });
 
 test("coverage claims come from the categories that have records", (t) => {
