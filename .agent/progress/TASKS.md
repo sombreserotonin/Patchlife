@@ -16,7 +16,6 @@ Next for the daily build (`Default`), in order:
   - Arlo: in its note, say kb.arlo.com's robots.txt disallows all bots and www.arlo.com serves a bot challenge (D18), so it can't be used.
   - EZVIZ: add an entry for `https://support.ezviz.com/faq/article/EZVIZ-EOL-Product-List` (kind `eol_list`; hosts waiting on #23).
   - Aqara and Reolink: add entries for `https://www.aqara.com/en/security-certifications/` and `https://reolink.com/product-compliance-psti/` (kind `unknown`, note "PDF only; hosts not allowlisted").
-- [ ] `scripts/data-report.mjs`: print counts by brand, category, status and verification state, plus the oldest `checked` date, with tests. Run it as `node scripts/data-report.mjs`, with no `package.json` change. Use it to refresh the Measures table in docs/PLAN.md.
 - [ ] Verifier: add `--due <days>` and `--limit <n>` options that select records whose `checked` is empty or older than that many days, oldest first, with tests. This is for the nightly re-verify.
 
 Waiting:
@@ -36,6 +35,7 @@ Done:
 - [x] `npm run validate` checks that quotes state each record's dates and years (#20).
 - [x] Source registry format, validated by `npm run validate` (#26).
 - [x] Data, audited per RUNBOOKS A8: Ring 48 (#24), Google Nest 12 (#21), TP-Link Tapo 60 (#22). 120 verified records from three brands on `main`.
+- [x] `node scripts/data-report.mjs` prints counts by brand, category, status and verification state, plus the oldest `checked` date; the Measures table in docs/PLAN.md cites it.
 - [x] `needs-human` issues for the `Crawl` environment (#9) and the crawler contact URL (#10).
 
 ## Done: M0 (2026-10-21)

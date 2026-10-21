@@ -59,12 +59,13 @@ All dates in records and logs are UTC (`date -u +%F`). Scheduled runs at 06:08 S
 4. **Stuck PRs:** `claude/` PRs open for more than two days.
 5. **CI:** failed Actions runs on `main`.
 6. **Progress:** skim `.agent/progress/LOG.md` for the week, and the heartbeat comments on #27.
-7. **Public queue:**
+7. **Measures:** the first four rows of the Measures table in [`PLAN.md`](PLAN.md) come from `node scripts/data-report.mjs`. It reads only the local records, so any session can run it, including in `Default`.
+8. **Public queue:**
    - open `data-correction` and `add-model` issues (start O1 with A3);
    - PRs from forks (agents never merge them; close or handle them yourself);
    - data PRs waiting for an A8 audit;
    - the decisions issue.
-8. **Scheduled tasks:** at https://claude.ai/code/routines, check that each Patchlife task lists no connectors (Edit > Advanced settings > Connectors).
+9. **Scheduled tasks:** at https://claude.ai/code/routines, check that each Patchlife task lists no connectors (Edit > Advanced settings > Connectors).
 
 ### O6 Create the nightly `Crawl` scheduled task
 **When:** decision P1 is B **and** the prompt-fix PR is merged. That PR makes `data-refresh.md` do one source per run, re-verify by id, and leave new records for an audit. Don't create the task before then.
