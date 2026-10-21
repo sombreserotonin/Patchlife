@@ -9,7 +9,6 @@ Rules for the daily build:
 - Never mark M1 done or write M2 tasks. Only the `Crawl` session that runs the M1 exit check may do that, and only if it passes.
 
 Next for the daily build (`Default`), in order:
-- [ ] Verifier: when the final URL after redirects has a different origin or path from the cited URL, report `error (redirected to <final url>)` instead of checking the quote, so a homepage redirect is not read as "quote not found". Ignore a trailing slash and any change to the query string. Test both cases with the fake fetcher in `tests/verify-evidence.test.mjs`, and add the outcome to the RUNBOOKS A1 table.
 
 Waiting:
 - [ ] Google Nest Australian statements of compliance for 6 of the merged models, linked from `https://support.google.com/chromecast/answer/10367042`, per RUNBOOKS A2 with region `AU` and model-number aliases, then an A8 audit (found by the #21 audit; needs a `Crawl` session).
@@ -31,6 +30,7 @@ Done:
 - [x] Verifier options `--due <days>` and `--limit <n>` select the verified records to re-verify, oldest first (#37).
 - [x] Data, audited per RUNBOOKS A8: Ring 48 (#24), Google Nest 12 (#21), TP-Link Tapo 60 (#22). 120 verified records from three brands on `main`.
 - [x] `node scripts/data-report.mjs` prints counts by brand, category, status and verification state, plus the oldest `checked` date; the Measures table in docs/PLAN.md cites it (#35).
+- [x] Verifier reports `error (redirected to <final url>)` when the cited page redirects to another origin or path, and leaves the record unchanged (#33).
 - [x] `needs-human` issues for the `Crawl` environment (#9) and the crawler contact URL (#10).
 
 ## Done: M0 (2026-10-21)

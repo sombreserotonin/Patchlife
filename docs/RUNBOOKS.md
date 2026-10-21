@@ -105,13 +105,14 @@ All dates in records and logs are UTC (`date -u +%F`). Scheduled runs at 06:08 S
 | --- | --- | --- |
 | `verified` | Every quote matched | Keep |
 | `failed (quote not found at <url>)` | The quote isn't in the page text | Re-copy the quote from the page text (A2 step 3). Never change a date to make it match |
-| `stale (...)` | A verified record's quote is gone, or its page returns 404 or 410 | A4 |
-| `error (robots.txt disallows <url>)` | The site asks bots not to fetch this page | Don't use the source (A5) |
-| `error (robots.txt unreachable (...) for <origin>)` | Blocked host, outage or bot wall | A5 |
+| `stale (...)` | A verified record's quote is gone, or the cited page itself returns 404 or 410 | A4 |
+| `error (robots.txt disallows <url>)` | The site asks bots not to fetch this page | Don't use the source (A5). If `<url>` has a different origin from the cited URL, the cited page redirected there: A4 first |
+| `error (robots.txt unreachable (...) for <origin>)` | Blocked host, outage or bot wall | A5. If `<origin>` differs from the cited URL's origin, the cited page redirected there: A4 first |
 | `error (HTTP 403 for <url>)` or a bot challenge | Bot wall | Don't use the source (A5) |
 | `error (HTTP 429 ...)`, `(HTTP 5xx ...)`, `(<host> asked us to back off)` | Temporary | Retry in a later run; change nothing |
 | `error (unsupported content type "application/pdf" ...)` | PDF source | Leave unverified until PDF support lands |
 | `error (HTTP 404 for <url>)` on an unverified record | Wrong URL | Re-check the URL on the maker's site (A2 step 1) |
+| `error (redirected to <url>)` or `error (redirected to <url>, HTTP <status>)` | The cited page now redirects to another site or page, such as the homepage. The status is that page's error | Find where the statement moved (A4). A login page or bot challenge: A5 |
 | `error (no record with this id)` | Typo in the ids | Re-run with the right id |
 | `error (more than 5 redirects ...)`, a timeout or `fetch failed` | Network or site problem | Retry in a later run; change nothing |
 | `skipped (none_published)` or `skipped (disputed)` | Not checked by design | None |
@@ -135,6 +136,7 @@ All dates in records and logs are UTC (`date -u +%F`). Scheduled runs at 06:08 S
    console.log(`${url} (${contentType})`);
    console.log(htmlToText(text).replace(/\s+/g, " ").trim());' "<source URL>" | fold -s -w 300 > /tmp/page.txt
    ```
+   The first output line is the final URL after redirects. If it differs from the URL you passed by more than a trailing slash, query string or fragment, the verifier will report `error (redirected to ...)`, so cite the printed URL instead.
    Find a model's row with `grep -n -i '<model>' /tmp/page.txt`. A quote may span a line break, because the verifier collapses whitespace. Never take quotes from Claude Code's fetch tool or a connector: they summarise pages or fetch them as someone else (D17).
 4. Follow the `add-device-record` skill for each model. In particular:
    - The quote must contain the record's end date, anchor date and number of years (`npm run validate` checks this).
