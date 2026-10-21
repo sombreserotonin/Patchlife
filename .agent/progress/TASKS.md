@@ -11,7 +11,6 @@ Rules for the daily build:
 Next for the daily build (`Default`), in order:
 - [ ] Verifier: when the final URL after redirects has a different origin or path from the cited URL, report `error (redirected to <final url>)` instead of checking the quote, so a homepage redirect is not read as "quote not found". Ignore a trailing slash and any change to the query string. Test both cases with the fake fetcher in `tests/verify-evidence.test.mjs`, and add the outcome to the RUNBOOKS A1 table.
 - [ ] `scripts/data-report.mjs`: print counts by brand, category, status and verification state, plus the oldest `checked` date, with tests. Run it as `node scripts/data-report.mjs`, with no `package.json` change. Use it to refresh the Measures table in docs/PLAN.md.
-- [ ] Verifier: add `--due <days>` and `--limit <n>` options that select records whose `checked` is empty or older than that many days, oldest first, with tests. This is for the nightly re-verify.
 
 Waiting:
 - [ ] Google Nest Australian statements of compliance for 6 of the merged models, linked from `https://support.google.com/chromecast/answer/10367042`, per RUNBOOKS A2 with region `AU` and model-number aliases, then an A8 audit (found by the #21 audit; needs a `Crawl` session).

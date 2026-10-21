@@ -4,7 +4,7 @@ import { cpSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
-import { htmlToText, normalise, quoteMatches, verifyDevices, verifyRecord } from "../scripts/verify-evidence.mjs";
+import { htmlToText, normalise, quoteMatches, selectRecords, verifyDevices, verifyRecord } from "../scripts/verify-evidence.mjs";
 import { validateDevices } from "../scripts/validate-data.mjs";
 
 const html = readFileSync(new URL("./fixtures/evidence/ring-policy.html", import.meta.url), "utf8");
@@ -175,4 +175,59 @@ test("verifyDevices skips disputed records and reports unknown ids", async () =>
     { id: "acme-nope", outcome: "error", reason: "no record with this id" },
   ]);
   assert.equal(read("acme-cam-1"), before);
+});
+
+// selectRecords is given records in file order. TODAY is 2026-10-21, so 30 days before it is 2026-09-21.
+const due = (id, checked, status = "verified") => ({ id, support: { rule: "fixed_date" }, verification: { status, checked } });
+const DUE = [
+  due("a", "2026-09-21"),
+  due("b", "2026-09-20"),
+  due("c", null, "unverified"),
+  due("d", "2026-01-01"),
+  due("e", "2026-10-20"),
+  { id: "f", support: { rule: "fixed_date" }, verification: { status: "unverified" } },
+];
+
+test("selectRecords picks records never checked or checked more than due days ago, oldest and never checked first", () => {
+  assert.deepEqual(selectRecords(DUE, { due: 30, today: TODAY }), ["c", "f", "d", "b"]);
+});
+
+test("selectRecords counts a record checked exactly due days ago as not due, in UTC dates", () => {
+  assert.deepEqual(selectRecords([due("a", "2026-09-21"), due("b", "2026-09-20")], { due: 30, today: TODAY }), ["b"]);
+  assert.deepEqual(selectRecords([due("a", "2026-10-21"), due("b", "2026-10-20")], { due: 0, today: TODAY }), ["b"]);
+  assert.deepEqual(selectRecords([due("a", "2024-02-29"), due("b", "2024-02-28")], { due: 1, today: "2024-03-01" }), ["b"]);
+});
+
+test("selectRecords applies the limit after sorting, with or without due", () => {
+  assert.deepEqual(selectRecords(DUE, { due: 30, limit: 3, today: TODAY }), ["c", "f", "d"]);
+  assert.deepEqual(selectRecords(DUE, { limit: 5, today: TODAY }), ["c", "f", "d", "b", "a"]);
+  assert.deepEqual(selectRecords(DUE, { limit: 0, today: TODAY }), []);
+});
+
+test("selectRecords narrows named ids, and with due or limit leaves out records the verifier skips", () => {
+  const all = [...DUE, { ...due("n", null), support: { rule: "none_published" } }, due("x", null, "disputed")];
+  assert.deepEqual(selectRecords(all, { today: TODAY }), ["a", "b", "c", "d", "e", "f", "n", "x"]);
+  assert.deepEqual(selectRecords(all, { ids: ["n", "e", "b"], today: TODAY }), ["b", "e", "n"]);
+  assert.deepEqual(selectRecords(all, { ids: ["n", "e", "b"], due: 30, today: TODAY }), ["b"]);
+  assert.deepEqual(selectRecords(all, { limit: 2, today: TODAY }), ["c", "f"]);
+});
+
+test("verifyDevices with due and limit checks only the selected records, and nothing when none is due", async () => {
+  const { dir, get, fetched } = setupDevices();
+  assert.deepEqual(outcomes(await verifyDevices(dir, { get, today: TODAY, due: 30 })), {
+    "acme-leap-5": "verified",
+    "acme-plug-3": "verified",
+    "acme-router-2": "verified",
+  });
+  const fetches = fetched.length;
+  assert.deepEqual(await verifyDevices(dir, { get, today: TODAY, due: 30 }), []);
+  assert.equal(fetched.length, fetches);
+
+  // acme-cam-1 was checked 19 days ago, so it is not due, and it is not an unknown id either.
+  const named = setupDevices();
+  const results = await verifyDevices(named.dir, { get: named.get, today: TODAY, due: 30, limit: 1, ids: ["acme-cam-1", "acme-router-2", "acme-nope"] });
+  assert.deepEqual(results, [
+    { id: "acme-router-2", outcome: "verified" },
+    { id: "acme-nope", outcome: "error", reason: "no record with this id" },
+  ]);
 });

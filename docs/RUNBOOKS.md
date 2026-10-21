@@ -95,6 +95,8 @@ All dates in records and logs are UTC (`date -u +%F`). Scheduled runs at 06:08 S
 ### A1 Run the verifier (`Crawl`)
 1. Run `npm ci`, and check that `node --version` is 22.21 or later.
 2. Run `npm run verify:evidence -- <ids>`, passing only the records you touched or that are due.
+   - `--due <days>` checks only records whose `checked` date is empty or more than `<days>` days before today (UTC), oldest first, and `--limit <n>` checks at most `<n>` of them. For example: `npm run verify:evidence -- --due 60 --limit 20`.
+   - With ids as well, the options choose only among those ids. With either option, `none_published` and `disputed` records are left out instead of being listed as skipped.
 3. Read each outcome:
 
 | Output | Meaning | Action |
