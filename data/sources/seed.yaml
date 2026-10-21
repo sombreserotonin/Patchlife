@@ -16,16 +16,17 @@
   kind: eol_list
   urls:
     - https://kb.arlo.com/000063018/Arlo-Legacy-Cameras-End-of-Life
-  note: End-of-life list; critical security updates for one year after the EOL date.
+  note: End-of-life list; critical security updates for one year after the EOL date. Can't be used (D18) because kb.arlo.com's robots.txt disallows all bots and www.arlo.com serves a bot challenge.
   last_checked: null
 
 - brand: TP-Link
   brand_slug: tp-link
-  kind: years_after_eol
+  kind: per_model_dates
   urls:
+    - https://www.tp-link.com/au/landing/au-cyber-compliance/
     - https://www.tp-link.com/uk/support/psti/
     - https://www.tp-link.com/uk/support/faq/3562/
-  note: Support ends 3 years after a product's end-of-life date; the second URL covers end-of-life products.
+  note: The AU page gives a date per model and hardware version; the Tapo records (#22) cite it. The UK pages give 3 years after a product's end-of-life date; the UK per-model periods are only in a PDF.
   last_checked: null
 
 - brand: GL.iNet
@@ -60,9 +61,11 @@
 
 - brand: Google
   brand_slug: google
-  kind: unknown
-  urls: [https://support.google.com/product-documentation/answer/14869041?hl=en]
-  note: From a 2024 list. Should cover Nest cameras and doorbells.
+  kind: per_model_dates
+  urls:
+    - https://support.google.com/product-documentation/answer/10231940?hl=en
+    - https://support.google.com/product-documentation/answer/14869041?hl=en
+  note: The first URL is the Nest table the Google records cite (#21); the second is from a 2024 list.
   last_checked: null
 
 - brand: Lenovo
@@ -98,4 +101,25 @@
   kind: lead_only
   urls: [https://cie-group.com/compliances-bsi/]
   note: A distributor page says support ends 1 year after end of life. Lead only; find Grandstream's own statement.
+  last_checked: null
+
+- brand: EZVIZ
+  brand_slug: ezviz
+  kind: eol_list
+  urls: [https://support.ezviz.com/faq/article/EZVIZ-EOL-Product-List]
+  note: End-of-life product list. Hosts not allowlisted yet (#23).
+  last_checked: null
+
+- brand: Aqara
+  brand_slug: aqara
+  kind: unknown
+  urls: [https://www.aqara.com/en/security-certifications/]
+  note: PDF only; hosts not allowlisted.
+  last_checked: null
+
+- brand: Reolink
+  brand_slug: reolink
+  kind: unknown
+  urls: [https://reolink.com/product-compliance-psti/]
+  note: PDF only; hosts not allowlisted.
   last_checked: null
