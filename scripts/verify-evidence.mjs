@@ -1,12 +1,13 @@
 // Checks that each evidence quote appears in the source page (SPEC 3) and records the result in the YAML.
 // Also keeps one hash per evidence URL in data/sources/page-hashes.json and reports which pages changed since the
-// last run. Stores hashes, never pages. PDF extraction and archive snapshots are not built yet.
+// last run. Reads HTML, plain text and PDF (D29). Stores hashes, never pages. Archive snapshots are not built yet.
 // Usage: node --use-env-proxy scripts/verify-evidence.mjs [--due <days>] [--limit <n>] [id ...]
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
+import { extractText, getDocumentProxy } from "unpdf";
 import YAML from "yaml";
 import { createFetcher } from "./polite-fetch.mjs";
 import { listYamlFiles, normalise } from "./validate-data.mjs";
@@ -55,18 +56,36 @@ export function htmlToText(html) {
 
 export { normalise };
 
+// The text of a PDF, its pages joined by newlines. Throws when the bytes are not a readable PDF. pdf.js detaches the
+// bytes' buffer, so they can be read only once.
+export async function pdfToText(bytes) {
+  const pdf = await getDocumentProxy(bytes, { verbosity: 0 });
+  return (await extractText(pdf, { mergePages: true })).text;
+}
+
+// The text of a fetched page: HTML and plain text through htmlToText, a PDF through pdfToText.
+export async function pageText({ url, contentType, text, bytes }) {
+  if (TEXT_TYPES.has(contentType)) return htmlToText(text);
+  if (contentType === "application/pdf") {
+    return pdfToText(bytes).catch((err) => {
+      throw new Error(`unreadable PDF at ${url} (${err.message})`);
+    });
+  }
+  throw new Error(`unsupported content type "${contentType}" at ${url}`);
+}
+
 export function quoteMatches(quote, text) {
   const wanted = normalise(quote);
   return wanted !== "" && normalise(text).includes(wanted);
 }
 
-// texts[i] is the HTML of record.evidence[i].url, or null when it could not be fetched.
+// texts[i] is the text of record.evidence[i].url (from pageText), or null when it could not be fetched.
 export function verifyRecord(record, texts, today = new Date().toISOString().slice(0, 10)) {
   if (record.support.rule === "none_published") return { ok: false, reason: "none_published records have no quote to verify" };
   const normalised = [];
   for (const [i, item] of record.evidence.entries()) {
     if (texts[i] == null) return { ok: false, reason: `no text for ${item.url}` };
-    const text = normalise(htmlToText(texts[i]));
+    const text = normalise(texts[i]);
     if (!quoteMatches(item.quote ?? "", text)) return { ok: false, reason: `quote not found at ${item.url}` };
     normalised.push(text);
   }
@@ -75,8 +94,8 @@ export function verifyRecord(record, texts, today = new Date().toISOString().sli
 }
 
 // The hash of one page's normalised text. For a record with one evidence URL it equals the record's text_sha256.
-function pageHash(html) {
-  return createHash("sha256").update(normalise(htmlToText(html))).digest("hex");
+function pageHash(text) {
+  return createHash("sha256").update(normalise(text)).digest("hex");
 }
 
 // Reads the stored page hashes: a JSON object of evidence URL to hash, or {} when the file does not exist yet.
@@ -140,9 +159,9 @@ export async function verifyDevices(devicesDir, { ids = [], due, limit, get = cr
   const pages = new Map();
   const page = (url) => {
     if (!pages.has(url)) {
-      pages.set(url, get(url).then(({ url: finalUrl, contentType, text }) => {
-        if (!samePage(url, finalUrl)) throw new Error(`redirected to ${finalUrl}`);
-        if (!TEXT_TYPES.has(contentType)) throw new Error(`unsupported content type "${contentType}" at ${url}`);
+      pages.set(url, get(url).then(async (fetched) => {
+        if (!samePage(url, fetched.url)) throw new Error(`redirected to ${fetched.url}`);
+        const text = await pageText({ ...fetched, url });
         hashes.set(url, pageHash(text));
         return text;
       }, (err) => {

@@ -6,10 +6,15 @@ import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { htmlToText, normalise, pageReport, quoteMatches, selectRecords, verifyDevices, verifyRecord } from "../scripts/verify-evidence.mjs";
+import { htmlToText, normalise, pageReport, pdfToText, quoteMatches, selectRecords, verifyDevices, verifyRecord } from "../scripts/verify-evidence.mjs";
 import { validateDevices } from "../scripts/validate-data.mjs";
 
 const html = readFileSync(new URL("./fixtures/evidence/ring-policy.html", import.meta.url), "utf8");
+const page = htmlToText(html);
+// A one-page PDF with three lines of text: "Acme end-of-life dates", "Router 2 End of Life 31 March 2025" and
+// "Models <with> notes & more".
+// pdf.js detaches the bytes it reads, so each use gets a fresh copy.
+const pdf = () => new Uint8Array(readFileSync(new URL("./fixtures/evidence/acme-eol.pdf", import.meta.url)));
 const TODAY = "2026-10-21";
 const record = (quote = "Ring Video Doorbell 3 31 December 2027") => ({
   support: { rule: "fixed_date" },
@@ -53,7 +58,7 @@ test("a changed date does not match", () => {
 });
 
 test("a matching quote marks the record verified with the hash of the normalised text", () => {
-  const result = verifyRecord(record(), [html], TODAY);
+  const result = verifyRecord(record(), [page], TODAY);
   assert.equal(result.ok, true);
   assert.deepEqual(result.verification, {
     status: "verified",
@@ -63,7 +68,7 @@ test("a matching quote marks the record verified with the hash of the normalised
 });
 
 test("a missing quote fails and leaves verification untouched", () => {
-  const result = verifyRecord(record("Ring Video Doorbell 3 31 December 2028"), [html], TODAY);
+  const result = verifyRecord(record("Ring Video Doorbell 3 31 December 2028"), [page], TODAY);
   assert.equal(result.ok, false);
   assert.match(result.reason, /quote not found/);
   assert.equal(result.verification, undefined);
@@ -72,13 +77,13 @@ test("a missing quote fails and leaves verification untouched", () => {
 test("every evidence item must match", () => {
   const rec = record();
   rec.evidence.push({ url: "https://example.test/other", quote: "not on this page" });
-  assert.equal(verifyRecord(rec, [html, html], TODAY).ok, false);
+  assert.equal(verifyRecord(rec, [page, page], TODAY).ok, false);
 });
 
 test("none_published has no quote to check and is not verified here", () => {
   const rec = { ...record(), support: { rule: "none_published" } };
   rec.evidence = [{ url: "https://example.test/policy" }];
-  const result = verifyRecord(rec, [html], TODAY);
+  const result = verifyRecord(rec, [page], TODAY);
   assert.equal(result.ok, false);
   assert.match(result.reason, /none_published/);
 });
@@ -146,12 +151,41 @@ test("verifyDevices leaves files unchanged when a page cannot be fetched or is n
   const pages = { ...PAGES };
   delete pages["https://example.com/acme/leap-5"];
   const { dir, get, read } = setupDevices(pages);
-  const pdf = async (url) => (url.endsWith("/eol") ? { url, contentType: "application/pdf", text: "%PDF" } : get(url));
+  const image = async (url) => (url.endsWith("/eol") ? { url, contentType: "image/png", bytes: new Uint8Array([137, 80, 78, 71]) } : get(url));
   const before = { leap: read("acme-leap-5"), router: read("acme-router-2") };
-  const { results } = await verifyDevices(dir, { get: pdf, today: TODAY, ids: ["acme-leap-5", "acme-router-2"] });
+  const { results } = await verifyDevices(dir, { get: image, today: TODAY, ids: ["acme-leap-5", "acme-router-2"] });
   assert.deepEqual(outcomes(results), { "acme-leap-5": "error", "acme-router-2": "error" });
-  assert.match(results.find((r) => r.id === "acme-router-2").reason, /unsupported content type "application\/pdf"/);
+  assert.match(results.find((r) => r.id === "acme-router-2").reason, /unsupported content type "image\/png"/);
   assert.deepEqual({ leap: read("acme-leap-5"), router: read("acme-router-2") }, before);
+});
+
+test("pdfToText returns a PDF's text as written, and throws on bytes that are not a PDF", async () => {
+  assert.equal(await pdfToText(pdf()), "Acme end-of-life dates\nRouter 2 End of Life 31 March 2025\nModels <with> notes & more");
+  await assert.rejects(pdfToText(new TextEncoder().encode("<p>not a pdf</p>")), /Invalid PDF structure/);
+});
+
+test("verifyDevices checks quotes in a PDF and hashes its text", async () => {
+  const pages = { ...PAGES };
+  delete pages["https://example.com/acme/eol"];
+  const { dir, get, read, hashFile } = setupDevices(pages);
+  const withPdf = async (url) => (url.endsWith("/eol") ? { url, contentType: "application/pdf", bytes: pdf() } : get(url));
+  const { results, pages: read_ } = await verifyDevices(dir, { get: withPdf, today: TODAY, ids: ["acme-router-2"], hashFile });
+  assert.deepEqual(results, [{ id: "acme-router-2", outcome: "verified" }]);
+  const pdfText = normalise(await pdfToText(pdf()));
+  const psti = normalise(htmlToText(PAGES["https://example.com/acme/psti"]));
+  assert.match(read("acme-router-2"), new RegExp(`text_sha256: ${createHash("sha256").update(`${psti}\n${pdfText}`).digest("hex")}`));
+  assert.deepEqual(read_.map((p) => p.url), ["https://example.com/acme/psti", "https://example.com/acme/eol"]);
+  assert.equal(JSON.parse(readFileSync(hashFile, "utf8"))["https://example.com/acme/eol"], createHash("sha256").update(pdfText).digest("hex"));
+});
+
+test("verifyDevices reports an unreadable PDF as an error and changes nothing", async () => {
+  const { dir, get, read } = setupDevices();
+  const broken = async (url) => (url.endsWith("/eol") ? { url, contentType: "application/pdf", bytes: new TextEncoder().encode("%PDF-1.4 cut short") } : get(url));
+  const before = read("acme-router-2");
+  const { results } = await verifyDevices(dir, { get: broken, today: TODAY, ids: ["acme-router-2"] });
+  assert.equal(results[0].outcome, "error");
+  assert.match(results[0].reason, /^unreadable PDF at https:\/\/example\.com\/acme\/eol \(.+\)$/);
+  assert.equal(read("acme-router-2"), before);
 });
 
 test("verifyDevices marks a verified record stale when its page is gone, but not on other errors", async () => {
@@ -341,7 +375,7 @@ test("verifyDevices keeps the stored hash of a page it could not read and drops 
   const failing = async (url) => {
     if (url.endsWith("/security")) throw Object.assign(new Error(`HTTP 500 for ${url}`), { status: 500 });
     if (url.endsWith("/leap-5")) return { ...(await get(url)), url: "https://example.com/" };
-    if (url.endsWith("/eol")) return { ...(await get(url)), contentType: "application/pdf" };
+    if (url.endsWith("/eol")) return { ...(await get(url)), contentType: "image/png" };
     return get(url);
   };
   const { results, pages } = await verifyDevices(dir, { get: failing, today: TODAY, hashFile });
