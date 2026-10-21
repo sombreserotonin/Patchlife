@@ -1,0 +1,36 @@
+id: google-nest-cam-indoor-wired-3rd-gen
+brand: Google
+brand_slug: google
+model: "Nest Cam Indoor (wired, 3rd gen)"
+aliases:
+  - "Google Nest Cam Indoor (wired, 3rd gen)"
+category: camera
+regions: [GLOBAL]
+support:
+  rule: years_after_launch
+  end_date: "2030-10-01"
+  years: 5
+  anchor_date: "2025-10-01"
+  at_least: true
+  conditions: "Covers critical issues that Google can fix with a remote software update."
+evidence:
+  - url: https://support.google.com/product-documentation/answer/10231940?hl=en
+    quote: "Nest Cam Indoor (wired, 3rd gen) 10/1/2025 10/1/2030 Yes"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://support.google.com/product-documentation/answer/10231940?hl=en
+    quote: "Google Nest connected home devices will receive automatic security updates for at least 5 years from the date we start selling them on the US Google Store."
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://support.google.com/product-documentation/answer/10231940?hl=en
+    quote: "Security updates will address critical issues known to Google Nest that are able to be resolved with a remote software update."
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+verification:
+  status: verified
+  checked: "2026-10-21"
+  text_sha256: 2c8aecfb1c4dfe3b5dcf9f8579917873d94f474c205f4955c66d768511d34752
+notes: "Google's table gives the US Google Store release date and the release date plus 5 years (minimum), in US month/day/year format. Google's page names no region; dates are anchored to the US Google Store."
