@@ -1,0 +1,29 @@
+id: ezviz-cs-c6n-c0-2c2wf
+brand: EZVIZ
+brand_slug: ezviz
+model: "CS-C6N-C0-2C2WF"
+category: camera
+regions: [EU]
+support:
+  rule: fixed_date
+  end_date: "2028-12-31"
+  years: null
+  anchor_date: null
+  at_least: false
+  conditions: null
+evidence:
+  - url: https://support.ezviz.com/faq/article/EZVIZ-EOL-Product-List
+    quote: "Smart Home Camera CS-C6N-C0-2C2WF Europe 2028/12/31"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://support.ezviz.com/faq/article/EZVIZ-EOL-Product-List
+    quote: "About EZVIZ’s EOL (End-Of-Life) products: It means that EZVIZ no longer maintain any firmware updates (including security updates) for them, and may no longer respond to security vulnerability reports for such products either."
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+verification:
+  status: verified
+  checked: "2026-10-21"
+  text_sha256: 4aa22bab9154d0b89972660a3052af830289c529907fd657005a1f9552e24d8c
+notes: "EZVIZ lists this as the expected day of firmware update cessation for the targeted area Europe, and says its EOL means no firmware updates, including security updates. The page gives the model number only; product line on the page: Smart Home Camera."
