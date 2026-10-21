@@ -1,0 +1,15 @@
+- brand: Acme
+  brand_slug: acme
+  kind: per_model_dates
+  urls:
+    - https://example.com/acme/security
+    - https://example.com/acme/us/security
+  note: Per-model dates in a table.
+  last_checked: "2026-10-21"
+
+- brand: Globex
+  brand_slug: globex
+  kind: eol_list
+  urls: [https://example.com/globex/end-of-life]
+  note: End-of-life list.
+  last_checked: null
