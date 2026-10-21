@@ -12,7 +12,7 @@ support:
   years: null
   anchor_date: null
   at_least: true
-  conditions: "If bought new on ring.com or from Amazon as the seller, at least four years from purchase or this date, whichever is later."
+  conditions: "If bought new on ring.com, or on amazon.com where Amazon is the seller, at least four years from purchase or this date, whichever is later."
 evidence:
   - url: https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
     quote: "Car Cam 31 December 2027"

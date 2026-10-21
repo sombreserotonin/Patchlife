@@ -12,7 +12,7 @@ support:
   years: null
   anchor_date: null
   at_least: true
-  conditions: "If bought new on ring.com or from Amazon as the seller, at least four years from purchase or this date, whichever is later."
+  conditions: "If bought new on ring.com, or on amazon.com where Amazon is the seller, at least four years from purchase or this date, whichever is later."
 evidence:
   - url: https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
     quote: "Ring Video Doorbell 4 (2021 release) 31 December 2027"
@@ -28,4 +28,4 @@ verification:
   status: verified
   checked: "2026-10-21"
   text_sha256: d60cb408c74e5831e1fccee3277904660eedb87653cd390b71869ad820a74c64
-notes: null
+notes: Ring's US page gives 31 December 2029 for this model, so this record covers only the regions with the 2027 date.
