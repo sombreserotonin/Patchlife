@@ -9,13 +9,13 @@ Rules for the daily build:
 - Never mark M1 done or write M2 tasks. Only the `Crawl` session that runs the M1 exit check may do that, and only if it passes.
 
 Next for the daily build (`Default`), in order:
-- (none: every `Default` task is done; follow the rules above)
+- [ ] Validator: make numeric dates unambiguous. `mentionsDate` in `scripts/validate-data.mjs` accepts both day/month/year and month/day/year, so "3/4/2027" passes for both 2027-04-03 and 2027-03-04 (Google's quotes are month/day, TP-Link AU's are day/month). Add an optional `date_order: dmy | mdy` to source registry entries (`data/sources/*.yaml`, schema in `data/schema/source.schema.json`); for evidence whose URL starts with one of an entry's URLs, accept only that numeric order. A numeric date whose day and month are both 12 or under and differ, on evidence no entry covers, fails validation. Set `date_order` on the Google (mdy) and TP-Link (dmy) entries. Tests for both orders and the uncovered case. No change to `data/devices`.
+- [ ] Validator: every record's `model` or one of its `aliases` must appear in at least one evidence quote (normalised as the verifier does), and no alias or model may be shared by two records of the same brand unless they are region-date splits of one product (D33: same `model`, different regions). Tests. All 122 current records should pass; if any fails, list it in the PR instead of editing data.
 
 Waiting:
 - [ ] EZVIZ camera records per RUNBOOKS A2, then an A8 audit by a second session: the fourth brand (waiting on #23, then the owner starting `Crawl` sessions, O1).
 - [ ] M1 exit check (waiting on the EZVIZ task, then a `Crawl` session): run a full `npm run verify:evidence`. Mark M1 done in ROADMAP.md and write the M2 tasks only if at least 50 records are `verified` across at least four brands. With fewer brands, leave M1 open and say why in the PR.
 
-- [ ] Region-date records (D33): add `ring-video-doorbell-4-us` for Ring's US date (31 December 2029), and any other Ring model whose US date differs from its UK and AU date, per RUNBOOKS A2, then an A8 audit (needs `Crawl`).
 - [ ] Draft #34, the M2 site generator: P2 is decided (D28); merge after the final re-review of its fixes. It stays a draft until then.
 
 Leads for after M1 (need `Crawl`): Google's regulatory page `https://support.google.com/chromecast/answer/10367042` also links Australian statements for Google TV Streamer (4K), Google Nest Mini, Google Nest Wifi Pro and Nest x Yale Lock (found by the #36 audit).
@@ -35,6 +35,7 @@ Done:
 - [x] Verifier options `--due <days>` and `--limit <n>` select the verified records to re-verify, oldest first (#37).
 - [x] Data, audited per RUNBOOKS A8: Ring 48 (#24), Google Nest 12 (#21), TP-Link Tapo 60 (#22). 120 verified records from three brands on `main`.
 - [x] Google's Australian statements added to 6 Google Nest records, audited (#36).
+- [x] Ring region-date records (D33): `ring-video-doorbell-4-us` and `ring-spotlight-cam-4k-pro-au-us` (#43); missing regions added to 7 Ring records (#44); former product names from Ring's name-change article added as aliases to 14 records (#45). All audited. Not settled from Ring's own pages, so unchanged: the AU "Ring Video Doorbell" row (no generation named) and the US Battery Doorbell, Battery Doorbell Plus, Battery Doorbell Pro, Floodlight Cam Plus and Floodlight Cam Pro rows.
 - [x] `node scripts/data-report.mjs` prints counts by brand, category, status and verification state, plus the oldest `checked` date; the Measures table in docs/PLAN.md cites it (#35).
 - [x] Verifier reports `error (redirected to <final url>)` when the cited page redirects to another origin or path, and leaves the record unchanged (#33).
 - [x] `needs-human` issues for the `Crawl` environment (#9) and the crawler contact URL (#10).
