@@ -20,7 +20,7 @@ evidence:
     archive_url: null
     regime: vendor_policy
 verification:
-  status: unverified
-  checked: null
-  text_sha256: null
+  status: verified
+  checked: "2026-10-21"
+  text_sha256: 12cbdeafbaccb60df3d8e9b1f95596a60fbbe5ad478f90ed0c49e37c9210fc31
 notes: Seed record. The page also describes a purchase-channel rule; record it in conditions once the UK wording is confirmed by the M1 verifier.

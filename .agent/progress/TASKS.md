@@ -5,8 +5,8 @@
 - [x] Evidence verifier core as in SPEC 3 for HTML (`scripts/verify-evidence.mjs`: text extraction, normalise, match, hash), with offline fixture tests.
 - [x] Crawler contact page `docs/CRAWLER.md` (owner chose option A in #10). Contact URL: `https://github.com/sombreserotonin/Patchlife/blob/main/docs/CRAWLER.md`.
 - [x] Polite fetcher (`scripts/polite-fetch.mjs`: robots.txt per RFC 9309, one request per second per host, back-off, redirects, 30-second timeout) and the verifier CLI that writes `verified` or `stale` back to the YAML (`verifyDevices` in `scripts/verify-evidence.mjs`). Offline tests only; reviewed by a multi-agent workflow and 13 confirmed defects fixed.
-- [ ] Wire `npm run verify:evidence` into `package.json` and CLAUDE.md: PR #16 is open with `needs-human-merge`; the owner merges it.
-- [ ] Run `npm run verify:evidence` in a `Crawl` session on the two Ring seed records. This confirms the `Crawl` allowlist and proxy work before adding records.
+- [x] Wire `npm run verify:evidence` into `package.json` and CLAUDE.md: PR #16, merged by the owner.
+- [x] Run `npm run verify:evidence` in a `Crawl` session on the two Ring seed records. This confirms the `Crawl` allowlist and proxy work before adding records.
 - [ ] PDF to text (needs a dependency, so a `package.json` PR with a human merge) and archive snapshots (no official documentation for the Wayback "save" API was found; build and test it in `Crawl`). Real fetches run only in `Crawl` (D12); the daily build runs in Default, so build and test offline there.
 - [x] Open `needs-human` issues for the network the verifier needs: the `crawl` environment (H5, pulled forward from M3) #9 and the crawler contact URL (from H9) #10. Cloud sessions in the Default environment cannot reach manufacturer sites from the shell.
 - [ ] Formalise the source registry format in `data/sources/*.yaml` and validate it.

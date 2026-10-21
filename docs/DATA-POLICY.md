@@ -10,6 +10,7 @@ News, forums, retailers, distributors and AI answers are leads only, never evide
 ## Quotes
 - Verbatim: the shortest span that states the date or rule for that model, 300 characters at most.
 - Table rows: quote the cell texts joined by single spaces, for example `Ring Video Doorbell 3 31 December 2027`.
+- The quotes must state what the record states: a `fixed_date` record's end date, any anchor date, and the number of years in a relative rule. `npm run validate` rejects a record whose dates or years are not written in any of its quotes.
 - Store only quotes and facts, never whole pages or images.
 
 ## Accuracy
