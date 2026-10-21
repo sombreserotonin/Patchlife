@@ -5,6 +5,8 @@ model: "Battery Doorbell 4K Pro"
 aliases:
   - "Ring Battery Doorbell 4K Pro"
   - "Battery Doorbell 4K Pro"
+  - "Battery Doorbell Pro (2nd Gen)"
+  - "Battery Video Doorbell Pro (2nd Gen)"
 category: doorbell
 regions: [UK, AU, US]
 support:
@@ -30,8 +32,23 @@ evidence:
     retrieved: "2026-10-21"
     archive_url: null
     regime: vendor_policy
+  - url: https://ring.com/support/articles/538eg/ring-product-name-changes
+    quote: "Battery Doorbell Pro (2nd Gen) Battery Doorbell 4K Pro"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://ring.com/au/en/support/articles/538eg/ring-product-name-changes
+    quote: "Battery Video Doorbell Pro (2nd Gen) Battery Doorbell 4K Pro"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://ring.com/gb/en/support/articles/538eg/ring-product-name-changes
+    quote: "Battery Video Doorbell Pro (2nd Gen) Battery Doorbell 4K Pro"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
 verification:
   status: verified
   checked: "2026-10-21"
-  text_sha256: 0601354d95f1e9c47d83a5e1944f713bc81cf501fc7078fe1b7fc2bcbd2ec4cf
+  text_sha256: 9b4b5fcb11de22f7060fd06bfceca3930cf1c04eee09389d14e85c143774709a
 notes: null
