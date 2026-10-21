@@ -4,8 +4,9 @@ brand_slug: google
 model: "Nest Cam Indoor (wired, 3rd gen)"
 aliases:
   - "Google Nest Cam Indoor (wired, 3rd gen)"
+  - "G1NRR"
 category: camera
-regions: [GLOBAL]
+regions: [GLOBAL, AU]
 support:
   rule: years_after_launch
   end_date: "2030-10-01"
@@ -29,8 +30,18 @@ evidence:
     retrieved: "2026-10-21"
     archive_url: null
     regime: vendor_policy
+  - url: https://support.google.com/product-documentation/answer/16889039?hl=en
+    quote: "Google Nest Cam Indoor (wired, 3rd generation)(G1NRR)"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: au_smart_device_rules
+  - url: https://support.google.com/product-documentation/answer/16889039?hl=en
+    quote: "At least five years from when the device first became available on the Google Store in the US, ending no earlier than October 1, 2030"
+    retrieved: "2026-10-21"
+    archive_url: null
+    regime: au_smart_device_rules
 verification:
   status: verified
   checked: "2026-10-21"
-  text_sha256: 2c8aecfb1c4dfe3b5dcf9f8579917873d94f474c205f4955c66d768511d34752
-notes: "Google's table gives the US Google Store release date and the release date plus 5 years (minimum), in US month/day/year format. Google's page names no region; dates are anchored to the US Google Store."
+  text_sha256: d354c84f0de567b1bcdbb023e6123897120d9ceb3ab9e38e10a876471a201bae
+notes: "Google's table gives the US Google Store release date and the release date plus 5 years (minimum), in US month/day/year format. Google's page names no region; dates are anchored to the US Google Store. Also listed in Google's Australian Cyber Security Rules statement of compliance (February 2026), which applies where sold in Australia."
