@@ -19,8 +19,13 @@ evidence:
     retrieved: "2026-10-22"
     archive_url: null
     regime: vendor_policy
+  - url: https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "We'll support your device with software security updates until at least four years from when you bought it new on amazon.com where Amazon is the seller or on ring.com (or, in each case, until the date stated below if later)."
+    retrieved: "2026-10-22"
+    archive_url: null
+    regime: vendor_policy
 verification:
   status: verified
   checked: "2026-10-22"
-  text_sha256: 12cbdeafbaccb60df3d8e9b1f95596a60fbbe5ad478f90ed0c49e37c9210fc31
+  text_sha256: 94d8a63a98a72dd9a3ae55e43a50306af4d1f67caeb23c969d09b24e425c0f3e
 notes: null

@@ -22,14 +22,29 @@ evidence:
     retrieved: "2026-10-21"
     archive_url: null
     regime: vendor_policy
+  - url: https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "We'll support your device with software security updates until at least four years from when you bought it new on amazon.com where Amazon is the seller or on ring.com (or, in each case, until the date stated below if later)."
+    retrieved: "2026-10-22"
+    archive_url: null
+    regime: vendor_policy
   - url: https://ring.com/au/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
     quote: "Ring Battery Doorbell 2K Plus 31 December 2031"
     retrieved: "2026-10-21"
     archive_url: null
     regime: vendor_policy
+  - url: https://ring.com/au/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "We'll support your device with software security updates until at least four years from when you bought it new on amazon.com where Amazon is the seller or on ring.com (or, in each case, until the date stated below if later)."
+    retrieved: "2026-10-22"
+    archive_url: null
+    regime: vendor_policy
   - url: https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
     quote: "Battery Doorbell 2K Plus 31 December 2031"
     retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "We'll support your device with software security updates until at least four years from when you bought it new on amazon.com where Amazon is the seller or on ring.com (or, in each case, until the date stated below if later)."
+    retrieved: "2026-10-22"
     archive_url: null
     regime: vendor_policy
   - url: https://ring.com/support/articles/538eg/ring-product-name-changes
@@ -49,6 +64,6 @@ evidence:
     regime: vendor_policy
 verification:
   status: verified
-  checked: "2026-10-21"
-  text_sha256: 9b4b5fcb11de22f7060fd06bfceca3930cf1c04eee09389d14e85c143774709a
+  checked: "2026-10-22"
+  text_sha256: 08321d6897b4e578b2b17af308efa00b4d8c76cbb0f054c3160cbef939b1b3d2
 notes: null

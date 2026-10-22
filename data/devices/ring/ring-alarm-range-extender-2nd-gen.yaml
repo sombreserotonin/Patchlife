@@ -20,13 +20,23 @@ evidence:
     retrieved: "2026-10-22"
     archive_url: null
     regime: vendor_policy
+  - url: https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "We'll support your device with software security updates until at least four years from when you bought it new on amazon.com where Amazon is the seller or on ring.com (or, in each case, until the date stated below if later)."
+    retrieved: "2026-10-22"
+    archive_url: null
+    regime: vendor_policy
   - url: https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
     quote: "Alarm Range Extender (2nd Gen) 31 December 2030"
+    retrieved: "2026-10-22"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "We'll support your device with software security updates until at least four years from when you bought it new on amazon.com where Amazon is the seller or on ring.com (or, in each case, until the date stated below if later)."
     retrieved: "2026-10-22"
     archive_url: null
     regime: vendor_policy
 verification:
   status: verified
   checked: "2026-10-22"
-  text_sha256: ef68204108474bd4dea7e01262a208022ed2bb45aa2e1e8ce4bbd873c2b7214b
+  text_sha256: 90de5aca0ea451815fc918f6bf71ae66f065355b1c8ed506c06d38ce46627ae4
 notes: null

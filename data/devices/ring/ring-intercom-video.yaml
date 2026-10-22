@@ -19,13 +19,23 @@ evidence:
     retrieved: "2026-10-22"
     archive_url: null
     regime: vendor_policy
+  - url: https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "We'll support your device with software security updates until at least four years from when you bought it new on amazon.com where Amazon is the seller or on ring.com (or, in each case, until the date stated below if later)."
+    retrieved: "2026-10-22"
+    archive_url: null
+    regime: vendor_policy
   - url: https://ring.com/au/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
     quote: "Ring Intercom Video 31 December 2030"
+    retrieved: "2026-10-22"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://ring.com/au/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "We'll support your device with software security updates until at least four years from when you bought it new on amazon.com where Amazon is the seller or on ring.com (or, in each case, until the date stated below if later)."
     retrieved: "2026-10-22"
     archive_url: null
     regime: vendor_policy
 verification:
   status: verified
   checked: "2026-10-22"
-  text_sha256: d60cb408c74e5831e1fccee3277904660eedb87653cd390b71869ad820a74c64
+  text_sha256: 44670b5d8898614a6c87152e61f46bad944e7643d1df4d1a824eba7965322388
 notes: null
