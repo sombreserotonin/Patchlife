@@ -177,7 +177,7 @@ Tier C starts only after Tiers A and B have merged. If the Max time runs short, 
 **Tier A: housekeeping and runbooks (required before cancelling)**
 - **A1 (unprotected):**
   - `scripts/merge-bot.mjs` and `scripts/watchdog.mjs`;
-  - `scripts/check-licences.mjs`: checks each `package-lock.json` entry's `license` against the lists in D9 and D30. Whether every lockfile entry carries `license` is unverified, so it falls back to `node_modules/*/package.json`;
+  - `scripts/check-licences.mjs`: checks each `package-lock.json` entry's `license` against the lists in D9 and D30. All 116 entries carry one (22 Oct), so a missing licence is reported for a person to look at, with no fallback;
   - tests using an injected fetch. They cover forks, each label, red checks, files outside the allowlist, a SHA that moved, and an `audited` label added by the App;
   - `ops/renewals.yml`.
 - **P2 (protected; merge only once the App exists):**
@@ -192,7 +192,7 @@ Tier C starts only after Tiers A and B have merged. If the Max time runs short, 
     - gains `due` and `limit` inputs, with a default of `--limit 1000`;
     - turns "Flag records that could not be checked" into a `::warning::`;
     - falls back to today's push-only path when `vars.BOT_APP_ID` is empty.
-  - A new `data-gate.yml` (decision 3).
+  - A new `data-gate.yml` (decision 3). Its job must be named exactly `data-gate`: `merge-bot.mjs` (A1) requires a check run of that name from GitHub Actions on the head commit, so any other name means nothing ever merges.
   - **`pages.yml`:** Lighthouse moves to its own `lighthouse` job, with `if: github.event_name == 'pull_request'`. A score dip then can't block the daily rebuild that moves statuses (D7), or a bot merge.
   - **`ci.yml`:** the licence check.
   - **`concurrency: { group: crawl, queue: max }`** on `reverify.yml` and `probe-hosts.yml` [15].
@@ -352,7 +352,8 @@ Tier C starts only after Tiers A and B have merged. If the Max time runs short, 
    - Dependabot security updates on;
    - Notifications > Actions: email, failed workflows only [33];
    - watch the repository;
-   - once `data-gate` has reported on a PR, add it to the required checks in ruleset 25530330 [9].
+   - once `data-gate` has reported on a PR, add it to the required checks in ruleset 25530330 [9];
+   - a branch ruleset for `claude/reverify-*` and `claude/measures-*` that lets only the App push and blocks force pushes. Without it, anyone with write access (including AI sessions acting as you before cut-over) could push to a bot branch, and any workflow with `checks: write` could post a check run named `test` under GitHub Actions' name. Whether a personal account's rulesets can list an App as the only bypass actor is unverified.
 5. **Unraid** (20 to 65 minutes):
    - `git clone --mirror`, then `git remote update --prune` nightly;
    - a weekly `curl` export of issues and comments, which stays within the 60 unauthenticated requests allowed an hour [17];
