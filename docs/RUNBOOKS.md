@@ -112,7 +112,8 @@ All dates in records and logs are UTC (`date -u +%F`). Scheduled runs at 06:08 S
 | `error (HTTP 429 ...)`, `(HTTP 5xx ...)`, `(<host> asked us to back off)` | Temporary | Retry in a later run; change nothing |
 | `error (unsupported content type "<type>" ...)` | Not HTML, plain text or PDF | Don't use it as evidence; find the statement as a page or PDF |
 | `error (unreadable PDF at <url> (...))` | The file isn't a PDF pdf.js can read | Re-check the URL; if it is a real PDF, don't use it (A5) |
-| `failed (quote not found ...)` on a PDF that opens fine in a browser | A scanned PDF (images, no text) gives no text | Don't use it (A5); never type a quote from an image |
+| `error (no text in PDF at <url> (...))` | A scanned PDF (images only), or text in fonts pdf.js can't map, such as CJK fonts that need CMap files | Don't use it (A5); never type a quote from an image. If the PDF shows selectable text in a browser, note it in the PR: adding `pdfjs-dist` 6.1.200 (protected) gives pdf.js its CMaps |
+| `failed (quote not found ...)` on a PDF | Usually a quote that differs from the page text | Run A2 step 3 on the URL. If it prints the row, re-copy the quote from that output. If the row's words are missing although the PDF shows them, treat it as the row above |
 | `error (HTTP 404 for <url>)` on an unverified record | Wrong URL | Re-check the URL on the maker's site (A2 step 1) |
 | `error (redirected to <url>)` or `error (redirected to <url>, HTTP <status>)` | The cited page now redirects to another site or page, such as the homepage. The status is that page's error | Find where the statement moved (A4). A login page or bot challenge: A5 |
 | `error (no record with this id)` | Typo in the ids | Re-run with the right id |

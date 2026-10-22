@@ -12,7 +12,6 @@ Next for the daily build (`Default`), in order:
 - Nothing. Do housekeeping only and end with `WAITING: no Default task`.
 
 Waiting:
-- [ ] PDF text (D29): the owner merges the `unpdf` 1.8.1 dependency (#73, protected); then the code PR on `claude/pdf-text` (fetcher returns PDF bytes, verifier extracts text with unpdf) merges after `main` is merged into it. Don't start it again.
 - [ ] Owner merges #72 (protected, after #71): the `add-device-record` skill stores month-only dates as `YYYY-MM` (D38).
 - [ ] Owner merges #67 (protected): the Pages build moves to `patchlife.tech` at the root, indexed, with a sitemap. Until then every link on patchlife.tech is a 404. Then Search Console (H7).
 - [ ] Owner merges #66 (protected): the manual `Probe hosts` workflow. Then run it once and record which evidence hosts block GitHub's runners (COSTS stage 1).
@@ -24,6 +23,7 @@ Waiting:
 Leads (need `Crawl`): Google's regulatory page `https://support.google.com/chromecast/answer/10367042` also links Australian statements for Google TV Streamer (4K), Google Nest Mini, Google Nest Wifi Pro and Nest x Yale Lock (#36 audit). TP-Link's TC and TD rows (PLAN M3). Ring renames not settled by Ring's pages (#44, #45).
 
 Done:
+- [x] PDF evidence (D29): the fetcher returns PDF bytes and the verifier reads the text with unpdf 1.8.1 (#73), rebuilt line by line in reading order so table rows pair correctly; a PDF with no text fails with `no text in PDF`. Next: the PDF-only sources (Aqara, Reolink, TP-Link UK, GoPro) through the nightly task.
 - [x] Month-only dates (D38): `end_date` may be `YYYY-MM` on a `fixed_date` record. `npm run validate` requires a quote stating the month and year and rejects one that states a day in it; status counts the month's last day for ended and its first day for ending soon; the site shows "June 2027" and "ended in June 2026". The `add-device-record` skill still says to skip month-only dates until its protected PR merges.
 - [x] H9a draft markers removed (#62); numeric dates read in each source's `date_order`, and a quote must name the model, with names unique per brand except D33 splits (#64); one hash per evidence URL and a per-page change report (#63); `scripts/probe-hosts.mjs` (#65). Merged 21 Oct after a combined local merge: validate 340 records, 0 errors; test 165 of 165.
 - [x] Velica GL-B2200 (D39): UK and global records, one per stated scope (#61).

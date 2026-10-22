@@ -6,15 +6,35 @@ import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { htmlToText, normalise, pageReport, pdfToText, quoteMatches, selectRecords, verifyDevices, verifyRecord } from "../scripts/verify-evidence.mjs";
+import { htmlToText, normalise, pageReport, pageText, pdfToText, quoteMatches, selectRecords, verifyDevices, verifyRecord } from "../scripts/verify-evidence.mjs";
 import { validateDevices } from "../scripts/validate-data.mjs";
 
 const html = readFileSync(new URL("./fixtures/evidence/ring-policy.html", import.meta.url), "utf8");
 const page = htmlToText(html);
-// A one-page PDF with three lines of text: "Acme end-of-life dates", "Router 2 End of Life 31 March 2025" and
-// "Models <with> notes & more".
-// pdf.js detaches the bytes it reads, so each use gets a fresh copy.
-const pdf = () => new Uint8Array(readFileSync(new URL("./fixtures/evidence/acme-eol.pdf", import.meta.url)));
+// A one-page PDF in Helvetica 12 pt that draws each [x, y, text] in the order given.
+function makePdf(cells) {
+  const esc = (s) => s.replace(/[\\()]/g, "\\$&");
+  const stream = cells.map(([x, y, text]) => `BT /F1 12 Tf ${x} ${y} Td (${esc(text)}) Tj ET`).join("\n");
+  const objects = [
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
+    `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`,
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
+  ];
+  let pdf = "%PDF-1.4\n";
+  const offsets = objects.map((body, i) => {
+    const at = pdf.length;
+    pdf += `${i + 1} 0 obj\n${body}\nendobj\n`;
+    return at;
+  });
+  const xref = pdf.length;
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${offsets.map((at) => `${String(at).padStart(10, "0")} 00000 n \n`).join("")}`;
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  return new TextEncoder().encode(pdf);
+}
+// Three lines of text. pdf.js detaches the bytes it reads, so each use builds a fresh copy.
+const pdf = () => makePdf([[72, 720, "Acme end-of-life dates"], [72, 700, "Router 2 End of Life 31 March 2025"], [72, 680, "Models <with> notes & more"]]);
 const TODAY = "2026-10-21";
 const record = (quote = "Ring Video Doorbell 3 31 December 2027") => ({
   support: { rule: "fixed_date" },
@@ -164,6 +184,22 @@ test("pdfToText returns a PDF's text as written, and throws on bytes that are no
   await assert.rejects(pdfToText(new TextEncoder().encode("<p>not a pdf</p>")), /Invalid PDF structure/);
 });
 
+test("pdfToText reads a table row by row whatever order the cells are drawn in", async () => {
+  // Each row's date is drawn before its model, so drawing order would give "31 March 2025Router 2".
+  const dateFirst = makePdf([[400, 720, "31 March 2025"], [72, 720, "Router 2"], [400, 700, "30 June 2026"], [72, 700, "Camera 4"]]);
+  assert.equal(await pdfToText(dateFirst), "Router 2 31 March 2025\nCamera 4 30 June 2026");
+  // A whole column at a time: drawing order would put "Router 2" next to Router 1's date.
+  const byColumn = makePdf([[72, 720, "Router 1"], [72, 700, "Router 2"], [400, 720, "30 June 2024"], [400, 700, "31 March 2025"]]);
+  assert.equal(await pdfToText(byColumn), "Router 1 30 June 2024\nRouter 2 31 March 2025");
+});
+
+test("pdfToText joins pieces of a word without a space and keeps a raised suffix on its line", async () => {
+  // "Rou" is 22.008 pt wide in 12 pt Helvetica; "Router" is 37.356 pt and a space 3.336 pt.
+  assert.equal(await pdfToText(makePdf([[72, 720, "Rou"], [94.008, 720, "ter 2"]])), "Router 2");
+  assert.equal(await pdfToText(makePdf([[72, 720, "Router"], [112.692, 720, "2"]])), "Router 2");
+  assert.equal(await pdfToText(makePdf([[72, 720, "31"], [85.4, 724, "st"], [97, 720, "December 2027"]])), "31st December 2027");
+});
+
 test("verifyDevices checks quotes in a PDF and hashes its text", async () => {
   const pages = { ...PAGES };
   delete pages["https://example.com/acme/eol"];
@@ -176,6 +212,14 @@ test("verifyDevices checks quotes in a PDF and hashes its text", async () => {
   assert.match(read("acme-router-2"), new RegExp(`text_sha256: ${createHash("sha256").update(`${psti}\n${pdfText}`).digest("hex")}`));
   assert.deepEqual(read_.map((p) => p.url), ["https://example.com/acme/psti", "https://example.com/acme/eol"]);
   assert.equal(JSON.parse(readFileSync(hashFile, "utf8"))["https://example.com/acme/eol"], createHash("sha256").update(pdfText).digest("hex"));
+});
+
+test("pageText reports a PDF with no text, such as a scanned one, instead of an empty page", async () => {
+  await assert.rejects(
+    pageText({ url: "https://example.com/acme/scan.pdf", contentType: "application/pdf", bytes: makePdf([]) }),
+    { message: "no text in PDF at https://example.com/acme/scan.pdf (scanned, or fonts pdf.js can't read)" },
+  );
+  assert.equal(await pageText({ url: "x", contentType: "text/html", text: "<p>a</p><p>b</p>" }), " a  b ");
 });
 
 test("verifyDevices reports an unreadable PDF as an error and changes nothing", async () => {

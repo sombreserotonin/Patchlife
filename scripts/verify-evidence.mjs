@@ -7,7 +7,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import { extractText, getDocumentProxy } from "unpdf";
+import { extractTextItems, getDocumentProxy } from "unpdf";
 import YAML from "yaml";
 import { createFetcher } from "./polite-fetch.mjs";
 import { listYamlFiles, normalise } from "./validate-data.mjs";
@@ -56,20 +56,42 @@ export function htmlToText(html) {
 
 export { normalise };
 
-// The text of a PDF, its pages joined by newlines. Throws when the bytes are not a readable PDF. pdf.js detaches the
-// bytes' buffer, so they can be read only once.
+// One page's text in reading order: items on the same baseline form a line, read left to right, and lines run top to
+// bottom. A PDF stores text in drawing order, which in a table can put a row's date before its model or draw a whole
+// column at a time, so drawing order would pair a model with another row's date. Cells and words get a space between
+// them; pieces of one word drawn side by side don't.
+function readingOrder(items) {
+  const lines = [];
+  for (const item of items.filter((i) => i.str.trim()).sort((a, b) => b.y - a.y || a.x - b.x)) {
+    const line = lines.at(-1);
+    if (line && Math.abs(line.y - item.y) <= Math.max(line.size, item.fontSize) / 2) line.items.push(item);
+    else lines.push({ y: item.y, size: item.fontSize, items: [item] });
+  }
+  return lines.map(({ items: cells }) =>
+    cells.sort((a, b) => a.x - b.x).reduce((text, item, i) => {
+      const prev = cells[i - 1];
+      return i === 0 ? item.str : `${text}${item.x - (prev.x + prev.width) > item.fontSize / 10 ? " " : ""}${item.str}`;
+    }, ""),
+  ).join("\n");
+}
+
+// The text of a PDF in reading order, its pages joined by newlines. Throws when the bytes are not a readable PDF.
+// pdf.js detaches the bytes' buffer, so they can be read only once.
 export async function pdfToText(bytes) {
   const pdf = await getDocumentProxy(bytes, { verbosity: 0 });
-  return (await extractText(pdf, { mergePages: true })).text;
+  return (await extractTextItems(pdf)).items.map(readingOrder).join("\n");
 }
 
 // The text of a fetched page: HTML and plain text through htmlToText, a PDF through pdfToText.
 export async function pageText({ url, contentType, text, bytes }) {
   if (TEXT_TYPES.has(contentType)) return htmlToText(text);
   if (contentType === "application/pdf") {
-    return pdfToText(bytes).catch((err) => {
+    const pdf = await pdfToText(bytes).catch((err) => {
       throw new Error(`unreadable PDF at ${url} (${err.message})`);
     });
+    // A scanned PDF, or text in fonts pdf.js can't map (such as CJK fonts that need CMap files), gives no text.
+    if (!pdf.trim()) throw new Error(`no text in PDF at ${url} (scanned, or fonts pdf.js can't read)`);
+    return pdf;
   }
   throw new Error(`unsupported content type "${contentType}" at ${url}`);
 }
