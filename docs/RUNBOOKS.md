@@ -4,7 +4,7 @@ Step-by-step procedures for the owner and for agent sessions. Each runbook says 
 
 **Where work can run:**
 - **`Default` environment:** code, tests and docs. Its network can't reach manufacturer sites: the shell, Node's `fetch` and Claude Code's fetch tool are all blocked. Connectors that can, such as Firecrawl, must not be used for manufacturer pages, because they don't identify as PatchlifeBot or apply our robots.txt rules (D17). The daily build runs here.
-- **`Crawl` environment:** anything that reads a manufacturer page: adding records, corrections, re-verifying, audits (A8) and the M1 exit check. Its allowlist is in [`ARCHITECTURE.md`](ARCHITECTURE.md).
+- **`Crawl` environment:** anything an agent does that reads a manufacturer page: adding records, corrections, re-checking records the nightly Actions re-verify could not, audits (A8) and the M1 exit check. Routine re-verification runs on GitHub Actions with no model (D42). Its allowlist is in [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
 All dates in records and logs are UTC (`date -u +%F`). Scheduled runs at 06:08 Sydney are still the previous day in UTC.
 
@@ -68,7 +68,7 @@ All dates in records and logs are UTC (`date -u +%F`). Scheduled runs at 06:08 S
 9. **Scheduled tasks:** at https://claude.ai/code/routines, check that each Patchlife task lists no connectors (Edit > Advanced settings > Connectors).
 
 ### O6 Create the nightly `Crawl` scheduled task
-**When:** decision P1 is B (D27). The prompt fixes (#29) make `data-refresh.md` do one source per run, re-verify with `--due 60 --limit 40`, and leave new records for an audit. Create it in the UI: a scheduled task an agent creates from a session has no repository attached (tested 21 Oct 2026).
+**When:** decision P1 is B (D27). The prompt fixes (#29) make `data-refresh.md` do one source per run and leave new records for an audit; from #80 it re-checks what the Actions re-verify could not, instead of re-verifying itself (D42). Create it in the UI: a scheduled task an agent creates from a session has no repository attached (tested 21 Oct 2026).
 1. Go to https://claude.ai/code/routines and select **New task**, then **Set up manually**.
 2. Name it `Patchlife nightly data`. Prompt: `Follow .agent/prompts/data-refresh.md`.
 3. Trigger: **Schedule**, **Daily**, a few minutes past the hour and away from 06:08 Sydney, for example 01:17 Sydney time.
@@ -204,3 +204,5 @@ All dates in records and logs are UTC (`date -u +%F`). Scheduled runs at 06:08 S
 A re-verification changes no data but `verification` blocks and `data/sources/page-hashes.json`, so it merges without an A8 audit (D20). Check that before merging:
 1. Check out the PR branch and run `node scripts/verification-only.mjs $(git merge-base origin/main HEAD)`. It must print `Only verification changed`; anything else needs A8.
 2. Merge once every check has passed. Records it marked `stale` get repaired per A4 by the next `Crawl` run.
+3. The `Re-verify evidence` workflow (#80) pushes `claude/reverify-<date>-<run id>` and opens no PR, so CI only runs once an agent opens one. It stops while any such branch exists. A branch whose PR was closed without merging blocks it until the owner deletes the branch, since agents can't delete branches.
+4. A failed run lists the records it couldn't check in an annotation titled `Records not checked`; the nightly `Crawl` task re-checks them (data-refresh step 2).

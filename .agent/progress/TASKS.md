@@ -13,7 +13,7 @@ Next for the daily build (`Default`), in order:
 
 Waiting:
 - [ ] PDF text (D29): `unpdf` 1.8.1 is on `main` (#73); the code PR on `claude/pdf-text` (fetcher returns PDF bytes, verifier extracts text with unpdf) merges after `main` is merged into it. Don't start it again.
-- [ ] COSTS stage 1, re-verify on GitHub Actions: `scripts/verification-only.mjs` and RUNBOOKS A9 are in the unprotected PR; the owner merges the protected PR (workflow `reverify.yml`, daily build opens and merges `claude/reverify-*` branches, nightly task stops re-verifying). Don't start it again.
+- [ ] COSTS stage 1, re-verify on GitHub Actions (D42): the owner merges #80 (protected: workflow `reverify.yml`, daily build opens and merges `claude/reverify-*` branches, the nightly task re-checks what Actions couldn't). Nothing is due until 21 Dec 2026. Don't start it again.
 - [ ] Search Console (H7, #77, owner): verify the Domain property and submit `https://patchlife.tech/sitemap.xml`.
 - [ ] Coverage for M4 (the nightly task, one source a night): at least 40 verified small-office records (routers, printers, NVRs). GL.iNet gave routers (#49); next in the registry are Kyocera, ASUS, GoPro, Lenovo, Motorola, NETGEAR, Samsung and Grandstream.
 - [ ] Archive snapshots (D29): test the Wayback "save" endpoint from `Crawl` (web.archive.org is allowlisted) and, if it works, fill `archive_url` on new evidence.
