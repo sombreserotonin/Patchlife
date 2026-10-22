@@ -126,6 +126,17 @@ test("valid source fixtures pass, including last_checked today, no note and both
   ]);
 });
 
+test("page-hashes.json must be a sorted object of https URL to SHA-256 hex", () => {
+  assert.deepEqual(runSources("page-hashes-ok").errors, []);
+  assert.deepEqual(messages(runSources("page-hashes-bad").errors).split("\n"), [
+    'page-hashes.json: key "http://example.com/a" is not an https URL',
+    "page-hashes.json: hash for http://example.com/a is not a SHA-256 hex string",
+    "page-hashes.json: keys must be sorted, as the verifier writes them",
+  ]);
+  assert.match(messages(runSources("page-hashes-conflict").errors), /^page-hashes\.json: JSON parse error: /);
+  assert.deepEqual(messages(runSources("page-hashes-array").errors), "page-hashes.json: must be a JSON object of evidence URL to hash");
+});
+
 test("validateSources returns no entries from a file that fails the schema", () => {
   const { entries, errors } = runSources("bad-date-order");
   assert.equal(errors.length, 1, messages(errors));
