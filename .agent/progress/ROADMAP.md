@@ -43,24 +43,27 @@ Exit: three consecutive nightly runs each end in a correct PR or a correct no-op
 
 Progress: the broken-source half passed on 22 Oct 2026 (drill of the `reverify.yml` steps, TASKS.md); the three nightly runs start that night.
 
-## M4 Demand check (four weeks)
+## M5 Browser extension (scope set by MIGRATION decision 4, #102)
+- As in SPEC 5, for three retailers. Zip built in CI. Store submission is H10.
+
+Exit: fixture tests pass for all three retailers; the zip is attached to a CI run.
+
+## M7 Growth
+- Monthly report generator and alerts (SPEC 7).
+
+Exit: first report published; alert flow tested against a test inbox.
+
+## Planned (not active)
+The owner shelved the business side on 22 Oct 2026 (D45): revisit once the no-AI setup is up and working (`docs/MIGRATION.md`, after Stage 4's exit check). Nothing here starts before then. The H9b drafts are in #99, on `claude/m4-drafts`.
+
+### M4 Demand check (four weeks)
 - Starts only when the start conditions in `docs/PLAN.md` hold (site on `patchlife.tech`, M3 done, 150 or more verified records, pages indexed, waitlist and collection notice live, gates approved).
 - Weekly Search Console and waitlist numbers in LOG.md, pasted by the owner into a pinned issue (needs H7).
 - B2B probe: a `/business` page linking to a hosted waitlist form (provider and copy are human gates; H9b first).
 
 Exit: gates A to C (decision P5) measured for four weeks; the outcome recorded in decisions.md, which also sets whether M5 or M6 comes next.
 
-## M5 Browser extension (order with M6 set by M4)
-- As in SPEC 5, for three retailers. Zip built in CI. Store submission is H10.
-
-Exit: fixture tests pass for all three retailers; the zip is attached to a CI run.
-
-## M6 B2B (order with M5 set by M4)
+### M6 B2B
 - CSV report, API keys through Stripe test mode, supplier SKU check (SPEC 6).
 
 Exit: a test-mode purchase issues a key that works end to end.
-
-## M7 Growth
-- Monthly report generator and alerts (SPEC 7).
-
-Exit: first report published; alert flow tested against a test inbox.
