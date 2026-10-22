@@ -12,7 +12,13 @@ Next for the daily build (`Default`), in order:
 - Nothing. Do housekeeping only and end with `WAITING: no Default task`.
 
 Waiting:
-- [ ] TP-Link AU small-office records (routers, mesh, access points, switches; up to 60): a `Crawl` session is on `claude/data-tp-link-au-networking` (22 Oct), then an A8 audit. Don't start it again.
+- [ ] In flight from the coordinating session on 22 Oct (`Crawl`; don't start these again, and finish a pushed branch if its session stopped):
+  - TP-Link AU routers and Deco mesh: PR #86 (60 records), A8 audit running;
+  - TP-Link AU access points and switches: `claude/data-tp-link-au-ap-switch`;
+  - EZVIZ EOL list (NVRs, networking, gateways, locks, sensors, vacuums): `claude/data-ezviz-eol-more`;
+  - Google Nest table non-camera devices: `claude/data-google-nest-table-more`;
+  - Ring chimes, alarm, intercom and lighting: `claude/data-ring-accessories`;
+  - Wayback snapshot test (D29), read only.
 - [ ] Coverage for M4 (the nightly task, one source a night): at least 40 verified small-office records (routers, printers, NVRs). GL.iNet gave routers (#49); next in the registry are Kyocera, ASUS, GoPro, Lenovo, Motorola, NETGEAR, Samsung and Grandstream.
 - [ ] Archive snapshots (D29): test the Wayback "save" endpoint from `Crawl` (web.archive.org is allowlisted) and, if it works, fill `archive_url` on new evidence.
 - [ ] M3 exit check (a `Crawl` session, after the tasks above): three consecutive nightly runs each end in a correct PR or a correct "nothing to do", and a deliberately broken fixture source is caught and flagged.
