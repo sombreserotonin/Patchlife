@@ -1,0 +1,22 @@
+# Monthly grouped updates, so upkeep is one PR per ecosystem a month (docs/MIGRATION.md P1). New releases wait 7 days
+# first. Dependabot PRs change protected paths, so the owner merges them.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+    groups:
+      npm:
+        patterns: ["*"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ["*"]
