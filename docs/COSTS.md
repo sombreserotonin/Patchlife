@@ -103,7 +103,7 @@ Other providers' open-model prices (DeepSeek, OpenRouter) came only from search 
 | --- | --- | --- | --- |
 | 0 | Now | Keep building. When cost starts to matter, keep multi-agent reviews for risky code. Note your plan tier and weekly usage once a week. | Done: on Max, aiming for Pro |
 | 1 | After M2 | Move the no-model jobs to Actions in one protected PR: merge script, nightly re-verify with per-URL change detection, heartbeat, Measures report. Probe host reachability first. | Merge the protected PR; maybe a GitHub App or token (secret) |
-| 2 | M3 | Per-source table parsers for Ring, Google and TP-Link, so new rows become candidate records by code. Harden the validator (see below). | Nothing |
+| 2 | M3 | Per-source table parsers for Ring, Google and TP-Link, so new rows become candidate records by code. Harden the validator (see below). First part done: `scripts/unquoted-dates.mjs` lists the dates on cited pages that no quote covers, so revisiting a source with nothing new ends without extraction (RUNBOOKS A2). | Nothing |
 | 3 | M3 | A gold-set test of the 9070 XT (and of Haiku 5.5) on the 122 audited records. Switch extraction to whichever passes. Audits stay on a hosted model, different from the extractor. | Linux on the PC, or API credits set up (an account and terms: human gates) |
 | 4 | After M3 | Move to Pro once the checks under "Getting to Pro" hold, and use a frontier model only when building features. | Change the plan |
 

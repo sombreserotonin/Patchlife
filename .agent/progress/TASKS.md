@@ -12,19 +12,19 @@ Next for the daily build (`Default`), in order:
 - Nothing. Do housekeeping only and end with `WAITING: no Default task`.
 
 Waiting:
-- [ ] Search Console (H7, #77, owner): verify the Domain property and submit `https://patchlife.tech/sitemap.xml`.
 - [ ] Coverage for M4 (the nightly task, one source a night): at least 40 verified small-office records (routers, printers, NVRs). GL.iNet gave routers (#49); next in the registry are Kyocera, ASUS, GoPro, Lenovo, Motorola, NETGEAR, Samsung and Grandstream.
 - [ ] Archive snapshots (D29): test the Wayback "save" endpoint from `Crawl` (web.archive.org is allowlisted) and, if it works, fill `archive_url` on new evidence.
 - [ ] M3 exit check (a `Crawl` session, after the tasks above): three consecutive nightly runs each end in a correct PR or a correct "nothing to do", and a deliberately broken fixture source is caught and flagged.
 
-Leads (need `Crawl`): Google's regulatory page `https://support.google.com/chromecast/answer/10367042` also links Australian statements for Google TV Streamer (4K), Google Nest Mini, Google Nest Wifi Pro and Nest x Yale Lock (#36 audit). TP-Link's TC and TD rows (PLAN M3). Ring renames not settled by Ring's pages (#44, #45).
+Leads from `scripts/unquoted-dates.mjs` (22 Oct, need `Crawl`): rows already on cited pages that no record covers (trial run: all 19 pages read, no errors). TP-Link's AU compliance page has 797 dates, nearly all non-Tapo products (routers, switches, access points: the largest small-office source we already cite); the EZVIZ EOL list has 119, including NVRs, routers and network switches that count toward M4's 40 small-office records; Google's Nest table (`answer/10231940`) has about 40 non-camera devices (hubs, Wifi, Chromecast, thermostats, speakers); Ring's `ri2p1` pages list chimes, alarm sensors, intercoms and lighting. Run the script on a page to list them. Other leads (need `Crawl`): Google's regulatory page `https://support.google.com/chromecast/answer/10367042` also links Australian statements for Google TV Streamer (4K), Google Nest Mini, Google Nest Wifi Pro and Nest x Yale Lock (#36 audit). TP-Link's TC and TD rows (PLAN M3). Ring renames not settled by Ring's pages (#44, #45).
 
 Done:
 - [x] COSTS stage 1, re-verification on GitHub Actions (D42): the owner merged #80 on 22 Oct; a manual run (39702142924) passed every step and ended "Nothing to push", since nothing is due until 21 Dec 2026. The daily build now opens and merges `claude/reverify-*` branches, and the nightly task re-checks what Actions couldn't.
 - [x] `npm run validate` checks `data/sources/page-hashes.json`: a sorted JSON object of https URL to SHA-256 hex, so a broken merge fails at the PR, not in the nightly run.
 - [x] Re-verification gate `scripts/verification-only.mjs` and RUNBOOKS A9 (#78); PDF evidence read in reading order (#79).
 - [x] `Probe hosts` run 39695382968 (21 Oct): all six evidence hosts allow PatchlifeBot and answer a GitHub runner with HTTP 200 (COSTS).
-- [x] Search Console steps posted for the owner (H7, #77).
+- [x] Search Console (H7, #77): the owner verified the Domain property and submitted `https://patchlife.tech/sitemap.xml` (22 Oct). The M4 check "at least 70% of sitemap URLs indexed" counts from here.
+- [x] COSTS stage 2, first part: `scripts/unquoted-dates.mjs` lists dates on cited pages that no record quotes; RUNBOOKS A2 runs it first when revisiting a source.
 - [x] PDF evidence (D29): the fetcher returns PDF bytes and the verifier reads the text with unpdf 1.8.1 (#73), rebuilt line by line in reading order so table rows pair correctly; a PDF with no text fails with `no text in PDF`. Next: the PDF-only sources (Aqara, Reolink, TP-Link UK, GoPro) through the nightly task.
 - [x] The site is live at https://patchlife.tech from the root, indexed, with a sitemap (#67, 21 Oct). Privacy page live (#69), with the Cloudflare wording the owner chose in #68 (option C: keep the proxy and Web Analytics, disclose both; D41). Lighthouse gates on the median of three runs (#75). The skill stores month-only dates (#72). The `Probe hosts` workflow is merged (#66).
 - [x] Month-only dates (D38): `end_date` may be `YYYY-MM` on a `fixed_date` record. `npm run validate` requires a quote stating the month and year and rejects one that states a day in it; status counts the month's last day for ended and its first day for ending soon; the site shows "June 2027" and "ended in June 2026". The `add-device-record` skill still says to skip month-only dates until its protected PR merges.
@@ -67,7 +67,7 @@ Done:
 - H4 Daily build scheduled task at claude.ai/code/routines: this repo, Default environment, daily at a few minutes past the hour, prompt `Follow .agent/prompts/daily-build.md`. Done (#5): `Patchlife daily build`, 06:08 Australia/Sydney.
 - H5 `Crawl` cloud environment with the Custom allowlist in ARCHITECTURE.md (done, #9), plus a nightly scheduled task with prompt `Follow .agent/prompts/data-refresh.md` (P1 is B, D27; done, #41: `Patchlife nightly data`, 01:17 Sydney). EZVIZ hosts: done, #23.
 - H6 (M2) P2 is GitHub Pages (D28): Pages source set to GitHub Actions (done 21 Oct; preview live, #47). Custom domain `patchlife.tech` set up by the owner (done 21 Oct, #57); the build switch is #67.
-- H7 (M2 launch, not M4) Google Search Console Domain property for `patchlife.tech` (DNS TXT record), then submit the sitemap. Indexing needs weeks before M4 can start.
+- H7 (M2 launch, not M4; done 22 Oct, #77) Google Search Console Domain property for `patchlife.tech` (DNS TXT record), then submit the sitemap. Indexing needs weeks before M4 can start.
 - H8 Optional: `@claude` in issues. Run `/install-github-app` in Claude Code, or add a `CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY` Actions secret. Not planned (#6).
 - H9 Legal, in three stages (checklists in docs/PLAN.md): H9a (done 21 Oct 2026, #52, all items approved) before the site moves to `patchlife.tech` (disclaimer next to dates, privacy policy, quote and brand use, UK GDPR); H9b before the M4 waitlist collects emails (collection notice, provider DPA, Spam Act unsubscribe, retention); H9c before charging (ABN, GST, terms and refunds, Stripe, data licence, overseas tax). Crawler contact URL done (#10).
 - H10 (M5 to M7) Stripe, browser store developer accounts, email provider.
