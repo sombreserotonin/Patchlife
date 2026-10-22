@@ -1,0 +1,25 @@
+id: tp-link-archer-ax53-v2
+brand: TP-Link
+brand_slug: tp-link
+model: Archer AX53 (V2)
+aliases:
+  - Archer AX53 V2
+category: router
+regions: [AU]
+support:
+  rule: fixed_date
+  end_date: "2029-01-07"
+  years: null
+  anchor_date: null
+  at_least: false
+  conditions: Hardware version V2 only.
+evidence:
+  - url: https://www.tp-link.com/au/landing/au-cyber-compliance/
+    quote: "Wi-Fi 6 Router Archer AX53 V2 7/01/2029"
+    retrieved: "2026-10-22"
+    archive_url: null
+    regime: au_smart_device_rules
+verification:
+  status: verified
+  checked: "2026-10-22"
+  text_sha256: a4337c7ad21ccddaf8a6d352a81901ef82a2c49bba82f7a707198d5ac2d69799
