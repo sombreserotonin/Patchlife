@@ -38,7 +38,7 @@ As of 21 October 2026:
 - **In progress:** M3, unattended data: the nightly data task, re-verification, PDF sources, and 40 or more small-office records.
 - **Site:** a preview is live at https://sombreserotonin.github.io/Patchlife/ (not indexed by search engines). It moves to patchlife.tech after the owner's legal read.
 
-[`docs/PLAN.md`](docs/PLAN.md) has the plan, the decisions and the 14-day action plan; [`docs/COSTS.md`](docs/COSTS.md) has the plan for moving off subscription AI. Live progress is in [`.agent/progress/TASKS.md`](.agent/progress/TASKS.md), and the exit checks for each milestone are in [`.agent/progress/ROADMAP.md`](.agent/progress/ROADMAP.md).
+[`docs/PLAN.md`](docs/PLAN.md) has the plan, the decisions and the 14-day action plan; [`docs/MIGRATION.md`](docs/MIGRATION.md) has the plan for running with no AI and no subscription, and [`docs/COSTS.md`](docs/COSTS.md) the cost research behind it. Live progress is in [`.agent/progress/TASKS.md`](.agent/progress/TASKS.md), and the exit checks for each milestone are in [`.agent/progress/ROADMAP.md`](.agent/progress/ROADMAP.md).
 
 | Milestone | Goal |
 | --- | --- |
@@ -182,7 +182,8 @@ Patchlife doesn't publish reviews, ratings or brand rankings without a published
 | Document | Covers |
 | --- | --- |
 | [`docs/PLAN.md`](docs/PLAN.md) | Where the project is going: milestones, decisions, risks and the action plan |
-| [`docs/COSTS.md`](docs/COSTS.md) | What the automation costs, and the staged plan to move off subscription AI |
+| [`docs/MIGRATION.md`](docs/MIGRATION.md) | The staged plan to run Patchlife with no AI and no subscription (D44) |
+| [`docs/COSTS.md`](docs/COSTS.md) | What the automation costs, and the research behind the migration |
 | [`docs/RUNBOOKS.md`](docs/RUNBOOKS.md) | Step-by-step procedures for the owner and agent sessions |
 | [`docs/BRIEF.md`](docs/BRIEF.md) | The problem, users, revenue and risks |
 | [`docs/SPEC.md`](docs/SPEC.md) | What gets built: records, status, verifier, site, extension, B2B |

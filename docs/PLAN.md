@@ -4,7 +4,7 @@ _As at Wednesday 21 October 2026. Dates are Sydney dates unless they say UTC. Re
 
 ## Summary
 - **Where we are.** M0, M1 and M2 are done (21 Oct 2026): 338 audited, verified records from five brands, and a preview site at https://sombreserotonin.github.io/Patchlife/. M3, unattended data, is next.
-- **Costs.** How to move off subscription AI later, and what the RX 9070 XT can take over: [`COSTS.md`](COSTS.md).
+- **Costs.** What the automation costs and what the RX 9070 XT can do: [`COSTS.md`](COSTS.md). The plan to run with no AI and no subscription (D44): [`MIGRATION.md`](MIGRATION.md).
 - **The strategy.**
   1. Collect evidence-backed data.
   2. Publish it as a fast static site.
