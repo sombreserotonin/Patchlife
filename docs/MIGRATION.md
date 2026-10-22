@@ -263,7 +263,7 @@ Tier C starts only after Tiers A and B have merged. If the Max time runs short, 
   - **`scripts/validate-data.mjs` gains rules R1 to R8:**
     - R1: each alias is quoted, is the model with the brand in front, or comes from the rename table;
     - R2: regions stay within the profile;
-    - R3: `at_least` is stated in a quote;
+    - R3: `at_least` is stated in a quote. The profile names the sentence, because makers word it differently: Ring says "until at least four years" (#105), Kyocera "At no point shall the support periods advertised on this webpage be reduced" (#111);
     - R4: `conditions` is one of the profile's sentences for a cited URL. All 222 TP-Link records carry "Hardware version <version> only." (126 of them V1), so the placeholder is needed. It takes the version exactly as the cited row writes it, since two rows write "v1" (#108);
     - R5: a footnote marker needs its footnote item;
     - R6: versioned models carry their version;
@@ -515,7 +515,7 @@ Incidents add 5 to 15 minutes a week on average (*estimate*).
 | Risk | Mitigation |
 |---|---|
 | In a public repo, schedules switch off after 60 days without repository activity [5] | The monthly measures PR and Dependabot's PRs create activity (which events count is unverified). The watchdog flags any workflow that isn't `active`, and the dead-man's switch flags a silent watchdog |
-| Schedules run late or are dropped [7], and `pages.yml` already missed its first one | Schedules avoid the top of the hour. Re-verify takes every due record, so a missed night catches up the next. The watchdog checks how old each last run is, and dispatches `pages.yml` |
+| Schedules run late or are dropped [7]. The first ones here ran 4.5 to 5 hours late (22 Oct) | Schedules avoid the top of the hour. Re-verify takes every due record, so a missed night catches up the next. The watchdog checks how old each last run is, and dispatches `pages.yml` |
 | A bug in the merge bot | Allowlists of branches and files; the SHA pin; the required `data-gate`, which runs the base branch's script; the protected-path label; the `BOT_MERGE` kill switch; a test for each rule; and the bot's own scripts under `protected-paths` |
 | The App's private key leaks | It is used only in scheduled and dispatched jobs, never in `pull_request` jobs, with the fewest permissions. Keys don't expire [32], so rotate it yearly; revoke it in the App's settings. `data-gate` ignores an `audited` label the App adds |
 | A queued run cancels another in the `crawl` group | `queue: max` [15], and the watchdog treats `cancelled` as a failure |
@@ -578,7 +578,7 @@ You shelved the business side on 22 Oct 2026, to come back to once this setup is
     - Use a contract that assigns copyright to you, which keeps D10's relicensing option.
     - They work from a fork, and you merge.
     - A$2,000 to 8,000 for SPEC section 6's API is an unverified *estimate*; get 2 or 3 quotes.
-12. **M3 and the Measures.** PLAN wants 6 or more brands at M3 (and at M4's start, now in Planned), and 5 or more daily-build heartbeats a week. There are 5 brands, and the heartbeat goes away. Recommended:
+12. **M3 and the Measures.** PLAN wants 6 or more brands at M3 (and at M4's start, now in Planned), and 5 or more daily-build heartbeats a week. Kyocera became the sixth brand on 22 Oct (#111), so the brand target holds; the heartbeat still goes away. Recommended:
     - redefine M3 part 1 on the new jobs (Stage 2's exit check);
     - replace the heartbeat row with "clean watchdog days";
     - set the brand target to 5, unless a sixth brand is added before cut-over.
