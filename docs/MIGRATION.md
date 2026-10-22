@@ -175,7 +175,7 @@ Run parallel sessions in separate files (D19, D26), each with one reviewer and n
 Tier C starts only after Tiers A and B have merged. If the Max time runs short, cut Tier C.
 
 **Tier A: housekeeping and runbooks (required before cancelling)**
-- **A1 (unprotected):**
+- **A1 (unprotected; done 22 Oct: the merge bot, licence check and renewals in #109, then `scripts/watchdog.mjs`):**
   - `scripts/merge-bot.mjs` and `scripts/watchdog.mjs`;
   - `scripts/check-licences.mjs`: checks each `package-lock.json` entry's `license` against the lists in D9 and D30. All 116 entries carry one (22 Oct), so a missing licence is reported for a person to look at, with no fallback;
   - tests using an injected fetch. They cover forks, each label, red checks, files outside the allowlist, a SHA that moved, and an `audited` label added by the App;
@@ -183,6 +183,7 @@ Tier C starts only after Tiers A and B have merged. If the Max time runs short, 
 - **P2 (protected; merge only once the App exists):**
   - **A new `housekeeping.yml`:**
     - runs on `23 21 * * *` and on `workflow_dispatch`, and mints the App token;
+    - checks out with `fetch-depth: 0`, because the watchdog dates stale records from git history, and passes `GH_TOKEN` and `GITHUB_REPOSITORY`;
     - runs `merge-bot.mjs` behind the `if: vars.BOT_MERGE == 'on'` kill switch, then `watchdog.mjs`;
     - opens the measures PR when `date -u +%d` is `01`;
     - posts the summary when `date -u +%u` is `7`.
@@ -190,7 +191,7 @@ Tier C starts only after Tiers A and B have merged. If the Max time runs short, 
     - mints the App token and passes it to `actions/checkout` as `token:`, because a push made with `GITHUB_TOKEN` triggers no CI;
     - opens its own PR through `gh api`;
     - gains `due` and `limit` inputs, with a default of `--limit 1000`;
-    - turns "Flag records that could not be checked" into a `::warning::`;
+    - turns "Flag records that could not be checked" into a `::warning::`, keeping the step name "Push verification changes" and the annotation title "Records not checked", which the watchdog reads;
     - falls back to today's push-only path when `vars.BOT_APP_ID` is empty.
   - A new `data-gate.yml` (decision 3). Its job must be named exactly `data-gate`: `merge-bot.mjs` (A1) requires a check run of that name from GitHub Actions on the head commit, so any other name means nothing ever merges.
   - **`pages.yml`:** Lighthouse moves to its own `lighthouse` job, with `if: github.event_name == 'pull_request'`. A score dip then can't block the daily rebuild that moves statuses (D7), or a bot merge.
@@ -241,7 +242,7 @@ Tier C starts only after Tiers A and B have merged. If the Max time runs short, 
 - 5 random records with text-fragment links, for your spot check [29].
 
 **Tier B: data without AI**
-- **B1 (unprotected; data, audited by A8 while AI is still available).** These are the fixes that B2's rules find when run locally:
+- **B1 (unprotected; data, audited by A8 while AI is still available). Done 22 Oct, #105 to #108, each audited:** Ring's "at least" sentence is now quoted on all 98 records (#105). The 15 UK and AU records were right: all three regional pages name amazon.com and ring.com word for word. Both aliases went (#106, #107; Fortify is a separate GL.iNet product). TP-Link's page itself writes "v1" on those two rows, so they were right too (#108). The original list:
   - add Ring's "at least" sentence as a second evidence item on the 98 Ring records. They have `at_least: true`, but no "at least" in the quote;
   - fix the 2 failing aliases: `Fortify (GL-MT6000)` on `gl-inet-gl-mt6000`, and `Nest Cam IQ Outdoor` on `google-nest-cam-iq-indoor-and-outdoor`;
   - fix the 15 non-US Ring records that carry the US purchase condition, if Ring's GB and AU pages don't state it (unverified);
@@ -263,7 +264,7 @@ Tier C starts only after Tiers A and B have merged. If the Max time runs short, 
     - R1: each alias is quoted, is the model with the brand in front, or comes from the rename table;
     - R2: regions stay within the profile;
     - R3: `at_least` is stated in a quote;
-    - R4: `conditions` is one of the profile's sentences for a cited URL. All 222 TP-Link records carry "Hardware version <version> only." (126 of them V1), so the placeholder is needed;
+    - R4: `conditions` is one of the profile's sentences for a cited URL. All 222 TP-Link records carry "Hardware version <version> only." (126 of them V1), so the placeholder is needed. It takes the version exactly as the cited row writes it, since two rows write "v1" (#108);
     - R5: a footnote marker needs its footnote item;
     - R6: versioned models carry their version;
     - R7: the category comes from the map or is a listed exception;
