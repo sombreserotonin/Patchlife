@@ -19,8 +19,13 @@ evidence:
     retrieved: "2026-10-21"
     archive_url: null
     regime: vendor_policy
+  - url: https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "We'll support your device with software security updates until at least four years from when you bought it new on amazon.com where Amazon is the seller or on ring.com (or, in each case, until the date stated below if later)."
+    retrieved: "2026-10-22"
+    archive_url: null
+    regime: vendor_policy
 verification:
   status: verified
-  checked: "2026-10-21"
-  text_sha256: 2a8b9a5c31241b1bf4662453914d9bc00ce48cd2c5ec7dcd114e91637a2fb7c6
+  checked: "2026-10-22"
+  text_sha256: c6544f480b147fd69734047217977710a3692108c9287f5fcfa8a795617fcedc
 notes: Ring's UK and AU pages give 31 December 2027 for this model (record ring-video-doorbell-4), so this record covers only the US page's 2029 date.

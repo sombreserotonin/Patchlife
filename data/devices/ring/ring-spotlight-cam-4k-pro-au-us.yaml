@@ -20,9 +20,19 @@ evidence:
     retrieved: "2026-10-21"
     archive_url: null
     regime: vendor_policy
+  - url: https://ring.com/au/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "We'll support your device with software security updates until at least four years from when you bought it new on amazon.com where Amazon is the seller or on ring.com (or, in each case, until the date stated below if later)."
+    retrieved: "2026-10-22"
+    archive_url: null
+    regime: vendor_policy
   - url: https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
     quote: "Spotlight Cam 4K Pro 31 December 2030"
     retrieved: "2026-10-21"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "We'll support your device with software security updates until at least four years from when you bought it new on amazon.com where Amazon is the seller or on ring.com (or, in each case, until the date stated below if later)."
+    retrieved: "2026-10-22"
     archive_url: null
     regime: vendor_policy
   - url: https://ring.com/support/articles/538eg/ring-product-name-changes
@@ -37,6 +47,6 @@ evidence:
     regime: vendor_policy
 verification:
   status: verified
-  checked: "2026-10-21"
-  text_sha256: 1439f5fd8561903869622ce5459f0b65f5fb61f5a3af60dd6bf062f2e459d8ea
+  checked: "2026-10-22"
+  text_sha256: 6718dc1b531be36c912bcb6ef19456c0d09ab9d890b28315d38454438ffec51a
 notes: Ring's UK page gives 31 December 2031 for this model (record ring-spotlight-cam-4k-pro), so this record covers only the AU and US pages' 2030 date.
