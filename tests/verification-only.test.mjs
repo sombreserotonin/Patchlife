@@ -40,6 +40,29 @@ test("verification fields and the page hash file may change", (t) => {
   assert.deepEqual(r.problems(), []);
 });
 
+test("an empty archive link filled with a capture of its item's page counts as verification; other link changes don't (D43)", (t) => {
+  const r = repo(t);
+  const capture = (url) => `https://web.archive.org/web/20261022015106/${url}`;
+  const commit = () => r.git("-c", "user.name=t", "-c", "user.email=t@example.invalid", "commit", "-qam", "change");
+  // Real records carry archive_url: null; the fixtures leave it out.
+  r.edit("acme-plug-3", "    regime: uk_psti\n", "    archive_url: null\n    regime: uk_psti\n");
+  commit();
+  r.edit("acme-plug-3", "    archive_url: null\n", `    archive_url: ${capture("https://example.com/acme/psti")}\n`);
+  r.edit("acme-cam-1", "    regime: au_smart_device_rules\n", `    regime: au_smart_device_rules\n    archive_url: ${capture("https://example.com/acme/security")}\n`);
+  assert.deepEqual(r.problems(), []);
+  commit();
+  r.edit("acme-cam-1", "20261022015106", "20261023000000");
+  r.edit("acme-leap-5", "    regime: vendor_policy\n", `    regime: vendor_policy\n    archive_url: ${capture("https://example.com/acme/other")}\n`);
+  r.edit("acme-router-2", "    regime: vendor_policy\n", "    regime: vendor_policy\n    archive_url: https://example.com/acme/copy\n");
+  r.edit("acme-plug-3", `    archive_url: ${capture("https://example.com/acme/psti")}\n`, "    archive_url: null\n");
+  assert.deepEqual(r.problems(), [
+    "data/devices/acme/acme-cam-1.yaml: changes more than the verification block",
+    "data/devices/acme/acme-leap-5.yaml: changes more than the verification block",
+    "data/devices/acme/acme-plug-3.yaml: changes more than the verification block",
+    "data/devices/acme/acme-router-2.yaml: changes more than the verification block",
+  ]);
+});
+
 test("a change outside the verification block is reported, as is a new, deleted, renamed or other data file", (t) => {
   const r = repo(t);
   r.edit("acme-cam-1", 'end_date: "2029-06-30"', 'end_date: "2029-06-29"');

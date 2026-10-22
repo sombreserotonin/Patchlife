@@ -206,7 +206,7 @@ All dates in records and logs are UTC (`date -u +%F`). Scheduled runs at 06:08 S
 5. Comment the result on the PR: records checked, problems found and how they were fixed. Then add the `audited` label: `gh api -X POST repos/sombreserotonin/Patchlife/issues/<n>/labels -f "labels[]=audited"`. The PR then merges per CLAUDE.md.
 
 ### A9 Merge a re-verification (`Default`)
-A re-verification changes no data but `verification` blocks and `data/sources/page-hashes.json`, so it merges without an A8 audit (D20). Check that before merging:
+A re-verification changes no data but `verification` blocks, empty `archive_url` fields it fills with a capture that holds the item's quote (D43), and `data/sources/page-hashes.json`, so it merges without an A8 audit (D20). Check that before merging:
 1. Check out the PR branch and run `node scripts/verification-only.mjs $(git merge-base origin/main HEAD)`. It must print `Only verification changed`; anything else needs A8.
 2. Merge once every check has passed. Records it marked `stale` get repaired per A4 by the next `Crawl` run.
 3. The `Re-verify evidence` workflow (#80) pushes `claude/reverify-<date>-<run id>` and opens no PR, so CI only runs once an agent opens one. It stops while any such branch exists. A branch whose PR was closed without merging blocks it until the owner deletes the branch, since agents can't delete branches.
