@@ -13,19 +13,17 @@ Next for the daily build (`Default`), in order:
 
 Waiting:
 - [ ] In flight from the coordinating session on 22 Oct (`Crawl`; don't start these again, and finish a pushed branch if its session stopped):
-  - TP-Link AU routers and Deco mesh: PR #86 (60 records), A8 audit running;
-  - TP-Link AU access points and switches: `claude/data-tp-link-au-ap-switch`;
-  - EZVIZ EOL list (NVRs, networking, gateways, locks, sensors, vacuums): `claude/data-ezviz-eol-more`;
-  - Google Nest table non-camera devices: `claude/data-google-nest-table-more`;
-  - Ring chimes, alarm, intercom and lighting: `claude/data-ring-accessories`;
-  - Wayback snapshot test (D29), read only.
+  - Ring accessories audit: #90 was merged before its A8 audit finished; the auditor checks `main` and opens `claude/fix-ring-accessories` if anything is wrong;
+  - EZVIZ EOL list, remaining rows: `claude/data-ezviz-eol-rest`, then an A8 audit;
+  - TP-Link AU smart home (plugs, bulbs, switches, hubs): `claude/data-tp-link-au-smart-home`, then an A8 audit.
+- [ ] Archive snapshots (D29): the `Crawl` network refuses archive.org (proxy 403) and drops web.archive.org before TLS (test session, 22 Oct), so the "allowlisted" note was wrong. Options: the owner adds both hosts to the `Crawl` allowlist, or snapshots are requested from GitHub Actions, whose runners reach archive.org.
 - [ ] Coverage for M4 (the nightly task, one source a night): at least 40 verified small-office records (routers, printers, NVRs). GL.iNet gave routers (#49); next in the registry are Kyocera, ASUS, GoPro, Lenovo, Motorola, NETGEAR, Samsung and Grandstream.
-- [ ] Archive snapshots (D29): test the Wayback "save" endpoint from `Crawl` (web.archive.org is allowlisted) and, if it works, fill `archive_url` on new evidence.
 - [ ] M3 exit check (a `Crawl` session, after the tasks above): three consecutive nightly runs each end in a correct PR or a correct "nothing to do", and a deliberately broken fixture source is caught and flagged.
 
 Leads from `scripts/unquoted-dates.mjs` (22 Oct, need `Crawl`): rows already on cited pages that no record covers (trial run: all 19 pages read, no errors). TP-Link's AU compliance page has 797 dates, nearly all non-Tapo products (routers, switches, access points: the largest small-office source we already cite); the EZVIZ EOL list has 119, including NVRs, routers and network switches that count toward M4's 40 small-office records; Google's Nest table (`answer/10231940`) has about 40 non-camera devices (hubs, Wifi, Chromecast, thermostats, speakers); Ring's `ri2p1` pages list chimes, alarm sensors, intercoms and lighting. Run the script on a page to list them. Other leads (need `Crawl`): Google's regulatory page `https://support.google.com/chromecast/answer/10367042` also links Australian statements for Google TV Streamer (4K), Google Nest Mini, Google Nest Wifi Pro and Nest x Yale Lock (#36 audit). TP-Link's TC and TD rows (PLAN M3). Ring renames not settled by Ring's pages (#44, #45).
 
 Done:
+- [x] Coverage, 22 Oct: #86 (TP-Link routers and Deco, 60), #88 (EZVIZ NVRs, networking, gateways, locks, sensors, 60), #89 (TP-Link access points and switches, 60), #90 (Ring accessories, 48) and #91 (Google Nest table devices, 27), each audited by a separate `Crawl` session except #90 (audit running after merge). 595 verified records; M4's "150 or more" and "40 small-office" conditions are met.
 - [x] COSTS stage 1, re-verification on GitHub Actions (D42): the owner merged #80 on 22 Oct; a manual run (39702142924) passed every step and ended "Nothing to push", since nothing is due until 21 Dec 2026. The daily build now opens and merges `claude/reverify-*` branches, and the nightly task re-checks what Actions couldn't.
 - [x] `npm run validate` checks `data/sources/page-hashes.json`: a sorted JSON object of https URL to SHA-256 hex, so a broken merge fails at the PR, not in the nightly run.
 - [x] Re-verification gate `scripts/verification-only.mjs` and RUNBOOKS A9 (#78); PDF evidence read in reading order (#79).
