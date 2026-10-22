@@ -1,0 +1,31 @@
+id: ring-alarm-motion-detector
+brand: Ring
+brand_slug: ring
+model: "Alarm Motion Detector"
+aliases:
+  - "Ring Alarm Motion Detector"
+category: sensor
+regions: [UK, US]
+support:
+  rule: fixed_date
+  end_date: "2030-12-31"
+  years: null
+  anchor_date: null
+  at_least: true
+  conditions: "If bought new on ring.com, or on amazon.com where Amazon is the seller, at least four years from purchase or this date, whichever is later."
+evidence:
+  - url: https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "Alarm Motion Detector 31 December 2030"
+    retrieved: "2026-10-22"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "Alarm Motion Detector 31 December 2030"
+    retrieved: "2026-10-22"
+    archive_url: null
+    regime: vendor_policy
+verification:
+  status: verified
+  checked: "2026-10-22"
+  text_sha256: ef68204108474bd4dea7e01262a208022ed2bb45aa2e1e8ce4bbd873c2b7214b
+notes: null

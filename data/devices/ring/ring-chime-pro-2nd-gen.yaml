@@ -1,0 +1,37 @@
+id: ring-chime-pro-2nd-gen
+brand: Ring
+brand_slug: ring
+model: "Chime Pro (2nd Gen)"
+aliases:
+  - "Ring Chime Pro (2nd Gen)"
+  - "Ring Chime Pro (2nd Generation)"
+category: other
+regions: [UK, AU, US]
+support:
+  rule: fixed_date
+  end_date: "2030-12-31"
+  years: null
+  anchor_date: null
+  at_least: true
+  conditions: "If bought new on ring.com, or on amazon.com where Amazon is the seller, at least four years from purchase or this date, whichever is later."
+evidence:
+  - url: https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "Ring Chime Pro (2nd Generation) 31 December 2030"
+    retrieved: "2026-10-22"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://ring.com/au/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "Ring Chime Pro (2nd Generation) 31 December 2030"
+    retrieved: "2026-10-22"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "Chime Pro (2nd Gen) 31 December 2030"
+    retrieved: "2026-10-22"
+    archive_url: null
+    regime: vendor_policy
+verification:
+  status: verified
+  checked: "2026-10-22"
+  text_sha256: 0601354d95f1e9c47d83a5e1944f713bc81cf501fc7078fe1b7fc2bcbd2ec4cf
+notes: null
