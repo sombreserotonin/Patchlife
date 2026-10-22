@@ -12,6 +12,7 @@ Next for the daily build (`Default`), in order:
 - Nothing. Do housekeeping only and end with `WAITING: no Default task`.
 
 Waiting:
+- [ ] TP-Link AU small-office records (routers, mesh, access points, switches; up to 60): a `Crawl` session is on `claude/data-tp-link-au-networking` (22 Oct), then an A8 audit. Don't start it again.
 - [ ] Coverage for M4 (the nightly task, one source a night): at least 40 verified small-office records (routers, printers, NVRs). GL.iNet gave routers (#49); next in the registry are Kyocera, ASUS, GoPro, Lenovo, Motorola, NETGEAR, Samsung and Grandstream.
 - [ ] Archive snapshots (D29): test the Wayback "save" endpoint from `Crawl` (web.archive.org is allowlisted) and, if it works, fill `archive_url` on new evidence.
 - [ ] M3 exit check (a `Crawl` session, after the tasks above): three consecutive nightly runs each end in a correct PR or a correct "nothing to do", and a deliberately broken fixture source is caught and flagged.
@@ -24,7 +25,7 @@ Done:
 - [x] Re-verification gate `scripts/verification-only.mjs` and RUNBOOKS A9 (#78); PDF evidence read in reading order (#79).
 - [x] `Probe hosts` run 39695382968 (21 Oct): all six evidence hosts allow PatchlifeBot and answer a GitHub runner with HTTP 200 (COSTS).
 - [x] Search Console (H7, #77): the owner verified the Domain property and submitted `https://patchlife.tech/sitemap.xml` (22 Oct). The M4 check "at least 70% of sitemap URLs indexed" counts from here.
-- [x] COSTS stage 2, first part: `scripts/unquoted-dates.mjs` lists dates on cited pages that no record quotes; RUNBOOKS A2 runs it first when revisiting a source.
+- [x] COSTS stage 2, first part: `scripts/unquoted-dates.mjs` lists dates on cited pages that no record quotes (#83); RUNBOOKS A2 and the nightly task start a revisit with it (#84).
 - [x] PDF evidence (D29): the fetcher returns PDF bytes and the verifier reads the text with unpdf 1.8.1 (#73), rebuilt line by line in reading order so table rows pair correctly; a PDF with no text fails with `no text in PDF`. Next: the PDF-only sources (Aqara, Reolink, TP-Link UK, GoPro) through the nightly task.
 - [x] The site is live at https://patchlife.tech from the root, indexed, with a sitemap (#67, 21 Oct). Privacy page live (#69), with the Cloudflare wording the owner chose in #68 (option C: keep the proxy and Web Analytics, disclose both; D41). Lighthouse gates on the median of three runs (#75). The skill stores month-only dates (#72). The `Probe hosts` workflow is merged (#66).
 - [x] Month-only dates (D38): `end_date` may be `YYYY-MM` on a `fixed_date` record. `npm run validate` requires a quote stating the month and year and rejects one that states a day in it; status counts the month's last day for ended and its first day for ending soon; the site shows "June 2027" and "ended in June 2026". The `add-device-record` skill still says to skip month-only dates until its protected PR merges.
