@@ -179,7 +179,8 @@ export function validateDevices(
 }
 
 // Checks each sourcesDir/*.yaml file: a list of starting URLs per brand. A brand_slug may appear once across all files.
-// Returns the entries of the files that pass the schema, for validateDevices.
+// Also checks sourcesDir/page-hashes.json, which the verifier rewrites, so a broken merge of it fails here rather than
+// at the next night's run. Returns the entries of the files that pass the schema, for validateDevices.
 export function validateSources(
   sourcesDir,
   { today = new Date().toISOString().slice(0, 10), validate = loadValidator(join(ROOT, "data/schema/source.schema.json")) } = {},
@@ -212,6 +213,27 @@ export function validateSources(
       if (seen.has(slug)) fail(`duplicate brand_slug "${slug}", also in ${seen.get(slug)}`);
       else seen.set(slug, name);
       if (checked && checked > today) fail(`last_checked ${checked} for "${slug}" is in the future`);
+    }
+  }
+
+  const hashFile = join(sourcesDir, "page-hashes.json");
+  if (existsSync(hashFile)) {
+    const fail = (message) => errors.push({ file: "page-hashes.json", message });
+    let hashes;
+    try {
+      hashes = JSON.parse(readFileSync(hashFile, "utf8"));
+    } catch (err) {
+      hashes = null;
+      fail(`JSON parse error: ${err.message}`);
+    }
+    if (hashes !== null && (typeof hashes !== "object" || Array.isArray(hashes))) fail("must be a JSON object of evidence URL to hash");
+    else if (hashes) {
+      const urls = Object.keys(hashes);
+      for (const url of urls) {
+        if (!url.startsWith("https://")) fail(`key "${url}" is not an https URL`);
+        if (!/^[a-f0-9]{64}$/.test(hashes[url])) fail(`hash for ${url} is not a SHA-256 hex string`);
+      }
+      if (urls.join("\n") !== [...urls].sort().join("\n")) fail("keys must be sorted, as the verifier writes them");
     }
   }
 

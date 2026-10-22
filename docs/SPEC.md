@@ -23,7 +23,7 @@ Against today's date: `supported` (more than 12 months left), `ending_soon` (12 
 - Fetch each evidence URL (HTML or PDF) and extract the text.
 - Normalise: Unicode NFKC, collapse whitespace, table cells joined by single spaces, case-insensitive comparison.
 - Pass when the normalised quote appears in the normalised text; then set `verification.status: verified`, `checked`, and `text_sha256` of the normalised text.
-- Keep one SHA-256 hash per evidence URL, of that page's normalised text, in `data/sources/page-hashes.json` (a JSON object of URL to hash, sorted by URL), and report each page read as changed, unchanged or not seen before. A page that could not be read keeps its stored hash; URLs that no record cites are dropped.
+- Keep one SHA-256 hash per evidence URL, of that page's normalised text, in `data/sources/page-hashes.json` (a JSON object of URL to hash, sorted by URL; `npm run validate` checks that shape), and report each page read as changed, unchanged or not seen before. A page that could not be read keeps its stored hash; URLs that no record cites are dropped.
 - Request an archive snapshot (best effort) and store `archive_url`.
 - Store hashes and quotes only, never whole pages.
 - Unit tests run offline against saved fixtures. CI never hits the network.
