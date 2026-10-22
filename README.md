@@ -46,9 +46,9 @@ As of 21 October 2026:
 | M1 Evidence engine | Automated quote checking and 50 verified camera and doorbell records |
 | M2 Public site | Search-only static site and JSON feed |
 | M3 Unattended data | Nightly data refresh and a 90-day re-check |
-| M4 Demand check | Four weeks of search data and a waitlist for business users |
+| M4 Demand check | Four weeks of search data and a waitlist for business users. Planned, not active (D45) |
 | M5 Browser extension | Support status badges on three retailers' product pages |
-| M6 B2B | CSV reports, paid API keys, supplier SKU checks |
+| M6 B2B | CSV reports, paid API keys, supplier SKU checks. Planned, not active (D45) |
 | M7 Growth | Monthly report and email alerts |
 
 ## How it works

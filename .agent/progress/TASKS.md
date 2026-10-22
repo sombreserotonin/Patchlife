@@ -4,7 +4,7 @@
 M1 and M2 are done (2026-10-21). The plan is `docs/PLAN.md` (M3) and the cost pivot is `docs/COSTS.md` (stages 1 and 2 fall in M3).
 
 Rules for the daily build:
-- Never start a task under **Waiting**: those need a `Crawl` session or the owner.
+- Never start a task under **Waiting**: those need a `Crawl` session or the owner. Never start anything under **Planned**.
 - When every task under **Next** is done, do housekeeping only and end the run with `WAITING: no Default task`.
 - Never mark M3 done. Only the session that runs the M3 exit check may do that, and only if it passes.
 
@@ -12,15 +12,19 @@ Next for the daily build (`Default`), in order:
 - Nothing. Do housekeeping only and end with `WAITING: no Default task`.
 
 Waiting:
-- [ ] Migration off AI and subscriptions (D44, `docs/MIGRATION.md`), stage 0: the owner answers the plan's open decisions (needs-human issue). Until cut-over, sessions build only the plan's replacements and nothing new that needs a model to run.
+- [ ] Migration off AI and subscriptions (D44, `docs/MIGRATION.md`), stage 0: the owner answers decisions 1 to 5 on #102 (#101, P1, merged 22 Oct). Until cut-over, sessions build only the plan's replacements and nothing new that needs a model to run.
 - [ ] Coverage for M4 (the nightly task, one source a night): at least 40 verified small-office records (routers, printers, NVRs). GL.iNet gave routers (#49); next in the registry are Kyocera, ASUS, GoPro, Lenovo, Motorola, NETGEAR, Samsung and Grandstream.
 - [ ] M3 exit check, part 1: three consecutive nightly runs each end in a correct PR or a correct "nothing to do" (from the night of 22 Oct UTC: `Re-verify evidence` at 12:41, the `Crawl` task at 14:17, the daily build at 19:08). Part 2 is done (below).
 
 Leads from `scripts/unquoted-dates.mjs` (22 Oct, need `Crawl`): rows already on cited pages that no record covers (trial run: all 19 pages read, no errors). TP-Link's AU compliance page has 797 dates, nearly all non-Tapo products (routers, switches, access points: the largest small-office source we already cite); the EZVIZ EOL list has 119, including NVRs, routers and network switches that count toward M4's 40 small-office records; Google's Nest table (`answer/10231940`) has about 40 non-camera devices (hubs, Wifi, Chromecast, thermostats, speakers); Ring's `ri2p1` pages list chimes, alarm sensors, intercoms and lighting. Run the script on a page to list them. Other leads (need `Crawl`): Google's regulatory page `https://support.google.com/chromecast/answer/10367042` also links Australian statements for Google TV Streamer (4K), Google Nest Mini, Google Nest Wifi Pro and Nest x Yale Lock (#36 audit). TP-Link's TC and TD rows (PLAN M3). Ring renames not settled by Ring's pages (#44, #45).
 
+Planned (not active; D45, revisit once the no-AI setup is up and working, after MIGRATION Stage 4):
+- [ ] The business side: M4's demand check (the `/business` page, the Tally waitlist and the privacy additions; drafts in #99 on `claude/m4-drafts`, keep that branch) and M6 (paid feed, API keys, reports, supplier checks, the free fleet checker). Who builds it is MIGRATION decision 15.
+
 Done:
 - [x] Archive snapshots (D29, D43): #97 (script) merged; the owner merged #98 (nightly step, gate, merge-rule wording) on 22 Oct. Watch the first scheduled `Re-verify evidence` run (12:41 UTC 22 Oct): no scheduled workflow has ever run in this repository (`pages.yml`'s 00:17 UTC schedule did not fire on 22 Oct), so check that it starts. It links up to 5 pages a night; the 19 pages take about four nights.
-- [x] H9b drafts (M4): #99 asks the owner to approve the `/business` page, waitlist form, privacy additions and checklist (draft on `claude/m4-drafts`).
+- [x] H9b drafts (M4): #99 holds the `/business` page, waitlist form, privacy additions and checklist (draft on `claude/m4-drafts`). The owner shelved the business side on 22 Oct (D45), so #99 is labelled `planned`, not `needs-human`.
+- [x] Migration plan reviewed (22 Oct): three critics (feasibility, facts, completeness) revised `docs/MIGRATION.md`; decisions 12 to 15 added; its proposed decisions renumbered from D46.
 - [x] M3 exit check, part 2 (22 Oct): a deliberately broken fixture source is detected and flagged. Drill: the real `reverify.yml` steps (all but validate and test) ran in a scratch clone against a local server, with four fixture records due for re-check. Good page: verified. Quote removed: `stale (quote not found ...)`, pushed. 404: `stale (HTTP 404 ...)`, pushed. Redirect: `error (redirected to ...)`, file unchanged, run failed with `::error title=Records not checked::acme-cam-c`. The pushed commit held only verification changes (`Only verification changed`), and the next run stopped at the guard while the branch existed.
 - [x] Coverage, 22 Oct (second round): #92 (EZVIZ, 58 more) and #94 (TP-Link smart home, 42), audited; the Ring audit of #90 passed after merge. 695 verified records.
 - [x] Coverage, 22 Oct: #86 (TP-Link routers and Deco, 60), #88 (EZVIZ NVRs, networking, gateways, locks, sensors, 60), #89 (TP-Link access points and switches, 60), #90 (Ring accessories, 48) and #91 (Google Nest table devices, 27), each audited by a separate `Crawl` session except #90 (audit running after merge). 595 verified records; M4's "150 or more" and "40 small-office" conditions are met.

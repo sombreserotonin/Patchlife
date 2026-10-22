@@ -18,3 +18,4 @@
 - Owner's machine for local models: Windows, 64 GB DDR4, RX 9070 XT (21 Oct 2026); Vulkan backend, Task Scheduler (docs/COSTS.md).
 - Sessions created with the session tools inherit the owner's Firecrawl connector; data and audit sessions may use it to search for URLs (D35), never as the source of a quote or category (D17).
 - Scheduled tasks: an agent can create one with the session tools, but it gets no repository and no connectors, so its runs have no checkout. The owner creates scheduled tasks in the claude.ai routines UI (nightly data task: #41).
+- 22 Oct: no AI and no subscription is the goal (D44, `docs/MIGRATION.md`); stage 0 decisions are on #102. #101 pinned the workflows to Node 24 and added monthly grouped Dependabot PRs, which the owner merges. The business side (M4, M6) is in Planned until the no-AI setup is up and working (D45, #99). No scheduled workflow has run in this repository yet (the 00:17 UTC Pages run on 22 Oct didn't fire).
