@@ -38,7 +38,7 @@ function setup() {
 
 test("links each quoted item whose quote the capture holds, and leaves the rest and failed pages unchanged", async () => {
   const { dir, get, calls, read } = setup();
-  const results = await archiveEvidence(dir, { get });
+  const results = await archiveEvidence(dir, { get, today: "1970-01-01" });
   assert.deepEqual(results, [
     { url: "https://example.com/acme/eol", error: "Save Page Now ended at https://web.archive.org/save/https://example.com/acme/eol, not a capture of this page" },
     { url: "https://example.com/acme/leap-5", error: `the capture redirects to https://web.archive.org/web/${TS}id_/https://example.com/` },
@@ -58,13 +58,20 @@ test("links each quoted item whose quote the capture holds, and leaves the rest 
   assert.deepEqual(validateDevices(dir, { today: "2026-10-22" }).errors, []);
 });
 
-test("skips linked items; urls and limit choose the pages", async () => {
+test("skips linked items; urls and limit choose the pages, and the start moves one page a day", async () => {
   const { dir, get, calls } = setup();
+  // 1970-01-01 is day 0; four pages have quoted items: eol, leap-5, psti, security.
+  // An archive that is down links nothing, so every call sees the same four pages.
+  const down = async () => { throw new Error("down"); };
+  const order = async (today) => (await archiveEvidence(dir, { get: down, today, limit: 2 })).map((r) => r.url.split("/").pop());
+  assert.deepEqual(await order("1970-01-01"), ["eol", "leap-5"]);
+  assert.deepEqual(await order("1970-01-03"), ["psti", "security"]);
+  assert.deepEqual(await order("1970-01-04"), ["security", "eol"]);
   await archiveEvidence(dir, { get, urls: ["https://example.com/acme/security"] });
   assert.deepEqual(calls, ["https://web.archive.org/save/https://example.com/acme/security", `https://web.archive.org/web/${TS}id_/https://example.com/acme/security`]);
   calls.length = 0;
   assert.deepEqual(await archiveEvidence(dir, { get, urls: ["https://example.com/acme/security"] }), []);
-  // Sorted: eol, leap-5, psti; security is fully linked now.
-  assert.deepEqual((await archiveEvidence(dir, { get, limit: 2 })).map((r) => r.url), ["https://example.com/acme/eol", "https://example.com/acme/leap-5"]);
-  assert.equal(calls.length, 3);
+  // Sorted: eol, leap-5, psti, as security is fully linked now; day 1 starts at leap-5.
+  assert.deepEqual((await archiveEvidence(dir, { get, today: "1970-01-02", limit: 2 })).map((r) => r.url), ["https://example.com/acme/leap-5", "https://example.com/acme/psti"]);
+  assert.equal(calls.length, 4);
 });

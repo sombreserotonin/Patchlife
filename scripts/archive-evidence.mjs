@@ -17,8 +17,9 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const WAYBACK = "https://web.archive.org";
 
 // Returns one { url, archiveUrl, linked, missing } per page archived, or { url, error } when the save or the capture
-// failed, in which case no file changes for that page.
-export async function archiveEvidence(devicesDir, { urls = [], limit = Infinity, get = createFetcher({ timeoutMs: 120_000 }) } = {}) {
+// failed, in which case no file changes for that page. Without urls, the pages are taken in URL order starting one
+// page further on each day (UTC), so under a limit, pages that never capture well can't keep the others out.
+export async function archiveEvidence(devicesDir, { urls = [], limit = Infinity, today = new Date().toISOString().slice(0, 10), get = createFetcher({ timeoutMs: 120_000 }) } = {}) {
   const files = listYamlFiles(devicesDir).map((file) => ({ file, doc: YAML.parseDocument(readFileSync(file, "utf8")) }));
   // url -> the quoted items citing it that have no link yet.
   const unlinked = new Map();
@@ -30,7 +31,10 @@ export async function archiveEvidence(devicesDir, { urls = [], limit = Infinity,
   }
   const results = [];
   const changed = new Set();
-  for (const url of (urls.length ? urls.filter((u) => unlinked.has(u)) : [...unlinked.keys()].sort()).slice(0, limit)) {
+  const sorted = [...unlinked.keys()].sort();
+  const start = sorted.length && (Date.parse(today) / 86_400_000) % sorted.length;
+  const pages = urls.length ? urls.filter((u) => unlinked.has(u)) : [...sorted.slice(start), ...sorted.slice(0, start)];
+  for (const url of pages.slice(0, limit)) {
     try {
       // Save Page Now redirects to the new capture; a capture that is itself a redirect ends somewhere else.
       const saved = await get(`${WAYBACK}/save/${url}`);
