@@ -1,0 +1,30 @@
+id: kyocera-ecosys-ma5500ifx
+brand: Kyocera
+brand_slug: kyocera
+model: ECOSYS MA5500ifx
+aliases: []
+category: printer
+regions: [UK]
+support:
+  rule: fixed_date
+  end_date: "2026-12-31"
+  years: null
+  anchor_date: null
+  at_least: true
+  conditions: Kyocera says it extends support periods where it judges that prudent and will not reduce them.
+evidence:
+  - url: https://www.kyoceradocumentsolutions.co.uk/en/support/product-security.html
+    quote: "ECOSYS MA5500ifx Date of first availability in the UK: Mar-23 End of support date: 31st December 2026"
+    retrieved: "2026-10-22"
+    archive_url: null
+    regime: uk_psti
+  - url: https://www.kyoceradocumentsolutions.co.uk/en/support/product-security.html
+    quote: "Kyocera shall, as standard, support all in-scope devices for period of no less than three years from the point the relevant model was first made available in the UK."
+    retrieved: "2026-10-22"
+    archive_url: null
+    regime: uk_psti
+verification:
+  status: verified
+  checked: "2026-10-22"
+  text_sha256: 35810e7206377a041221548c065c973fa64ef177b8146674e2f317e41deab6a3
+notes: The page is Kyocera's UK PSTI statement and covers the UK; the in-scope list names A4 ECOSYS and TASKalfa devices. The end date is the published support end, which the statement says is a minimum.
