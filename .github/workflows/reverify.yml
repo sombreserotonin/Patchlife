@@ -1,0 +1,77 @@
+name: Re-verify evidence
+
+# Nightly re-verification on GitHub's runners, with no model (docs/COSTS.md stage 1, D42). It checks up to 40 verified
+# records whose last check is more than 60 days old and pushes the results to claude/reverify-<date>-<run id> when the
+# data changes are verification only (RUNBOOKS A9). The daily build opens that PR, so CI runs, and merges it. The run
+# fails when the verifier breaks or a record can't be checked, and the nightly Crawl task re-checks those records.
+# Every evidence host answered a runner on 21 Oct 2026 (Probe hosts run 39695382968).
+on:
+  schedule:
+    - cron: '41 12 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: reverify
+  cancel-in-progress: false
+
+jobs:
+  reverify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - name: Stop while an earlier re-verification is unmerged
+        # Its records still look due on main, so this run would check them again and conflict with it.
+        run: |
+          open=$(git ls-remote --heads origin 'refs/heads/claude/reverify-*')
+          if [ -n "$open" ]; then
+            echo "::error::Unmerged re-verification branch: merge it, or delete it if its PR was closed (RUNBOOKS A9). $open"
+            exit 1
+          fi
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
+      - name: Re-verify the oldest due records
+        # Exit 1 means a record was stale, failed or errored, which the steps below handle. Any other exit, or output
+        # without the closing summary line, means the verifier itself broke (an uncaught error also exits 1).
+        run: |
+          set +e
+          npm run verify:evidence -- --due 60 --limit 40 2>&1 | tee "$RUNNER_TEMP/verify.txt"
+          status=${PIPESTATUS[0]}
+          set -e
+          sed 's/^/    /' "$RUNNER_TEMP/verify.txt" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$status" -gt 1 ] || ! grep -Eq '^[0-9]+ record\(s\) checked, [0-9]+ problem\(s\)$' "$RUNNER_TEMP/verify.txt"; then
+            echo "::error::The verifier did not finish (exit $status)"
+            exit 1
+          fi
+      - run: npm run validate
+      - run: npm test
+      - name: Push verification changes
+        run: |
+          if [ -z "$(git status --porcelain -- data)" ]; then
+            echo "Nothing to push: no record was due, or nothing changed." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          node scripts/verification-only.mjs
+          branch="claude/reverify-$(date -u +%F)-$GITHUB_RUN_ID"
+          git switch -c "$branch"
+          git add data
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -q -m "data: re-verify $(date -u +%F)" -m "$(tail -n 1 "$RUNNER_TEMP/verify.txt")" \
+            -m "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          git push origin "$branch"
+          echo "Pushed $branch" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Flag records that could not be checked
+        # An error (a redirect, robots.txt, HTTP 403 or 5xx, a timeout) changes no file, so the same records would come
+        # first again every night. The nightly Crawl task reads this annotation and re-checks the ids (data-refresh step 2).
+        run: |
+          ids=$(sed -nE 's/^([a-z0-9]+(-[a-z0-9]+)*): error \(.*/\1/p' "$RUNNER_TEMP/verify.txt" | tr '\n' ' ')
+          if [ -n "$ids" ]; then
+            echo "::error title=Records not checked::$ids"
+            exit 1
+          fi
