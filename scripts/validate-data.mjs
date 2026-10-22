@@ -170,6 +170,9 @@ export function validateDevices(
 
     for (const ev of record.evidence) {
       if (ev.retrieved > today) fail(`evidence retrieved date ${ev.retrieved} is in the future`);
+      // An archive link is a Wayback capture of the cited page itself (D43).
+      const captured = ev.archive_url?.match(/^https:\/\/web\.archive\.org\/web\/\d{14}\/(.*)$/s)?.[1];
+      if (ev.archive_url && captured !== ev.url) fail(`archive_url ${ev.archive_url} is not a Wayback capture of ${ev.url}`);
     }
     const checked = record.verification.checked;
     if (checked && checked > today) fail(`verification.checked ${checked} is in the future`);

@@ -69,6 +69,15 @@ test("sends the PatchlifeBot user agent with a timeout and returns the page", as
   assert.ok(calls.every((c) => c.ua === USER_AGENT && c.redirect === "manual" && c.signal instanceof AbortSignal));
 });
 
+test("timeoutMs bounds each request", async () => {
+  // A slow server: the late reply keeps the event loop alive, since AbortSignal.timeout's own timer doesn't.
+  const fetch = (url, init) => new Promise((resolve, reject) => {
+    const late = setTimeout(resolve, 5000, new Response(""));
+    init.signal.addEventListener("abort", () => (clearTimeout(late), reject(init.signal.reason)));
+  });
+  await assert.rejects(createFetcher({ fetch, timeoutMs: 20 })("https://a.test/p"), /^Error: robots\.txt unreachable \(.*timeout\) for https:\/\/a\.test$/);
+});
+
 test("a PDF comes back as bytes, not text", async () => {
   const bytes = new Uint8Array([37, 80, 68, 70, 0, 255]);
   const { get } = setup({ "https://a.test/p.pdf": reply(bytes, 200, { "content-type": "application/pdf" }) });

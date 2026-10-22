@@ -107,7 +107,7 @@ Targets are estimates. Each milestone closes only when its exit checks in ROADMA
   - re-verify verified records checked more than 60 days ago with `npm run verify:evidence -- --due 60 --limit 40`, so a quiet night ends with nothing to change. From #80 this runs on GitHub Actions (`Re-verify evidence`, D42), and the daily build merges it (RUNBOOKS A9);
   - report dead sources;
   - mark `stale` records and repair them (A4).
-- **PDF and archive (P3, D29):** PDF text through one dependency (protected PR); archive snapshots tested in `Crawl`; then the PDF-only brands (Aqara, Reolink, TP-Link UK, GoPro).
+- **PDF and archive (P3, D29):** PDF text through one dependency (protected PR); archive snapshots on GitHub's runners, since `Crawl` can't reach archive.org (D43); then the PDF-only brands (Aqara, Reolink, TP-Link UK, GoPro).
 - **Decisions to make:** how to store month-only dates, which A2 currently skips. The EU Cyber Resilience Act will make many statements month and year only.
 - **Coverage for M4:** at least 150 verified records, at least 40 of them in small-office categories (routers, printers, NVRs). Seed sources: TP-Link, GL.iNet, Kyocera, ASUS, NETGEAR. Also the follow-ups found in the audits: Google's Australian statements, AU and US evidence for the Ring seed records, TP-Link's TC and TD rows.
 - **Exit:**

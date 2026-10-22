@@ -50,7 +50,8 @@ export function robotsAllows(robotsTxt, path) {
 
 // Returns get(url) -> { url, contentType, text }, with bytes in place of text for a PDF, or throws with the reason (and `status` and the final `url` for HTTP errors).
 // State (robots cache, per-host timing, hosts that asked us to back off) lasts for the fetcher's lifetime.
-export function createFetcher({ fetch = globalThis.fetch, now = Date.now, sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
+// timeoutMs bounds each request; Save Page Now needs longer than a page (scripts/archive-evidence.mjs).
+export function createFetcher({ fetch = globalThis.fetch, now = Date.now, sleep = (ms) => new Promise((r) => setTimeout(r, ms)), timeoutMs = TIMEOUT_MS } = {}) {
   const lastRequest = new Map();
   const robots = new Map();
   const backedOff = new Set();
@@ -70,7 +71,7 @@ export function createFetcher({ fetch = globalThis.fetch, now = Date.now, sleep 
       const wait = (lastRequest.get(host) ?? -Infinity) + MIN_GAP_MS - now();
       if (wait > 0) await sleep(wait);
       lastRequest.set(host, now());
-      const res = await fetch(url, { headers: { "user-agent": USER_AGENT }, redirect: "manual", signal: AbortSignal.timeout(TIMEOUT_MS) });
+      const res = await fetch(url, { headers: { "user-agent": USER_AGENT }, redirect: "manual", signal: AbortSignal.timeout(timeoutMs) });
       if (res.status !== 429 && res.status !== 503) return res;
       const seconds = retrySeconds(res, attempt);
       if (attempt === MAX_ATTEMPTS || seconds > MAX_WAIT_S) {
