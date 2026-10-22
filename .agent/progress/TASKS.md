@@ -12,7 +12,6 @@ Next for the daily build (`Default`), in order:
 - Nothing. Do housekeeping only and end with `WAITING: no Default task`.
 
 Waiting:
-- [ ] COSTS stage 1, re-verify on GitHub Actions (D42): the owner merges #80 (protected: workflow `reverify.yml`, daily build opens and merges `claude/reverify-*` branches, the nightly task re-checks what Actions couldn't). Nothing is due until 21 Dec 2026. Don't start it again.
 - [ ] Search Console (H7, #77, owner): verify the Domain property and submit `https://patchlife.tech/sitemap.xml`.
 - [ ] Coverage for M4 (the nightly task, one source a night): at least 40 verified small-office records (routers, printers, NVRs). GL.iNet gave routers (#49); next in the registry are Kyocera, ASUS, GoPro, Lenovo, Motorola, NETGEAR, Samsung and Grandstream.
 - [ ] Archive snapshots (D29): test the Wayback "save" endpoint from `Crawl` (web.archive.org is allowlisted) and, if it works, fill `archive_url` on new evidence.
@@ -21,6 +20,7 @@ Waiting:
 Leads (need `Crawl`): Google's regulatory page `https://support.google.com/chromecast/answer/10367042` also links Australian statements for Google TV Streamer (4K), Google Nest Mini, Google Nest Wifi Pro and Nest x Yale Lock (#36 audit). TP-Link's TC and TD rows (PLAN M3). Ring renames not settled by Ring's pages (#44, #45).
 
 Done:
+- [x] COSTS stage 1, re-verification on GitHub Actions (D42): the owner merged #80 on 22 Oct; a manual run (39702142924) passed every step and ended "Nothing to push", since nothing is due until 21 Dec 2026. The daily build now opens and merges `claude/reverify-*` branches, and the nightly task re-checks what Actions couldn't.
 - [x] `npm run validate` checks `data/sources/page-hashes.json`: a sorted JSON object of https URL to SHA-256 hex, so a broken merge fails at the PR, not in the nightly run.
 - [x] Re-verification gate `scripts/verification-only.mjs` and RUNBOOKS A9 (#78); PDF evidence read in reading order (#79).
 - [x] `Probe hosts` run 39695382968 (21 Oct): all six evidence hosts allow PatchlifeBot and answer a GitHub runner with HTTP 200 (COSTS).

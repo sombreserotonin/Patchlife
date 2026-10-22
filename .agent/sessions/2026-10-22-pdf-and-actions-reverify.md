@@ -6,3 +6,4 @@
 - COSTS stage 1: #78 (gate script, A9, D42) merged; #80 (protected: `reverify.yml`, prompt changes) reviewed by 21 agents, 7 fixes, waits for the owner. Nothing is due until 21 Dec 2026.
 - Lighthouse gate now uses a median of three runs (#75) after a 75 on a slow runner.
 - Next: owner merges #80 and does H7. Then COSTS stage 2 (per-source table parsers) needs page fixtures from `Crawl`; M4 needs H9b before the waitlist.
+- Owner merged #80; the first manual run of `Re-verify evidence` (39702142924) passed end to end with nothing due.
