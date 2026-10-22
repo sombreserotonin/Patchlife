@@ -413,7 +413,9 @@ test("the privacy page carries the approved text and every page links to it", (t
   const site = build(t);
   const privacy = site.read("privacy/index.html");
   assertApproved(privacy, "Patchlife doesn't collect information about you.", "privacy");
-  assertApproved(privacy, "The site sets no cookies and runs no analytics, advertising or tracking scripts.", "privacy");
+  assertApproved(privacy, "The site sets no cookies and runs no advertising or tracking scripts. Cloudflare Web Analytics counts page views without cookies; Cloudflare says it does not collect or use visitors' personal data.", "privacy");
+  assertApproved(privacy, `Cloudflare delivers the site and handles visitors' IP addresses to do so. <a href="https://www.cloudflare.com/privacypolicy/">Cloudflare's privacy policy</a> explains how.`, "privacy");
+  assert.doesNotMatch(privacy, /runs no analytics/);
   assertApproved(privacy, "regardless of whether the visitor has signed into GitHub or not.", "privacy");
   assert.match(privacy, /<a href="mailto:admin@sombrexo\.com">admin@sombrexo\.com<\/a>, or open an issue at <a href="https:\/\/github\.com\/sombreserotonin\/Patchlife\/issues">/);
   for (const file of htmlFiles(site.outDir)) assert.match(site.read(file), /<a href="\/privacy\/">Privacy<\/a>/, file);

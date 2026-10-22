@@ -36,6 +36,7 @@ const CORRECTION_URL = `${REPO_URL}/issues/new/choose`;
 const CRAWLER_URL = `${REPO_URL}/blob/main/docs/CRAWLER.md`;
 const NOTICE_URL = `${REPO_URL}/blob/main/data/NOTICE.md`;
 const GITHUB_PRIVACY_URL = "https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement";
+const CLOUDFLARE_PRIVACY_URL = "https://www.cloudflare.com/privacypolicy/";
 const CONTACT_EMAIL = "admin@sombrexo.com";
 const AGPL_URL = `${REPO_URL}/blob/main/LICENSE`;
 const ODBL_URL = "https://opendatacommons.org/licenses/odbl/1-0/";
@@ -566,7 +567,7 @@ function aboutPage(ctx, { coverage }) {
   });
 }
 
-// The owner approved this text in #60, with the email and GitHub issues as the contacts.
+// The owner approved this text in #60, with the email and GitHub issues as the contacts, and the Cloudflare wording in #68.
 function privacyPage(ctx) {
   return layout(ctx, {
     path: "/privacy/",
@@ -576,9 +577,10 @@ function privacyPage(ctx) {
 <p>Last updated: 22 October 2026.</p>
 <p>Patchlife doesn't collect information about you.</p>
 <ul>
-<li><strong>No accounts, forms or tracking.</strong> The site sets no cookies and runs no analytics, advertising or tracking scripts.</li>
+<li><strong>No accounts, forms or tracking.</strong> The site sets no cookies and runs no advertising or tracking scripts. Cloudflare Web Analytics counts page views without cookies; Cloudflare says it does not collect or use visitors' personal data.</li>
 <li><strong>Search stays on your device.</strong> The search box works in your browser. What you type isn't sent to us.</li>
 <li><strong>Hosting.</strong> The site is hosted on GitHub Pages. GitHub says: "When a GitHub Pages site is visited, the visitor's IP address is logged and stored for security purposes, regardless of whether the visitor has signed into GitHub or not." Patchlife can't see those logs. <a href="${GITHUB_PRIVACY_URL}">GitHub's privacy statement</a> explains how GitHub handles them.</li>
+<li><strong>Delivery.</strong> Cloudflare delivers the site and handles visitors' IP addresses to do so. <a href="${CLOUDFLARE_PRIVACY_URL}">Cloudflare's privacy policy</a> explains how.</li>
 <li><strong>Links to other sites.</strong> Links to manufacturers' pages and to GitHub take you to their sites, which have their own privacy policies.</li>
 <li><strong>Corrections.</strong> Reporting a correction uses a GitHub issue, which needs a GitHub account and is public.</li>
 <li><strong>Questions.</strong> Email <a href="mailto:${CONTACT_EMAIL}">${CONTACT_EMAIL}</a>, or open an issue at <a href="${REPO_URL}/issues">github.com/sombreserotonin/Patchlife/issues</a>.</li>
