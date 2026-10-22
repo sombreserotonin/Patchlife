@@ -4,6 +4,7 @@ name: Re-verify evidence
 # records whose last check is more than 60 days old and pushes the results to claude/reverify-<date>-<run id> when the
 # data changes are verification only (RUNBOOKS A9). The daily build opens that PR, so CI runs, and merges it. The run
 # fails when the verifier breaks or a record can't be checked, and the nightly Crawl task re-checks those records.
+# It also archives up to 5 cited pages that have items with no archive link (D43), in the same branch.
 # Every evidence host answered a runner on 21 Oct 2026 (Probe hosts run 39695382968).
 on:
   schedule:
@@ -49,6 +50,15 @@ jobs:
             echo "::error::The verifier did not finish (exit $status)"
             exit 1
           fi
+      - name: Archive cited pages
+        # Best effort (D43): links each item whose quote the new capture holds. A page the archive can't capture keeps
+        # its null links and comes up again the next night. A crash marks this step failed but still lets the
+        # re-verification push.
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          node scripts/archive-evidence.mjs --limit 5 2>&1 | tee "$RUNNER_TEMP/archive.txt"
+          sed 's/^/    /' "$RUNNER_TEMP/archive.txt" >> "$GITHUB_STEP_SUMMARY"
       - run: npm run validate
       - run: npm test
       - name: Push verification changes
@@ -62,7 +72,7 @@ jobs:
           git switch -c "$branch"
           git add data
           git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
-            commit -q -m "data: re-verify $(date -u +%F)" -m "$(tail -n 1 "$RUNNER_TEMP/verify.txt")" \
+            commit -q -m "data: re-verify $(date -u +%F)" -m "$(tail -n 1 "$RUNNER_TEMP/verify.txt")" -m "$(tail -n 1 "$RUNNER_TEMP/archive.txt")" \
             -m "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           git push origin "$branch"
           echo "Pushed $branch" | tee -a "$GITHUB_STEP_SUMMARY"

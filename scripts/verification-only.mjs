@@ -1,6 +1,6 @@
 // Checks that, under data/, the working tree differs from a git ref only in what a re-verification may change: the
-// `verification` block of existing device records and data/sources/page-hashes.json. Files outside data/ (notes, the
-// log) are not data and are ignored. The nightly re-verify workflow runs it before pushing, and the daily build before
+// `verification` block of existing device records, an empty `archive_url` filled with a capture of its item's own page
+// (D43), and data/sources/page-hashes.json. Files outside data/ (notes, the log) are not data and are ignored. The nightly re-verify workflow runs it before pushing, and the daily build before
 // merging a re-verification PR without an audit (D20, RUNBOOKS A9).
 // Usage: node scripts/verification-only.mjs [ref]   (ref defaults to HEAD; run it from inside the repository)
 import { execFileSync } from "node:child_process";
@@ -9,9 +9,24 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isDeepStrictEqual } from "node:util";
 import YAML from "yaml";
+import { isCaptureOf } from "./validate-data.mjs";
 
 const PAGE_HASHES = "data/sources/page-hashes.json";
 const DEVICE = /^data\/devices\/[^/]+\/[^/]+\.yaml$/;
+
+// The record without its verification block, and without the archive links filled since `before` where an item had
+// none, so those count like verification.
+function comparable(record, before) {
+  const { verification: _, ...rest } = record ?? {};
+  if (!Array.isArray(rest.evidence)) return rest;
+  const evidence = rest.evidence.map((item, i) => {
+    const old = before?.evidence?.[i];
+    if (old?.archive_url != null || typeof item?.archive_url !== "string" || !isCaptureOf(item.archive_url, item.url)) return item;
+    const { archive_url: _link, ...plain } = item;
+    return old?.archive_url === null ? { ...plain, archive_url: null } : plain;
+  });
+  return { ...rest, evidence };
+}
 
 // Returns one message per path that a re-verification may not change; an empty list means only verification changed.
 export function verificationOnlyProblems(ref = "HEAD", cwd = process.cwd()) {
@@ -41,9 +56,7 @@ export function verificationOnlyProblems(ref = "HEAD", cwd = process.cwd()) {
       problems.push(`${path}: deleted or unreadable`);
       continue;
     }
-    const { verification: _before, ...restBefore } = before ?? {};
-    const { verification: _after, ...restAfter } = after ?? {};
-    if (!isDeepStrictEqual(restBefore, restAfter)) problems.push(`${path}: changes more than the verification block`);
+    if (!isDeepStrictEqual(comparable(before), comparable(after, before))) problems.push(`${path}: changes more than the verification block`);
   }
   return problems;
 }
