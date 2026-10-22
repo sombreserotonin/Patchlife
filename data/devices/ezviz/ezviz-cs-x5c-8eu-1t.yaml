@@ -1,0 +1,39 @@
+id: ezviz-cs-x5c-8eu-1t
+brand: EZVIZ
+brand_slug: ezviz
+model: "CS-X5C-8EU/1T"
+category: nvr
+regions: [EU]
+support:
+  rule: fixed_date
+  end_date: "2023-12-31"
+  years: null
+  anchor_date: null
+  at_least: false
+  conditions: "EZVIZ gives this as an expected EOL date and says its EOL product list is subject to change."
+evidence:
+  - url: https://support.ezviz.com/faq/article/EZVIZ-EOL-Product-List
+    quote: "NVR CS-X5C-8EU/1T Europe 2023/12/31"
+    retrieved: "2026-10-22"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://support.ezviz.com/faq/article/EZVIZ-EOL-Product-List
+    quote: "About EZVIZ’s EOL (End-Of-Life) products: It means that EZVIZ no longer maintain any firmware updates (including security updates) for them, and may no longer respond to security vulnerability reports for such products either."
+    retrieved: "2026-10-22"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://support.ezviz.com/faq/article/EZVIZ-EOL-Product-List
+    quote: "Please note that the list includes both EOL products and currently active products with an expected EOL date."
+    retrieved: "2026-10-22"
+    archive_url: null
+    regime: vendor_policy
+  - url: https://www.ezviz.com/inter/trust-center/security/upgrade-policy
+    quote: "The updates policies and the EOL product list are subject to change and will be reviewed on a regular basis."
+    retrieved: "2026-10-22"
+    archive_url: null
+    regime: vendor_policy
+verification:
+  status: verified
+  checked: "2026-10-22"
+  text_sha256: 682dd0e0ef2a21877659e79a8f7a865d73ac1cd4728de168f1aff43933b801f5
+notes: "EZVIZ lists this as the expected day of firmware update cessation for the targeted area Europe, and says its EOL means no firmware updates, including security updates. The page gives the model number only; product line on the page: NVR."
