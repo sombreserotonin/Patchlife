@@ -134,6 +134,8 @@ npm ci
 | `node scripts/data-report.mjs` | Prints the Measures rows of `docs/PLAN.md`, then counts by brand, category, status and verification state. Reads only local files, so it runs in any environment |
 | `node scripts/verification-only.mjs [ref]` | Exits 0 only if, under `data/`, the working tree differs from `ref` (default `HEAD`) in nothing but device records' `verification` blocks, empty `archive_url` fields filled with a capture of their own page, and `data/sources/page-hashes.json`: the test for a re-verification that may merge without an audit |
 | `node scripts/archive-evidence.mjs [--limit <n>] [url ...]` | Asks the Wayback Machine to capture each cited page (or the ones named) that has an item with no `archive_url`, and links each item whose quote the capture's raw copy holds. Needs archive.org, which `Crawl` can't reach, so it runs on GitHub's runners (D43); always exits 0 |
+| `node scripts/merge-bot.mjs [--dry-run]` | Merges only the routine PRs the bot opens (re-verify and measures), at the exact commit it checked, once `test`, `data-gate` and `build` pass and every file fits the PR's type; anything else waits for the owner (MIGRATION decision 2). Env: `GH_TOKEN`, `GITHUB_REPOSITORY`, `BOT_LOGIN` (the App's login, ending `[bot]`) |
+| `node scripts/check-licences.mjs [lockfile]` | Exits 1 if any package in `package-lock.json` has a missing licence or one D9 and D30 don't allow |
 | `node --use-env-proxy scripts/unquoted-dates.mjs [url ...]` | Lists each date on the cited pages (or the ones named) that no record's quote covers: rows we don't have yet, or prose. Reads pages with the polite fetcher, so it runs in `Crawl`; always exits 0 |
 
 ## How the project runs itself

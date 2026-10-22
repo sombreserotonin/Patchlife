@@ -1,0 +1,23 @@
+# What Patchlife must renew or replace by a date: due is "YYYY-MM-DD", or null until the owner fills it in.
+# The watchdog warns 60 and 14 days before each due date (docs/MIGRATION.md).
+- name: patchlife.tech domain
+  due: null
+  note: Registrar, expiry date and renewal price unknown. Record them here.
+- name: sombrexo.com domain
+  due: null
+  note: Registrar and expiry date unknown. The privacy page contact, admin@sombrexo.com, depends on it (MIGRATION decision 13).
+- name: admin@sombrexo.com mailbox
+  due: null
+  note: Paid plan or free forwarding unknown. It is the privacy page contact (MIGRATION decision 13).
+- name: GitHub App private key rotation
+  due: null
+  note: Keys don't expire, so rotate the key yearly. Set this a year after the key is created, once the App exists (MIGRATION decision 1).
+- name: Cloudflare plan
+  due: null
+  note: The Free plan is expected but unverified. Set a date only if the zone is on a paid plan.
+- name: Unraid licence updates
+  due: null
+  note: Some licences include a year of updates, then an optional yearly fee (unverified, MIGRATION decision 13).
+- name: Node 24 end of life
+  due: "2028-04-30"
+  note: Move to Node 26 before this; its end of life is 30 Apr 2029 (MIGRATION decision 9).
