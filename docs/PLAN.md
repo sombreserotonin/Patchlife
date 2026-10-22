@@ -37,7 +37,7 @@ _As at Wednesday 21 October 2026. Dates are Sydney dates unless they say UTC. Re
 | Loop | Where | Does | Pace |
 | --- | --- | --- | --- |
 | Daily build (scheduled) | `Default` | Code, tests and docs: one TASKS.md item per run, plus merging green agent PRs | About 5 tasks a week |
-| Data work | `Crawl` | Adds, corrects and re-verifies records, one source per PR (D19) | One source takes about 5 to 20 minutes in a session |
+| Data work | `Crawl` | Adds and corrects records, one source per PR (D19), and re-checks what the nightly Actions re-verify could not (D42) | One source takes about 5 to 20 minutes in a session |
 | Audits | `Crawl`, a different session from the author | Checks each data PR against the source (RUNBOOKS A8), then adds the `audited` label | One per data PR |
 | Coordinating session | `Default` | Starts and steers `Crawl` sessions, merges audited PRs with your approval (D15), runs workflows like this plan | When you start one |
 | Owner | GitHub and claude.ai | Decisions, gates, protected merges, starting `Crawl` sessions until the nightly task exists, weekly check (O5) | About 90 minutes this week, then 10 minutes a week |
@@ -104,7 +104,7 @@ Targets are estimates. Each milestone closes only when its exit checks in ROADMA
 **Target:** December 2026.
 - **Nightly task:** the nightly `Crawl` task (P1, O6), which the prompt fixes (#29) made safe to run.
 - **Re-verifying:**
-  - re-verify verified records checked more than 60 days ago with `npm run verify:evidence -- --due 60 --limit 40`, so a quiet night ends with nothing to change;
+  - re-verify verified records checked more than 60 days ago with `npm run verify:evidence -- --due 60 --limit 40`, so a quiet night ends with nothing to change. From #80 this runs on GitHub Actions (`Re-verify evidence`, D42), and the daily build merges it (RUNBOOKS A9);
   - report dead sources;
   - mark `stale` records and repair them (A4).
 - **PDF and archive (P3, D29):** PDF text through one dependency (protected PR); archive snapshots tested in `Crawl`; then the PDF-only brands (Aqara, Reolink, TP-Link UK, GoPro).
@@ -239,7 +239,7 @@ Who: **A** = agent (daily build or coordinating session), **O** = owner.
 - **`.agent/prompts/data-refresh.md`:**
   - `Crawl`;
   - one source per run;
-  - re-verify verified records checked more than 60 days ago, with `--due 60 --limit 40`;
+  - re-check the records the nightly `Re-verify evidence` run on Actions could not check (D42), and repair stale ones;
   - quotes only from the polite fetcher's text;
   - skip robots-blocked and bot-walled sources;
   - never merge its own PR;

@@ -132,6 +132,7 @@ npm ci
 | `npm run verify:evidence [-- <id> ...]` | Fetches evidence URLs, marks records `verified` or `stale`, and updates the page hashes in `data/sources/page-hashes.json`. Needs network access to manufacturer sites, so in cloud sessions it runs in the `Crawl` environment |
 | `npm run build:site` | Builds the static site into `_site/`. `BASE_PATH`, `SITE_URL`, `BUILD_DATE` and `NOINDEX` set the base path, origin, status date and preview mode. Run `npm run validate` first |
 | `node scripts/data-report.mjs` | Prints the Measures rows of `docs/PLAN.md`, then counts by brand, category, status and verification state. Reads only local files, so it runs in any environment |
+| `node scripts/verification-only.mjs [ref]` | Exits 0 only if, under `data/`, the working tree differs from `ref` (default `HEAD`) in nothing but device records' `verification` blocks and `data/sources/page-hashes.json`: the test for a re-verification that may merge without an audit |
 
 ## How the project runs itself
 Claude Code does the work in cloud sessions and scheduled tasks. The guard rails are in the repository itself:
