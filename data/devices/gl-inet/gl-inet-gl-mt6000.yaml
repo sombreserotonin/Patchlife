@@ -4,7 +4,6 @@ brand_slug: gl-inet
 model: "Flint 2 (GL-MT6000)"
 aliases:
   - "GL-MT6000"
-  - "Fortify (GL-MT6000)"
 category: router
 regions: [UK]
 support:
@@ -27,6 +26,6 @@ evidence:
     regime: uk_psti
 verification:
   status: verified
-  checked: "2026-10-21"
-  text_sha256: 3541bb8b150773af7eaa338d4c5b0cbea4ebb35912af624873abe5b99b273ac4
+  checked: "2026-10-22"
+  text_sha256: e50090b5139b5194019d2a768c8b7e9ce9fedf10ffb88681ad5a970e5e50c249
 notes: "The page is GL.iNet's PSTI support period table and names no region; recorded as UK, the regime it is published under. The date is the pre-defined minimum, not a guaranteed end."
