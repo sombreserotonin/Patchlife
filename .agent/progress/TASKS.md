@@ -12,6 +12,7 @@ Next for the daily build (`Default`), in order:
 - Nothing. Do housekeeping only and end with `WAITING: no Default task`.
 
 Waiting:
+- [ ] Migration Stage 1 (D44, `docs/MIGRATION.md`): B1 and A1 are done (below). Next: B2 (source profiles and rules R1 to R8; the owner approves the profiles), B5, then B3 and B4; P2 waits for the GitHub App (decision 1).
 - [ ] Migration off AI and subscriptions (D44, `docs/MIGRATION.md`), stage 0: the owner answers decisions 1, 3, 4 and 5 on #102 (#101, P1, merged 22 Oct; decision 2 settled 22 Oct: the Pangolin VPS stays, since the owner pays for it for other projects). Until cut-over, sessions build only the plan's replacements and nothing new that needs a model to run.
 - [ ] Coverage for M4 (the nightly task, one source a night): at least 40 verified small-office records (routers, printers, NVRs). GL.iNet gave routers (#49); next in the registry are Kyocera, ASUS, GoPro, Lenovo, Motorola, NETGEAR, Samsung and Grandstream.
 - [ ] M3 exit check, part 1: three consecutive nightly runs each end in a correct PR or a correct "nothing to do" (from the night of 22 Oct UTC: `Re-verify evidence` at 12:41, the `Crawl` task at 14:17, the daily build at 19:08). Part 2 is done (below).
@@ -22,6 +23,8 @@ Planned (not active; D45, revisit once the no-AI setup is up and working, after 
 - [ ] The business side: M4's demand check (the `/business` page, the Tally waitlist and the privacy additions; drafts in #99 on `claude/m4-drafts`, keep that branch) and M6 (paid feed, API keys, reports, supplier checks, the free fleet checker). Who builds it is MIGRATION decision 15.
 
 Done:
+- [x] Migration Stage 1, B1 (22 Oct): #105 (Ring "at least" quoted on all 98 records), #106 and #107 (two unsupported aliases dropped), each audited by a separate `Crawl` session, and #108 (TP-Link's "v1" already matches the page). On `main`: no Ring record claims "at least" without a quote saying so, and no alias is missing from its quotes.
+- [x] Migration Stage 1, A1 (22 Oct): `scripts/merge-bot.mjs`, `scripts/check-licences.mjs`, `scripts/renewals.mjs` and `ops/renewals.yml` (#109), and `scripts/watchdog.mjs`. Nothing runs them until P2. Built by two background builders, reviewed here; 263 tests.
 - [x] Archive snapshots (D29, D43): #97 (script) merged; the owner merged #98 (nightly step, gate, merge-rule wording) on 22 Oct. Watch the first scheduled `Re-verify evidence` run (12:41 UTC 22 Oct): no scheduled workflow has ever run in this repository (`pages.yml`'s 00:17 UTC schedule did not fire on 22 Oct), so check that it starts. It links up to 5 pages a night; the 19 pages take about four nights.
 - [x] H9b drafts (M4): #99 holds the `/business` page, waitlist form, privacy additions and checklist (draft on `claude/m4-drafts`). The owner shelved the business side on 22 Oct (D45), so #99 is labelled `planned`, not `needs-human`.
 - [x] Migration plan reviewed (22 Oct): three critics (feasibility, facts, completeness) revised `docs/MIGRATION.md`; decisions 12 to 15 added; its proposed decisions renumbered from D46.
