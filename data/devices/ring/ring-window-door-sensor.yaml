@@ -1,0 +1,26 @@
+id: ring-window-door-sensor
+brand: Ring
+brand_slug: ring
+model: "Window & Door Sensor"
+aliases:
+  - "Ring Window & Door Sensor"
+category: sensor
+regions: [US]
+support:
+  rule: fixed_date
+  end_date: "2030-12-31"
+  years: null
+  anchor_date: null
+  at_least: true
+  conditions: "If bought new on ring.com, or on amazon.com where Amazon is the seller, at least four years from purchase or this date, whichever is later."
+evidence:
+  - url: https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "Window & Door Sensor 31 December 2030"
+    retrieved: "2026-10-22"
+    archive_url: null
+    regime: vendor_policy
+verification:
+  status: verified
+  checked: "2026-10-22"
+  text_sha256: 2a8b9a5c31241b1bf4662453914d9bc00ce48cd2c5ec7dcd114e91637a2fb7c6
+notes: null
