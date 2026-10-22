@@ -41,6 +41,8 @@ Status: done 2026-10-21, on the exit checks above, after M1 closed.
 
 Exit: three consecutive nightly runs each end in a correct PR or a correct no-op; a deliberately broken fixture source is detected and flagged.
 
+Progress: the broken-source half passed on 22 Oct 2026 (drill of the `reverify.yml` steps, TASKS.md); the three nightly runs start that night.
+
 ## M4 Demand check (four weeks)
 - Starts only when the start conditions in `docs/PLAN.md` hold (site on `patchlife.tech`, M3 done, 150 or more verified records, pages indexed, waitlist and collection notice live, gates approved).
 - Weekly Search Console and waitlist numbers in LOG.md, pasted by the owner into a pinned issue (needs H7).
