@@ -164,7 +164,7 @@ const quoted = (doc, value) => Object.assign(doc.createNode(value), { type: "QUO
 
 // A redirect to another origin or path, such as a homepage, means the cited page has moved, so its text is not checked.
 // A trailing slash, query string or fragment does not count.
-function samePage(cited, final) {
+export function samePage(cited, final) {
   const [a, b] = [new URL(cited), new URL(final)];
   return a.origin === b.origin && a.pathname.replace(/\/$/, "") === b.pathname.replace(/\/$/, "");
 }
