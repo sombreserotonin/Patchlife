@@ -42,6 +42,7 @@ const rejected = [
   ["month-not-in-quote", /^end_date 2027-07 is not written in any evidence quote$/],
   ["month-hides-day", /^end_date 2027-06 gives only the month, but a quote states 2027-06-30: use the full date$/],
   ["bad-month", /schema: \/support\/end_date must match pattern/],
+  ["bad-archive", /^archive_url https:\/\/web\.archive\.org\/web\/20261022015106\/https:\/\/example\.com\/acme\/other is not a Wayback capture of https:\/\/example\.com\/acme\/security$/],
 ];
 
 test("a month-only end date passes when a quote states that month and no day in it (D38)", () => {

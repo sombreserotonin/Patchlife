@@ -12,7 +12,7 @@ Next for the daily build (`Default`), in order:
 - Nothing. Do housekeeping only and end with `WAITING: no Default task`.
 
 Waiting:
-- [ ] Archive snapshots (D29): the `Crawl` network refuses archive.org (proxy 403) and drops web.archive.org before TLS (test session, 22 Oct), so the "allowlisted" note was wrong. Options: the owner adds both hosts to the `Crawl` allowlist, or snapshots are requested from GitHub Actions, whose runners reach archive.org.
+- [ ] Archive snapshots (D29, D43): `scripts/archive-evidence.mjs` is merged (#97). The owner merges the protected follow-up (the nightly step in `Re-verify evidence`, the gate change and CLAUDE.md's merge-rule wording); then the nightly run links up to 5 pages a night and the daily build merges it per A9. The 19 cited pages take about four nights.
 - [ ] Coverage for M4 (the nightly task, one source a night): at least 40 verified small-office records (routers, printers, NVRs). GL.iNet gave routers (#49); next in the registry are Kyocera, ASUS, GoPro, Lenovo, Motorola, NETGEAR, Samsung and Grandstream.
 - [ ] M3 exit check, part 1: three consecutive nightly runs each end in a correct PR or a correct "nothing to do" (from the night of 22 Oct UTC: `Re-verify evidence` at 12:41, the `Crawl` task at 14:17, the daily build at 19:08). Part 2 is done (below).
 

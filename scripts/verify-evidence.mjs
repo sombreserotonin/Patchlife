@@ -1,6 +1,6 @@
 // Checks that each evidence quote appears in the source page (SPEC 3) and records the result in the YAML.
 // Also keeps one hash per evidence URL in data/sources/page-hashes.json and reports which pages changed since the
-// last run. Reads HTML, plain text and PDF (D29). Stores hashes, never pages. Archive snapshots are not built yet.
+// last run. Reads HTML, plain text and PDF (D29). Stores hashes, never pages. scripts/archive-evidence.mjs adds archive links.
 // Usage: node --use-env-proxy scripts/verify-evidence.mjs [--due <days>] [--limit <n>] [id ...]
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
@@ -15,7 +15,7 @@ import { listYamlFiles, normalise } from "./validate-data.mjs";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const TEXT_TYPES = new Set(["text/html", "application/xhtml+xml", "text/plain"]);
 // Keeps untouched lines byte-identical, such as `regions: [UK]` and long notes.
-const YAML_OUT = { flowCollectionPadding: false, lineWidth: 0 };
+export const YAML_OUT = { flowCollectionPadding: false, lineWidth: 0 };
 
 // Named entities: the basic set, all of Latin-1 (code points 160 to 255 in order) and common typography.
 const LATIN1 =

@@ -173,7 +173,7 @@ All dates in records and logs are UTC (`date -u +%F`). Scheduled runs at 06:08 S
 
 ### A4 Stale record
 1. Search the maker's own site for where the statement moved.
-2. If you find it, add new evidence and re-verify (A1).
+2. If you find it, add new evidence and re-verify (A1). Set `archive_url: null` on every item whose quote or URL changed; the nightly run captures it again (D43).
 3. If you don't, change the record to `rule: none_published`, list the pages checked, and say so in the PR. Never keep a date without a matching quote.
 
 ### A5 Blocked or unusable source

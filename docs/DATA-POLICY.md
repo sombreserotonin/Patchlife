@@ -17,6 +17,7 @@ News, forums, retailers, distributors and AI answers are leads only, never evide
 - At least one quote must name the model, as its `model` or one of its `aliases` (ignoring case and spacing, as the evidence checker does). `none_published` records are exempt.
 - Within a brand, a model name or alias belongs to one record, except region-date splits of one model (D33): records with the same `model` and no region in common.
 - Store only quotes and facts, never whole pages or images.
+- `archive_url` is a Wayback Machine capture of the cited page whose raw copy holds that item's quote. Authors leave it `null`; the nightly re-verify run fills it (D43). When an item's quote or URL changes, set its `archive_url` back to `null` so the page is captured again. `npm run validate` rejects a link that is not a capture of the item's own URL.
 - When a table states the rule in one place and lists the models in another (a group table), use two evidence items from the same URL: the rule and the model's entry.
 
 ## Accuracy

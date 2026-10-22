@@ -67,6 +67,11 @@ export function mentionsYears(text, years) {
   return new RegExp(`\\b(?:${words})[\\s-]+years?\\b`, "i").test(text.normalize("NFKC"));
 }
 
+// An archive link must be a Wayback Machine capture of the cited page itself (D43).
+export function isCaptureOf(archiveUrl, url) {
+  return archiveUrl.match(/^https:\/\/web\.archive\.org\/web\/\d{14}\/(.*)$/s)?.[1] === url;
+}
+
 export function loadValidator(schemaPath = join(ROOT, "data/schema/device.schema.json")) {
   const ajv = new Ajv2020({ allErrors: true, strict: true });
   addFormats(ajv);
@@ -170,6 +175,7 @@ export function validateDevices(
 
     for (const ev of record.evidence) {
       if (ev.retrieved > today) fail(`evidence retrieved date ${ev.retrieved} is in the future`);
+      if (ev.archive_url && !isCaptureOf(ev.archive_url, ev.url)) fail(`archive_url ${ev.archive_url} is not a Wayback capture of ${ev.url}`);
     }
     const checked = record.verification.checked;
     if (checked && checked > today) fail(`verification.checked ${checked} is in the future`);
