@@ -2,7 +2,7 @@
 
 - 2026-10-21: Repo created from the starter kit. Nothing deployed.
 - M0, M1 and M2 done (21 Oct 2026; #54). M3 (unattended data) is active; its tasks are in TASKS.md. The site is live at https://patchlife.tech from the root, indexed, with a sitemap (#67), behind Cloudflare's proxy with Cloudflare Web Analytics (#68, D41).md`; the procedures are `docs/RUNBOOKS.md`; the cost pivot is `docs/COSTS.md`.
-- Data on `main`: 340 records from five brands, all audited: EZVIZ 193 (#51), TP-Link Tapo 60 (#22), Ring 50 (#24, #43 to #45), GL.iNet 25 (#49, Velica #61), Google Nest 12 (#21, #36). 309 are cameras or doorbells. Arlo can't be used (D18).
+- Data on `main` (22 Oct): 595 verified records from five brands: EZVIZ 253, TP-Link 180, Ring 98, Google 39, GL.iNet 25. All audited except Ring's 48 accessories (#90), whose audit runs after merge. M4's record-count conditions are met.
 - Decisions P1 to P8 settled 21 Oct (#30; D27 to D34). H9a approved (#52, 21 Oct). Privacy page live (#69): no cookies, search in the browser, GitHub Pages and Cloudflare disclosed (#60, #68 option C), contacts admin@sombrexo.com and GitHub issues. Agents can dispatch workflows and re-run jobs with `gh api` (probe dispatched 21 Oct). G1 and G3 done 21 Oct. The prompt fixes are merged (#29, 21 Oct).
 - Labels: `audited` marks a data PR that passed RUNBOOKS A8. Heartbeat issue #27 gets one comment per daily build run (from 22 Oct, #29). The daily build merges a data PR only with `audited` or when it changes only `verification:` fields.
 - Repo is public. Ruleset `main` is active: pull request required (0 approvals), `test` check required, force pushes and deletion blocked, no bypass actors. Agents merge only PRs whose head branch is in this repo.
