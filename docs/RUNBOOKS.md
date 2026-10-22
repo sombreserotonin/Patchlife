@@ -131,6 +131,8 @@ All dates in records and logs are UTC (`date -u +%F`). Scheduled runs at 06:08 S
 4. Run `npm run validate` and `npm test`, then paste the verifier output into the PR. Commit `data/sources/page-hashes.json` with the records.
 
 ### A2 Add records from one source (`Crawl`)
+**Revisiting a source already in the data:** first run `node --use-env-proxy --disable-warning=UNDICI-EHPA scripts/unquoted-dates.mjs <cited url> ...` on the pages its records cite. It lists each date on those pages that no record's quote covers, with the text before it. If none is a new model's row, there is nothing to add: set the source's `last_checked` and stop. Otherwise add only those rows, from step 1.
+
 1. Create a branch `claude/data-<brand_slug>-<what>` from `main`, and run `npm ci`.
 2. **Triage the source before writing anything.**
    - Check the host is on the allowlist.
