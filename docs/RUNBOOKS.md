@@ -110,7 +110,10 @@ All dates in records and logs are UTC (`date -u +%F`). Scheduled runs at 06:08 S
 | `error (robots.txt unreachable (...) for <origin>)` | Blocked host, outage or bot wall | A5. If `<origin>` differs from the cited URL's origin, the cited page redirected there: A4 first |
 | `error (HTTP 403 for <url>)` or a bot challenge | Bot wall | Don't use the source (A5) |
 | `error (HTTP 429 ...)`, `(HTTP 5xx ...)`, `(<host> asked us to back off)` | Temporary | Retry in a later run; change nothing |
-| `error (unsupported content type "application/pdf" ...)` | PDF source | Leave unverified until PDF support lands |
+| `error (unsupported content type "<type>" ...)` | Not HTML, plain text or PDF | Don't use it as evidence; find the statement as a page or PDF |
+| `error (unreadable PDF at <url> (...))` | The file isn't a PDF pdf.js can read | Re-check the URL; if it is a real PDF, don't use it (A5) |
+| `error (no text in PDF at <url> (...))` | A scanned PDF (images only), or text in fonts pdf.js can't map, such as CJK fonts that need CMap files | Don't use it (A5); never type a quote from an image. If the PDF shows selectable text in a browser, note it in the PR: adding `pdfjs-dist` 6.1.200 (protected) gives pdf.js its CMaps |
+| `failed (quote not found ...)` on a PDF | Usually a quote that differs from the page text | Run A2 step 3 on the URL. If it prints the row, re-copy the quote from that output. If the row's words are missing although the PDF shows them, treat it as the row above |
 | `error (HTTP 404 for <url>)` on an unverified record | Wrong URL | Re-check the URL on the maker's site (A2 step 1) |
 | `error (redirected to <url>)` or `error (redirected to <url>, HTTP <status>)` | The cited page now redirects to another site or page, such as the homepage. The status is that page's error | Find where the statement moved (A4). A login page or bot challenge: A5 |
 | `error (no record with this id)` | Typo in the ids | Re-run with the right id |
@@ -139,10 +142,10 @@ All dates in records and logs are UTC (`date -u +%F`). Scheduled runs at 06:08 S
    ```
    node --use-env-proxy --disable-warning=UNDICI-EHPA --input-type=module -e '
    import { createFetcher } from "./scripts/polite-fetch.mjs";
-   import { htmlToText } from "./scripts/verify-evidence.mjs";
-   const { url, contentType, text } = await createFetcher()(process.argv[1]);
-   console.log(`${url} (${contentType})`);
-   console.log(htmlToText(text).replace(/\s+/g, " ").trim());' "<source URL>" | fold -s -w 300 > /tmp/page.txt
+   import { pageText } from "./scripts/verify-evidence.mjs";
+   const page = await createFetcher()(process.argv[1]);
+   console.log(`${page.url} (${page.contentType})`);
+   console.log((await pageText(page)).replace(/\s+/g, " ").trim());' "<source URL>" | fold -s -w 300 > /tmp/page.txt
    ```
    The first output line is the final URL after redirects. If it differs from the URL you passed by more than a trailing slash, query string or fragment, the verifier will report `error (redirected to ...)`, so cite the printed URL instead.
    Find a model's row with `grep -n -i '<model>' /tmp/page.txt`. A quote may span a line break, because the verifier collapses whitespace. Never take quotes from Claude Code's fetch tool or a connector: they summarise pages or fetch them as someone else (D17).

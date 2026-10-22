@@ -12,7 +12,6 @@ Next for the daily build (`Default`), in order:
 - Nothing. Do housekeeping only and end with `WAITING: no Default task`.
 
 Waiting:
-- [ ] PDF text (D29): `unpdf` 1.8.1 is on `main` (#73); the code PR on `claude/pdf-text` (fetcher returns PDF bytes, verifier extracts text with unpdf) merges after `main` is merged into it. Don't start it again.
 - [ ] COSTS stage 1, re-verify on GitHub Actions (D42): the owner merges #80 (protected: workflow `reverify.yml`, daily build opens and merges `claude/reverify-*` branches, the nightly task re-checks what Actions couldn't). Nothing is due until 21 Dec 2026. Don't start it again.
 - [ ] Search Console (H7, #77, owner): verify the Domain property and submit `https://patchlife.tech/sitemap.xml`.
 - [ ] Coverage for M4 (the nightly task, one source a night): at least 40 verified small-office records (routers, printers, NVRs). GL.iNet gave routers (#49); next in the registry are Kyocera, ASUS, GoPro, Lenovo, Motorola, NETGEAR, Samsung and Grandstream.
@@ -24,6 +23,7 @@ Leads (need `Crawl`): Google's regulatory page `https://support.google.com/chrom
 Done:
 - [x] `Probe hosts` run 39695382968 (21 Oct): all six evidence hosts allow PatchlifeBot and answer a GitHub runner with HTTP 200 (COSTS).
 - [x] Search Console steps posted for the owner (H7, #77).
+- [x] PDF evidence (D29): the fetcher returns PDF bytes and the verifier reads the text with unpdf 1.8.1 (#73), rebuilt line by line in reading order so table rows pair correctly; a PDF with no text fails with `no text in PDF`. Next: the PDF-only sources (Aqara, Reolink, TP-Link UK, GoPro) through the nightly task.
 - [x] The site is live at https://patchlife.tech from the root, indexed, with a sitemap (#67, 21 Oct). Privacy page live (#69), with the Cloudflare wording the owner chose in #68 (option C: keep the proxy and Web Analytics, disclose both; D41). Lighthouse gates on the median of three runs (#75). The skill stores month-only dates (#72). The `Probe hosts` workflow is merged (#66).
 - [x] Month-only dates (D38): `end_date` may be `YYYY-MM` on a `fixed_date` record. `npm run validate` requires a quote stating the month and year and rejects one that states a day in it; status counts the month's last day for ended and its first day for ending soon; the site shows "June 2027" and "ended in June 2026". The `add-device-record` skill still says to skip month-only dates until its protected PR merges.
 - [x] H9a draft markers removed (#62); numeric dates read in each source's `date_order`, and a quote must name the model, with names unique per brand except D33 splits (#64); one hash per evidence URL and a per-page change report (#63); `scripts/probe-hosts.mjs` (#65). Merged 21 Oct after a combined local merge: validate 340 records, 0 errors; test 165 of 165.

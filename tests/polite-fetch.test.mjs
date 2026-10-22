@@ -69,6 +69,12 @@ test("sends the PatchlifeBot user agent with a timeout and returns the page", as
   assert.ok(calls.every((c) => c.ua === USER_AGENT && c.redirect === "manual" && c.signal instanceof AbortSignal));
 });
 
+test("a PDF comes back as bytes, not text", async () => {
+  const bytes = new Uint8Array([37, 80, 68, 70, 0, 255]);
+  const { get } = setup({ "https://a.test/p.pdf": reply(bytes, 200, { "content-type": "application/pdf" }) });
+  assert.deepEqual(await get("https://a.test/p.pdf"), { url: "https://a.test/p.pdf", contentType: "application/pdf", bytes });
+});
+
 test("a page robots.txt disallows is never requested", async () => {
   const { get, urls } = setup({ "https://a.test/robots.txt": reply("User-agent: *\nDisallow: /p", 200, { "content-type": "text/plain" }) });
   await assert.rejects(get("https://a.test/p"), /robots.txt disallows/);

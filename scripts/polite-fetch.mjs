@@ -48,7 +48,7 @@ export function robotsAllows(robotsTxt, path) {
   return best ? best.allow : true;
 }
 
-// Returns get(url) -> { url, contentType, text }, or throws with the reason (and `status` and the final `url` for HTTP errors).
+// Returns get(url) -> { url, contentType, text }, with bytes in place of text for a PDF, or throws with the reason (and `status` and the final `url` for HTTP errors).
 // State (robots cache, per-host timing, hosts that asked us to back off) lasts for the fetcher's lifetime.
 export function createFetcher({ fetch = globalThis.fetch, now = Date.now, sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
   const lastRequest = new Map();
@@ -125,6 +125,8 @@ export function createFetcher({ fetch = globalThis.fetch, now = Date.now, sleep 
       await res.body?.cancel();
       throw Object.assign(new Error(`HTTP ${res.status} for ${finalUrl}`), { status: res.status, url: finalUrl });
     }
-    return { url: finalUrl, contentType: (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase(), text: await res.text() };
+    const contentType = (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
+    if (contentType === "application/pdf") return { url: finalUrl, contentType, bytes: new Uint8Array(await res.arrayBuffer()) };
+    return { url: finalUrl, contentType, text: await res.text() };
   };
 }

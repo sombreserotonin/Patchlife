@@ -104,7 +104,7 @@ verification:
 
 It also keeps one SHA-256 hash per evidence URL, of that page's normalised text, in `data/sources/page-hashes.json`, and reports each page it read as changed, unchanged or not seen before. Most records cite more than one page and many records share a page, so this shows which page changed.
 
-Only quotes and hashes are stored, never whole pages. The fetcher identifies itself as PatchlifeBot, honours `robots.txt`, and makes at most one request per second per host ([`docs/CRAWLER.md`](docs/CRAWLER.md)). PDF sources and archive snapshots are not supported yet.
+Only quotes and hashes are stored, never whole pages. The fetcher identifies itself as PatchlifeBot, honours `robots.txt`, and makes at most one request per second per host ([`docs/CRAWLER.md`](docs/CRAWLER.md)). It reads HTML, plain text and PDF; PDF text comes from pdf.js through `unpdf`. Archive snapshots are not supported yet.
 
 ### Support status
 Status is worked out from the dates each time the site is built, and never stored in a record:
