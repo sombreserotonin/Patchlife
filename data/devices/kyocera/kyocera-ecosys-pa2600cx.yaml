@@ -11,7 +11,7 @@ support:
   years: null
   anchor_date: null
   at_least: true
-  conditions: Kyocera says it extends support periods where it judges that prudent and will not reduce them.
+  conditions: "Kyocera says support periods are reviewed on a continual basis and extended where it is deemed prudent to do so."
 evidence:
   - url: https://www.kyoceradocumentsolutions.co.uk/en/support/product-security.html
     quote: "ECOSYS PA2600cx Date of first availability in the UK: Jan-25 End of support date: 31st January 2028"
@@ -19,7 +19,7 @@ evidence:
     archive_url: null
     regime: uk_psti
   - url: https://www.kyoceradocumentsolutions.co.uk/en/support/product-security.html
-    quote: "Kyocera shall, as standard, support all in-scope devices for period of no less than three years from the point the relevant model was first made available in the UK."
+    quote: "These support periods are reviewed on a continual basis and extended where it is deemed prudent to do so, for the benefit of the consumer. At no point shall the support periods advertised on this webpage be reduced"
     retrieved: "2026-10-22"
     archive_url: null
     regime: uk_psti
@@ -27,4 +27,4 @@ verification:
   status: verified
   checked: "2026-10-22"
   text_sha256: 35810e7206377a041221548c065c973fa64ef177b8146674e2f317e41deab6a3
-notes: The page is Kyocera's UK PSTI statement and covers the UK; the in-scope list names A4 ECOSYS and TASKalfa devices. The end date is the published support end, which the statement says is a minimum.
+notes: "The page is Kyocera's UK PSTI statement and covers the UK; it says Kyocera's A4 ECOSYS and TASKalfa devices are in scope. The end date is a minimum: the page says the support periods it advertises shall not be reduced."
