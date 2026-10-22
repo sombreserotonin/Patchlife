@@ -11,7 +11,7 @@ This is the plan as at 22 Oct 2026. It was revised the same day after a feasibil
 - **Cost.** Subscriptions fall from Max to A$0.
   - Max is US$100 a month (5x) or US$200 (20x), before tax [21]. At US$1 = A$1.43 [26], that is about A$143 or A$286 a month, or A$1,700 to A$3,400 a year. Whether GST is added to Australian bills is unverified.
   - The only payment still required is the `patchlife.tech` renewal. The cheapest registrar listed renews `.tech` at US$32.62 a year [27], which is about A$47 a year or A$4 a month. Yours may charge more, so record the real price in `ops/renewals.yml`.
-  - Check for other subscriptions (decisions 2 and 13): the Pangolin VPS, `sombrexo.com` and the `admin@sombrexo.com` mailbox, Cloudflare's plan, Firecrawl, and Unraid's update licence.
+  - Check for other subscriptions (decision 13): `sombrexo.com` and the `admin@sombrexo.com` mailbox, Cloudflare's plan, Firecrawl, and Unraid's update licence. The Pangolin VPS is paid for your other projects, so Patchlife adds nothing to it (decision 2).
 - **Your time.** About 30 to 45 minutes in a typical week, and up to about 70 in a busy one (*estimate*). PLAN budgets 10 minutes a week today. On top of that:
   - 1 to 3 hours for each new source, if you choose to grow (*estimate*).
   - When a redesign breaks a parser, 30 to 60 minutes to freeze that source and pull its records or wait. It takes 4 to 8 hours if the EZVIZ or TP-Link AU page moves, because those two pages carry 77% of the records. Expect perhaps 2 to 4 breakages a year (*estimates*).
@@ -26,7 +26,7 @@ This is the plan as at 22 Oct 2026. It was revised the same day after a feasibil
     - Atom feeds instead of email alerts (M7);
     - the business side (M4's demand test, and M6's paid feed, API and reports) waits in Planned until this setup is up and working (D45; see "Planned: the business side").
 - **Timeline.**
-  - By 27 Oct: answer decisions 1 to 5 on #102. #101 is already merged, so nothing moves to Node 26 when it becomes LTS on 28 Oct.
+  - By 27 Oct: answer decisions 1, 3, 4 and 5 on #102 (2 is settled: the VPS stays). #101 is already merged, so nothing moves to Node 26 when it becomes LTS on 28 Oct.
   - 23 Oct to 8 Nov: build the replacements in parallel lanes, using the Max time you have already paid for.
   - 9 to 22 Nov: run in shadow, with no AI doing operations. AI-audited backlog batches finish in the same window.
   - 23 to 30 Nov: retire and cancel.
@@ -40,6 +40,7 @@ Checked with `git` and the GitHub API at 03:25 UTC:
 - **#101 (P1) merged at 03:23 UTC.** The four working workflows are pinned to Node 24, and `.github/dependabot.yml` sends monthly grouped PRs. The Lighthouse change is in P2.
 - **The business side is in Planned (D45).** You shelved M4 (the `/business` page, the waitlist and its privacy additions) and M6 (the paid feed, API keys, reports and supplier checks) until this setup is up and working. #99 keeps the drafts, labelled `planned`.
 - **#102 (`needs-human`) asks for decisions 1 to 5.** This revision changes two of them and adds 12 to 15:
+  - 2 is settled: the VPS stays, since you pay for it for other projects;
   - 4 now means maintenance mode by default and no bookmarklet; D45 settles its business part;
   - 5 now says when the batches run.
 - **The repository has had 0 scheduled workflow runs.**
@@ -125,7 +126,7 @@ Checked with `git` and the GitHub API at 03:25 UTC:
    - Revisit if issues pass 2 a week.
 7. **Heartbeat.** **Decision: report problems only** (a red run and the `watchdog` issue), plus the Monday summary.
    - There is no daily line.
-   - The dead-man's switch only makes outbound checks from Unraid. A push monitor would need a public URL on Unraid, which clashes with decision 2.
+   - The dead-man's switch only makes outbound checks from Unraid. A push monitor would need a public URL on Unraid, through the Pangolin VPS; the outbound check needs none, so nothing new is exposed.
 8. **Orphaned re-verify branches.** **Decision: report them, don't delete them.**
    - Deleting a branch whose PR was closed unmerged takes you two clicks, and leaving it to you keeps the bot's rights small.
    - The bot does delete the branches it has just merged.
@@ -152,7 +153,7 @@ Checked with `git` and the GitHub API at 03:25 UTC:
 
 - **Done:** #100 put this plan, D44 and the COSTS note on `main`.
 - This revision lands as a docs PR, as #102 promised.
-- **Your actions:** answer decisions 1 to 5 on #102. (#101 merged at 03:23 UTC.)
+- **Your actions:** answer decisions 1, 3, 4 and 5 on #102. (#101 merged at 03:23 UTC, and decision 2 is settled.)
 - **Let M3 exit check part 1 run as scheduled.** If it fails, note it on #102. Don't spend Max time repairing the daily build, because decision 12 redefines part 1 on the new jobs.
 - **Tonight's re-verify run pushes its first branch.** If the daily build hasn't merged it by 12:00 UTC on 23 Oct, merge it yourself (A9):
   - open a PR from the branch on GitHub;
@@ -548,13 +549,14 @@ You shelved the business side on 22 Oct 2026, to come back to once this setup is
 - **What it covers:** M4's demand test (the `/business` page, the Tally waitlist and the privacy page additions) and M6 (the paid feed, API keys, reports, supplier checks, and the free fleet checker that would have stood in for them).
 - **When:** after Stage 4's exit check, so the business work starts on a setup that already runs without AI.
 - **Where it starts:** #99 and the drafts on `claude/m4-drafts` (`docs/drafts/m4-business-waitlist.md`). Keep that branch. The legal steps come first: H9b before the waitlist collects emails, H9c before charging.
+- **Hosting:** M6 runs on Unraid, published through your Pangolin VPS (D40). You already pay for the VPS for other projects, so this adds no cost (decision 2).
 - **Who builds it:** decision 15.
 - **Until then:** the site collects no personal data and sells nothing, so the privacy page stays as it is.
 
 ## Open decisions
 
 1. **Create the GitHub App `patchlife-bot`?** Recommended: yes. Without it, every bot PR waits for your click.
-2. **The Pangolin VPS.** If it is paid monthly, it is a subscription, and only M6 needs it (D40), which is now in Planned (D45). Recommended: cancel it unless you use it for something else. When the business side starts, try Cloudflare Tunnel from Unraid first; it is available on all plans [20].
+2. **The Pangolin VPS.** Settled on 22 Oct: it stays. You pay for it for other projects, so Patchlife adds no cost to it. When the business side resumes, M6 runs on Unraid published through it (D40). Cloudflare Tunnel from Unraid remains the fallback; it is available on all plans [20].
 3. **Max renewal.** Recommended: don't renew. If the renewal date falls before Stage 3, take Pro billed monthly for one month.
 4. **Scope cuts and maintenance mode.** The business side is settled: it is in Planned (D45). Recommended: accept the rest of the table above, with maintenance mode as the default.
 5. **Clear the backlog before cancelling?** Recommended: yes, for TP-Link AU, EZVIZ and Google, in 60-row batches with A8 audits. They run from about 9 to 30 Nov, once Tiers A and B are on `main`. Otherwise one weekly 60-row PR feeds the backlog in slowly: TP-Link AU alone would take about 14 weeks (*estimate*).
