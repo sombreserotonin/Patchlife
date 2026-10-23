@@ -44,12 +44,12 @@ evidence:
   - url: https://support.google.com/product-documentation/answer/16890804?hl=en
     quote: "Nest Doorbell battery (GWX3T)"
     retrieved: "2026-10-21"
-    archive_url: null
+    archive_url: https://web.archive.org/web/20261023172516/https://support.google.com/product-documentation/answer/16890804?hl=en
     regime: au_smart_device_rules
   - url: https://support.google.com/product-documentation/answer/16890804?hl=en
     quote: "At least five years from when the device first became available on the Google Store in the US, ending no earlier than August 24, 2026"
     retrieved: "2026-10-21"
-    archive_url: null
+    archive_url: https://web.archive.org/web/20261023172516/https://support.google.com/product-documentation/answer/16890804?hl=en
     regime: au_smart_device_rules
 verification:
   status: verified
