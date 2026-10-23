@@ -55,8 +55,9 @@
   brand_slug: asus
   kind: unknown
   urls: [https://www.asus.com/support/faq/1051929/]
-  note: From a 2024 list.
-  last_checked: null
+  date_order: dmy
+  note: UK PSTI list of networking products with a security update end date per group of models (54 router and mesh records). Adapters, cards, repeaters and models whose group row is over 300 characters from their name to the date are skipped.
+  last_checked: "2026-10-23"
 
 - brand: GoPro
   brand_slug: gopro

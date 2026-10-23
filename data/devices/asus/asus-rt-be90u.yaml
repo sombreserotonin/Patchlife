@@ -1,0 +1,30 @@
+id: asus-rt-be90u
+brand: ASUS
+brand_slug: asus
+model: "RT-BE90U"
+aliases: []
+category: router
+regions: [UK]
+support:
+  rule: fixed_date
+  end_date: "2030-12-31"
+  years: null
+  anchor_date: null
+  at_least: true
+  conditions: "ASUS says extended support may be provided after the stated date."
+evidence:
+  - url: https://www.asus.com/support/faq/1051929/
+    quote: "RT-BE90U ROG USB-C10G USB-BE93 Mini USB-BT600 ZenWiFi BT7 ZenWiFi BT7 Z 4 years (until 31th December 2030)"
+    retrieved: "2026-10-23"
+    archive_url: null
+    regime: uk_psti
+  - url: https://www.asus.com/support/faq/1051929/
+    quote: "ASUS will offer security update support to the networking products complied with UK PSTI(Product Security and Telecommunications Infrastructure Act) until the date specified below. And extended support may be provided after the stated date."
+    retrieved: "2026-10-23"
+    archive_url: null
+    regime: uk_psti
+verification:
+  status: verified
+  checked: "2026-10-23"
+  text_sha256: e54a1f1ebfe22136001872fc487fffb1fbd9eb53e1d981033b24a8efdd487d1c
+notes: "The page is ASUS's UK PSTI security update list for networking products and covers the UK. The date is a minimum: ASUS says extended support may be provided after it. The page writes the date as 31th December 2030."
