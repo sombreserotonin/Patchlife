@@ -30,7 +30,7 @@ evidence:
   - url: https://www.ezviz.com/inter/trust-center/security/upgrade-policy
     quote: "The updates policies and the EOL product list are subject to change and will be reviewed on a regular basis."
     retrieved: "2026-10-22"
-    archive_url: null
+    archive_url: https://web.archive.org/web/20261023172541/https://www.ezviz.com/inter/trust-center/security/upgrade-policy
     regime: vendor_policy
 verification:
   status: verified

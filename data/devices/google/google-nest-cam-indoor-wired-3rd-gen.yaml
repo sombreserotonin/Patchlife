@@ -33,12 +33,12 @@ evidence:
   - url: https://support.google.com/product-documentation/answer/16889039?hl=en
     quote: "Google Nest Cam Indoor (wired, 3rd generation)(G1NRR)"
     retrieved: "2026-10-21"
-    archive_url: null
+    archive_url: https://web.archive.org/web/20261023172451/https://support.google.com/product-documentation/answer/16889039?hl=en
     regime: au_smart_device_rules
   - url: https://support.google.com/product-documentation/answer/16889039?hl=en
     quote: "At least five years from when the device first became available on the Google Store in the US, ending no earlier than October 1, 2030"
     retrieved: "2026-10-21"
-    archive_url: null
+    archive_url: https://web.archive.org/web/20261023172451/https://support.google.com/product-documentation/answer/16889039?hl=en
     regime: au_smart_device_rules
 verification:
   status: verified

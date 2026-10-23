@@ -17,7 +17,7 @@ evidence:
   - url: https://www.gl-inet.com/en-us/pages/firmware-versions/?status=ended
     quote: "GL-B2200 3.218 QSDK 15.05.1 Maintenance Oct 10th, 2024 Oct 10th, 2026"
     retrieved: "2026-10-21"
-    archive_url: null
+    archive_url: https://web.archive.org/web/20261023172623/https://www.gl-inet.com/en-us/pages/firmware-versions/?status=ended
     regime: vendor_policy
 verification:
   status: verified
