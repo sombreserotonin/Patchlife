@@ -181,6 +181,7 @@ All dates in records and logs are UTC (`date -u +%F`). Scheduled runs at 06:08 S
 2. If the host is simply not on the allowlist, search the open issues first: `gh api "repos/sombreserotonin/Patchlife/issues?labels=needs-human&state=open"`.
 3. If no open issue names the host, open one with exact steps (owner runbook O3). Include the host, the source URL and roughly how many records it would give.
 4. Skip that source for now and move on.
+5. So that the next run takes the next source: if the source can't be used (step 1) or its pages hold no dates, add the reason to its `note` in `data/sources/seed.yaml` and set its `last_checked` to today, as Arlo's entry does. Commit that with the night's PR, or in a PR of its own. A source that waits on an owner issue (steps 2 and 3), or failed for a temporary reason (a timeout, `fetch failed`, HTTP 429 or 5xx), keeps its `last_checked`, so it comes first again once the owner acts or the site recovers.
 
 ### A6 Waiting on the owner
 1. Put protected files (`.github/`, `.claude/`, `.agent/prompts/`, `CLAUDE.md`, `package.json`, `package-lock.json`) in a PR of their own.
