@@ -63,6 +63,23 @@ test("an empty archive link filled with a capture of its item's page counts as v
   ]);
 });
 
+test("a record that already has an archive link may gain another, and its verification may change (D43)", (t) => {
+  const r = repo(t);
+  const capture = (url) => `https://web.archive.org/web/20261022015106/${url}`;
+  const commit = () => r.git("-c", "user.name=t", "-c", "user.email=t@example.invalid", "commit", "-qam", "change");
+  // As on 24 Oct: one item linked on an earlier night, the other filled now, with a re-check in the same run.
+  r.edit("acme-router-2", "    regime: uk_psti\n", `    regime: uk_psti\n    archive_url: ${capture("https://example.com/acme/psti")}\n`);
+  r.edit("acme-router-2", "    regime: vendor_policy\n", "    regime: vendor_policy\n    archive_url: null\n");
+  commit();
+  r.edit("acme-router-2", "    archive_url: null\n", `    archive_url: ${capture("https://example.com/acme/eol")}\n`);
+  r.edit("acme-router-2", "  status: unverified\n", "  status: verified\n  checked: \"2026-10-24\"\n");
+  assert.deepEqual(r.problems(), []);
+  commit();
+  // An existing link still may not change.
+  r.edit("acme-router-2", "20261022015106/https://example.com/acme/psti", "20261023000000/https://example.com/acme/psti");
+  assert.deepEqual(r.problems(), ["data/devices/acme/acme-router-2.yaml: changes more than the verification block"]);
+});
+
 test("a change outside the verification block is reported, as is a new, deleted, renamed or other data file", (t) => {
   const r = repo(t);
   r.edit("acme-cam-1", 'end_date: "2029-06-30"', 'end_date: "2029-06-29"');

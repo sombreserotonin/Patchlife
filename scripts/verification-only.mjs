@@ -14,11 +14,11 @@ import { isCaptureOf } from "./validate-data.mjs";
 const PAGE_HASHES = "data/sources/page-hashes.json";
 const DEVICE = /^data\/devices\/[^/]+\/[^/]+\.yaml$/;
 
-// The record without its verification block, and without the archive links filled since `before` where an item had
-// none, so those count like verification.
+// The record without its verification block. Given `before`, the archive links filled since then where an item had
+// none are left out too, so those count like verification; the links `before` already had stay on both sides.
 function comparable(record, before) {
   const { verification: _, ...rest } = record ?? {};
-  if (!Array.isArray(rest.evidence)) return rest;
+  if (!before || !Array.isArray(rest.evidence)) return rest;
   const evidence = rest.evidence.map((item, i) => {
     const old = before?.evidence?.[i];
     if (old?.archive_url != null || typeof item?.archive_url !== "string" || !isCaptureOf(item.archive_url, item.url)) return item;
