@@ -18,27 +18,27 @@ evidence:
   - url: https://support.google.com/product-documentation/answer/10231940?hl=en
     quote: "Nest Cam Outdoor (wired, 2nd gen) 10/1/2025 10/1/2030 Yes"
     retrieved: "2026-10-21"
-    archive_url: null
+    archive_url: https://web.archive.org/web/20261025164730/https://support.google.com/product-documentation/answer/10231940?hl=en
     regime: vendor_policy
   - url: https://support.google.com/product-documentation/answer/10231940?hl=en
     quote: "Google Nest connected home devices will receive automatic security updates for at least 5 years from the date we start selling them on the US Google Store."
     retrieved: "2026-10-21"
-    archive_url: null
+    archive_url: https://web.archive.org/web/20261025164730/https://support.google.com/product-documentation/answer/10231940?hl=en
     regime: vendor_policy
   - url: https://support.google.com/product-documentation/answer/10231940?hl=en
     quote: "Security updates will address critical issues known to Google Nest that are able to be resolved with a remote software update."
     retrieved: "2026-10-21"
-    archive_url: null
+    archive_url: https://web.archive.org/web/20261025164730/https://support.google.com/product-documentation/answer/10231940?hl=en
     regime: vendor_policy
   - url: https://support.google.com/product-documentation/answer/16888345?hl=en
     quote: "Google Nest Cam Outdoor (wired, 2nd generation) (G7LYP)"
     retrieved: "2026-10-21"
-    archive_url: null
+    archive_url: https://web.archive.org/web/20261025164841/https://support.google.com/product-documentation/answer/16888345?hl=en
     regime: au_smart_device_rules
   - url: https://support.google.com/product-documentation/answer/16888345?hl=en
     quote: "At least five years from when the device first became available on the Google Store in the US, ending no earlier than October 1, 2030"
     retrieved: "2026-10-21"
-    archive_url: null
+    archive_url: https://web.archive.org/web/20261025164841/https://support.google.com/product-documentation/answer/16888345?hl=en
     regime: au_smart_device_rules
 verification:
   status: verified

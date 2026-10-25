@@ -15,17 +15,17 @@ evidence:
   - url: https://support.ezviz.com/faq/article/EZVIZ-EOL-Product-List
     quote: "Smart Entry CS-L2-11FCP Europe 2030/12/31"
     retrieved: "2026-10-22"
-    archive_url: null
+    archive_url: https://web.archive.org/web/20261025164711/https://support.ezviz.com/faq/article/EZVIZ-EOL-Product-List
     regime: vendor_policy
   - url: https://support.ezviz.com/faq/article/EZVIZ-EOL-Product-List
     quote: "About EZVIZ’s EOL (End-Of-Life) products: It means that EZVIZ no longer maintain any firmware updates (including security updates) for them, and may no longer respond to security vulnerability reports for such products either."
     retrieved: "2026-10-22"
-    archive_url: null
+    archive_url: https://web.archive.org/web/20261025164711/https://support.ezviz.com/faq/article/EZVIZ-EOL-Product-List
     regime: vendor_policy
   - url: https://support.ezviz.com/faq/article/EZVIZ-EOL-Product-List
     quote: "Please note that the list includes both EOL products and currently active products with an expected EOL date."
     retrieved: "2026-10-22"
-    archive_url: null
+    archive_url: https://web.archive.org/web/20261025164711/https://support.ezviz.com/faq/article/EZVIZ-EOL-Product-List
     regime: vendor_policy
   - url: https://www.ezviz.com/inter/trust-center/security/upgrade-policy
     quote: "The updates policies and the EOL product list are subject to change and will be reviewed on a regular basis."
