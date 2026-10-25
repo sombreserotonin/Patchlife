@@ -63,8 +63,8 @@
   brand_slug: gopro
   kind: unknown
   urls: [https://gopro.com/en/us/legal/uk-psti-compliance]
-  note: From a 2024 list.
-  last_checked: null
+  note: "From a 2024 list. Unusable on 25 Oct 2026 (D18): the page answers the polite fetcher with HTTP 403 (a bot challenge, 24 Oct). Wait for permission or another primary source."
+  last_checked: "2026-10-25"
 
 - brand: Google
   brand_slug: google
@@ -81,15 +81,15 @@
   brand_slug: lenovo
   kind: unknown
   urls: [https://www.lenovo.com/us/outletus/en/compliance/uk-psti-soc/]
-  note: From a 2024 list.
-  last_checked: null
+  note: "From a 2024 list. Unusable on 25 Oct 2026: the page states a PSTI compliance date (29 April 2024) and links a product search, but gives no support end dates."
+  last_checked: "2026-10-25"
 
 - brand: Motorola
   brand_slug: motorola
   kind: unknown
   urls: [https://en-gb.support.motorola.com/app/answers/detail/a_id/178271/~/uk-psti]
-  note: From a 2024 list.
-  last_checked: null
+  note: "From a 2024 list. Unusable on 25 Oct 2026 (D18): robots.txt disallows PatchlifeBot. Wait for permission or another primary source."
+  last_checked: "2026-10-25"
 
 - brand: NETGEAR
   brand_slug: netgear
