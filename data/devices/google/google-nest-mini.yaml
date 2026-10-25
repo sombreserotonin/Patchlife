@@ -15,17 +15,17 @@ evidence:
   - url: https://support.google.com/product-documentation/answer/10231940?hl=en
     quote: "Nest Mini 10/22/2019 10/22/2024 Yes"
     retrieved: "2026-10-22"
-    archive_url: null
+    archive_url: https://web.archive.org/web/20261025164730/https://support.google.com/product-documentation/answer/10231940?hl=en
     regime: vendor_policy
   - url: https://support.google.com/product-documentation/answer/10231940?hl=en
     quote: "Google Nest connected home devices will receive automatic security updates for at least 5 years from the date we start selling them on the US Google Store."
     retrieved: "2026-10-22"
-    archive_url: null
+    archive_url: https://web.archive.org/web/20261025164730/https://support.google.com/product-documentation/answer/10231940?hl=en
     regime: vendor_policy
   - url: https://support.google.com/product-documentation/answer/10231940?hl=en
     quote: "Security updates will address critical issues known to Google Nest that are able to be resolved with a remote software update."
     retrieved: "2026-10-22"
-    archive_url: null
+    archive_url: https://web.archive.org/web/20261025164730/https://support.google.com/product-documentation/answer/10231940?hl=en
     regime: vendor_policy
 verification:
   status: verified
