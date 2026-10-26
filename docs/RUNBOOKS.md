@@ -180,7 +180,7 @@ All dates in records and logs are UTC (`date -u +%F`). Scheduled runs at 06:08 S
 1. If robots.txt disallows the page, or there is a bot challenge or a login, do not work around it with another tool. The source can't be re-verified, so it can't be used.
 2. If the host is simply not on the allowlist, search the open issues first: `gh api "repos/sombreserotonin/Patchlife/issues?labels=needs-human&state=open"`.
 3. If no open issue names the host, open one with exact steps (owner runbook O3). Include the host, the source URL and roughly how many records it would give.
-4. Skip that source for now and move on.
+4. Skip that source for now and move on to the next one in the same order (oldest `last_checked`, null first). The sources already in the data come after the never-checked ones, and A2's revisit path applies to them, so the nightly run has nothing to do only when every source whose hosts are on the allowlist was skipped that night.
 5. So that the next run takes the next source: if the source can't be used (step 1) or its pages hold no dates, add the reason to its `note` in `data/sources/seed.yaml` and set its `last_checked` to today, as Arlo's entry does. Commit that with the night's PR, or in a PR of its own. A source that waits on an owner issue (steps 2 and 3), or failed for a temporary reason (a timeout, `fetch failed`, HTTP 429 or 5xx), keeps its `last_checked`, so it comes first again once the owner acts or the site recovers.
 
 ### A6 Waiting on the owner
