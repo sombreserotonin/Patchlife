@@ -44,12 +44,12 @@ evidence:
   - url: https://support.google.com/product-documentation/answer/16888555?hl=en
     quote: "Nest Cam outdoor or indoor battery (G3AL9)"
     retrieved: "2026-10-21"
-    archive_url: null
+    archive_url: https://web.archive.org/web/20261026185309/https://support.google.com/product-documentation/answer/16888555?hl=en
     regime: au_smart_device_rules
   - url: https://support.google.com/product-documentation/answer/16888555?hl=en
     quote: "At least five years from when the device first became available on the Google Store in the US, ending no earlier than August 24, 2026"
     retrieved: "2026-10-21"
-    archive_url: null
+    archive_url: https://web.archive.org/web/20261026185309/https://support.google.com/product-documentation/answer/16888555?hl=en
     regime: au_smart_device_rules
 verification:
   status: verified
