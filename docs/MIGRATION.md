@@ -7,7 +7,7 @@ This is the plan as at 22 Oct 2026. It was revised the same day after a feasibil
 - **End state.** No model runs anywhere in Patchlife, and nothing depends on a subscription.
   - Every recurring job is either deterministic code on GitHub Actions or a short task for you. Actions is free on standard GitHub-hosted runners in public repositories [8].
   - Today a model makes the judgement calls: reading a maker's row, the A8 audit, and repairs. That moves into per-source rules that code enforces, plus your weekly review.
-  - The Claude scheduled tasks, the Claude GitHub App, Claude's GitHub authorisation and `claude.yml` are removed, and Max is cancelled.
+  - The Claude scheduled tasks, the Claude GitHub App, Claude's GitHub authorisation and `claude.yml` are removed, and Max ends on 19 Nov 2026 without renewal.
 - **Cost.** Subscriptions fall from Max to A$0.
   - Max is US$100 a month (5x) or US$200 (20x), before tax [21]. At US$1 = A$1.43 [26], that is about A$143 or A$286 a month, or A$1,700 to A$3,400 a year. Whether GST is added to Australian bills is unverified.
   - The only payment still required is the `patchlife.tech` renewal. The cheapest registrar listed renews `.tech` at US$32.62 a year [27], which is about A$47 a year or A$4 a month. Yours may charge more, so record the real price in `ops/renewals.yml`.
@@ -27,9 +27,9 @@ This is the plan as at 22 Oct 2026. It was revised the same day after a feasibil
     - the business side (M4's demand test, and M6's paid feed, API and reports) waits in Planned until this setup is up and working (D45; see "Planned: the business side").
 - **Timeline.**
   - 27 Oct: you answered decisions 1, 3, 4 and 5 on #102 (D46); 2 was settled on 22 Oct (the VPS stays). #101 is already merged, so nothing moves to Node 26 when it becomes LTS on 28 Oct.
-  - 23 Oct to 8 Nov: build the replacements in parallel lanes, using the Max time you have already paid for.
-  - 9 to 22 Nov: run in shadow, with no AI doing operations. AI-audited backlog batches finish in the same window.
-  - 23 to 30 Nov: retire and cancel.
+  - 23 Oct to 4 Nov: build the replacements in parallel lanes, using the Max time you have already paid for. It ends on 19 Nov (D46), which sets every date below.
+  - 5 to 18 Nov: run in shadow, with no AI doing operations. AI-audited backlog batches run in the same window, from when B4 merges.
+  - By 18 Nov: Stage 3's PRs are open. On 19 Nov you remove the Claude pieces, and the plan ends.
   - 21 and 22 Dec: watch the first large re-verification.
 - **Most of this depends on one human gate:** a private GitHub App for the bot (decision 1). Its steps are in #126.
 
@@ -167,14 +167,13 @@ Checked with `git` and the GitHub API at 03:25 UTC:
 
   All three held on 27 Oct.
 
-### Stage 1: build (23 Oct to 8 Nov, Max)
+### Stage 1: build (23 Oct to 4 Nov, Max)
 
-Run parallel sessions in separate files (D19, D26), each with one reviewer and no multi-agent reviews. P1 (#101) has merged, which leaves three lanes:
-- A1, then P2, once the App exists;
-- B1, then B2, then B3, then B4. B3 needs B2's profile fields;
+Run parallel sessions in separate files (D19, D26), each with one reviewer and no multi-agent reviews. P1 (#101), A1, B1 and P2 (#128) have merged, which leaves:
+- B2, then B3, then B4. B3 needs B2's profile fields;
 - B5, then A2. P3 starts once B4 and B5 have merged.
 
-Tier C starts only after Tiers A and B have merged. If the Max time runs short, cut Tier C.
+All of it lands by 4 Nov, because Max ends on 19 Nov (D46) and the shadow fortnight needs the days before it. Tier C starts only after Tiers A and B have merged, and only if it fits before 4 Nov; otherwise cut it.
 
 **Tier A: housekeeping and runbooks (required before cancelling)**
 - **A1 (unprotected; done 22 Oct: the merge bot, licence check and renewals in #109, then `scripts/watchdog.mjs`):**
@@ -379,7 +378,7 @@ Tier C starts only after Tiers A and B have merged. If the Max time runs short, 
   - if the ruleset holds the PR, turn off `require_extra_approval_for_unattributed_changes`;
   - set `BOT_MERGE` back to `off`.
 
-### Stage 2: shadow fortnight (9 to 22 Nov, or earlier if Stage 1's exit check passes)
+### Stage 2: shadow fortnight (5 to 18 Nov, or earlier if Stage 1's exit check passes)
 
 - Set `BOT_MERGE=on` and `DATA_REFRESH=on`.
 - At claude.ai/code/routines, **pause, don't delete,** `Patchlife daily build` and `Patchlife nightly data`. Paused tasks keep their settings [25].
@@ -387,8 +386,8 @@ Tier C starts only after Tiers A and B have merged. If the Max time runs short, 
   - dispatch between 21:30 and 12:30 UTC (08:30 to 23:30 Sydney);
   - once CI is green, dispatch `housekeeping.yml` before 12:41 UTC. Otherwise the scheduled run stops at its guard.
 - Review each candidate PR using O9, and time yourself.
-- **The backlog batches (decision 5)** run in interactive sessions with A8 audits, and you merge them. They don't count against the no-AI criterion below, which covers operations only.
-- If Max renews during this window, switch to Pro billed monthly (US$20 [21]). Never take annual billing.
+- **The backlog batches (decision 5)** run in interactive sessions with A8 audits from when B4 merges until 18 Nov, and you merge them. They don't count against the no-AI criterion below, which covers operations only. Whatever is left on 18 Nov goes to the weekly PR.
+- Max ends on 19 Nov, the day after this window, and isn't renewed (D46). A session fixes what the shadow finds before then; after that, anything found becomes an issue for you.
 - **Exit check, over 14 consecutive days:**
   - the watchdog is clean every day, or its alerts are explained;
   - at least 5 re-verify PRs are opened and merged with no session;
@@ -398,9 +397,9 @@ Tier C starts only after Tiers A and B have merged. If the Max time runs short, 
   - no session runs any operation, beyond at most one interactive fix;
   - your time is 60 minutes a week or less, not counting one-off setup.
 
-### Stage 3: retire and cancel (23 to 30 Nov)
+### Stage 3: retire (PRs by 18 Nov; your actions on 19 Nov)
 
-While Max is still active, sessions open the PRs below. You cancel, then merge P4 last, so a rollback before that needs no revert.
+Sessions open the PRs below by 18 Nov, while Max is still active. On 19 Nov you remove the Claude pieces and let the plan end, then merge P4 last, so a rollback before that needs no revert.
 - **P4 (protected):**
   - delete `.github/workflows/claude.yml`, `.agent/prompts/daily-build.md` and `.agent/prompts/data-refresh.md`;
   - rewrite CLAUDE.md's merge rule (`data-gate` plus your audit) and its end-of-task steps;
@@ -433,19 +432,19 @@ While Max is still active, sessions open the PRs below. You cancel, then merge P
   - confirm there is no `CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY` secret;
   - remove the claude.ai connectors (Firecrawl, D35), and disconnect GitHub in claude.ai;
   - cancel Firecrawl, if it is a paid account (unverified);
-  - cancel the plan;
+  - let the plan end on 19 Nov (it is set not to renew) and check that no renewal is pending;
   - merge P4, then delete the `claude` label.
 
   From then on, any scripted model call would need either an API key under Anthropic's commercial terms, or a local model [22].
 - **Exit check:**
-  - the plan is cancelled;
+  - the plan has ended on 19 Nov with no renewal;
   - P4 is merged;
   - the next statement has no Anthropic charge.
 
-### Stage 4: watch (1 Dec 2026 to mid-January 2027)
+### Stage 4: watch (20 Nov 2026 to mid-January 2027)
 
 - The re-verification wave arrives on 21 and 22 Dec: about 340 and then 355 records, less those already checked in Stage 2. Each night's due records go through in one run.
-- **After 4 clean weeks,** mark the draft Stage 4 PR ready and merge it (protected). It:
+- **After 4 clean weeks and the December wave,** mark the draft Stage 4 PR ready and merge it (protected). It:
   - moves `decisions.md` to `docs/DECISIONS.md`;
   - moves the hard rules to `CONTRIBUTING.md`, and adds both files to `protected-paths`;
   - cuts CLAUDE.md down to a pointer to `CONTRIBUTING.md`, so any future tool or contractor still meets the rules;
@@ -463,7 +462,7 @@ While Max is still active, sessions open the PRs below. You cancel, then merge P
 - Tiers A and B with their tests, and `--check` green against the live pages.
 - B1's data fixes, audited by A8 while a second reader still exists.
 - The first PR from each new parser, audited in full by A8, so you never do a first-PR check yourself. Otherwise budget about 45 to 60 minutes per brand (*estimate*).
-- The coverage backlog, if you say yes to decision 5. Run it through the new parsers in about 16 batches of 60 rows, each audited by A8, from about 9 to 30 Nov (*estimate*):
+- The coverage backlog, if you say yes to decision 5. Run it through the new parsers in about 16 batches of 60 rows, each audited by A8, from when B4 merges (about 3 Nov) to 18 Nov (*estimate*); the nightly data task's revisit PRs (RUNBOOKS A5 step 4) count toward it until the shadow starts, and whatever is left goes to the weekly PR:
   - TP-Link AU: 797 dates that no record quotes yet. Each new product family needs a `category_map` line, which takes 5 to 10 minutes of your approval each (*estimate*);
   - EZVIZ: 119;
   - Google: about 40.
@@ -561,9 +560,9 @@ You shelved the business side on 22 Oct 2026, to come back to once this setup is
 
 1. **Create the GitHub App `patchlife-bot`?** Settled on 27 Oct: yes (D46), with the steps in #126. Without it, every bot PR waits for your click.
 2. **The Pangolin VPS.** Settled on 22 Oct: it stays. You pay for it for other projects, so Patchlife adds no cost to it. When the business side resumes, M6 runs on Unraid published through it (D40). Cloudflare Tunnel from Unraid remains the fallback; it is available on all plans [20].
-3. **Max renewal.** Settled on 27 Oct: you won't renew (D46), so Stages 1 to 3 have to fit inside the current period. If it ends before Stage 3, whatever is unbuilt waits, or you take one month of Pro billed monthly.
+3. **Max renewal.** Settled on 27 Oct: you won't renew, and the subscription ends on 19 Nov 2026 (D46). The stages are cut to fit: build to 4 Nov, shadow 5 to 18 Nov, Stage 3's PRs by 18 Nov, your removals on 19 Nov. Whatever isn't built by then waits for a later plan month or a contractor (decision 15).
 4. **Scope cuts and maintenance mode.** Settled on 27 Oct: accepted (D46). The business side is in Planned (D45), and the rest of the table above applies, with maintenance mode as the default.
-5. **Clear the backlog before cancelling?** Settled on 27 Oct: you left it to me, and I took the recommendation (D46). Yes, for TP-Link AU, EZVIZ and Google, in 60-row batches with A8 audits, from about 9 Nov, once Tiers A and B are on `main`, until the Max period ends. Whatever is left then goes to the weekly 60-row PR: TP-Link AU alone would take about 14 weeks that way (*estimate*).
+5. **Clear the backlog before cancelling?** Settled on 27 Oct: you left it to me, and I took the recommendation (D46). Yes, for TP-Link AU, EZVIZ and Google, in 60-row batches with A8 audits, from when B4 merges (about 3 Nov) until 18 Nov, the day before Max ends; the nightly data task's revisit PRs count toward it until the shadow starts. Whatever is left then goes to the weekly 60-row PR: TP-Link AU alone would take about 14 weeks that way (*estimate*).
 6. **Break-glass.** Recommended: none by default. If a breakage beats you, the options are:
    - paste the log into a local model on the RX 9070 XT. This needs no account or secret. llama.cpp's server binds to 127.0.0.1 by default [28]; whether the card works with its Vulkan build is unverified;
    - a one-off Anthropic API key on prepaid credits, with auto-reload off [24]. This involves account and spending gates. Sonnet 5.5 costs US$2 per million input tokens and US$10 per million output [23], so a fix costs about US$1 to 5 (*estimate*);
