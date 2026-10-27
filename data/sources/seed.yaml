@@ -14,9 +14,9 @@
   brand_slug: ring
   kind: per_model_dates
   urls:
-    - https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
-    - https://ring.com/au/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
-    - https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    - &ring-gb https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    - &ring-au https://ring.com/au/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    - &ring-us https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
   note: Per-model "at least" dates in tables on the GB, AU and US pages; each page states the same purchase-channel rule (#105).
   last_checked: "2026-10-21"
   regions_by_url:
@@ -72,9 +72,42 @@
     - { from: "Outdoor Cam Pro", to: "Outdoor Cam 4K Pro", urls: [*ring-renames-us, *ring-renames-gb, *ring-renames-au] }
     - { from: "Spotlight Cam (2nd Gen)", to: "Spotlight Cam 2K", urls: [*ring-renames-us, *ring-renames-gb, *ring-renames-au] }
     - { from: "Spotlight Cam Pro (2nd Gen)", to: "Spotlight Cam 4K Pro", urls: [*ring-renames-us, *ring-renames-gb, *ring-renames-au] }
+    # The names the ri2p1 pages themselves write for a recorded model (B4): a generation spelt out, a colour or
+    # variant list, a former name in brackets. The parser maps the row to the model and keeps the name as an alias;
+    # several rows of one page that map to one model with the same date are quoted together, as the records are.
+    - { from: "Alarm Base Station (2nd Generation)", to: "Alarm Base Station (2nd Gen)", urls: [*ring-gb] }
+    - { from: "Alarm Range Extender (2nd Generation)", to: "Alarm Range Extender (2nd Gen)", urls: [*ring-gb] }
+    - { from: "Chime (1st Generation)", to: "Chime (1st Gen)", urls: [*ring-au] }
+    - { from: "Chime (2nd Generation)", to: "Chime (2nd Gen)", urls: [*ring-au] }
+    - { from: "Chime Pro (1st Generation)", to: "Chime Pro (1st Gen)", urls: [*ring-au] }
+    - { from: "Chime Pro (2nd Generation)", to: "Chime Pro (2nd Gen)", urls: [*ring-gb, *ring-au] }
+    - { from: "Peephole Cam (also called Door View Cam)", to: "Door View Cam", urls: [*ring-us] }
+    - { from: "Elite 4K (140, 180, 270, 360)", to: "Elite 4K", urls: [*ring-us] }
+    - { from: "Indoor Cam (1st Gen) - Black, White", to: "Indoor Cam (1st Gen)", urls: [*ring-us] }
+    - { from: "Indoor Cam (2nd Gen) - Black, White", to: "Indoor Cam (2nd Gen)", urls: [*ring-us] }
+    - { from: "Outdoor Cam , Plug-In", to: "Outdoor Cam", urls: [*ring-us] }
+    - { from: "Outdoor Cam , Battery", to: "Outdoor Cam", urls: [*ring-us] }
+    - { from: "Outdoor Cam , Solar", to: "Outdoor Cam", urls: [*ring-us] }
+    - { from: "Spotlight Cam (1st Gen), Wired", to: "Spotlight Cam", urls: [*ring-us] }
+    - { from: "Spotlight Cam (1st Gen), Battery", to: "Spotlight Cam", urls: [*ring-us] }
+    - { from: "Spotlight Cam (1st Gen), Solar", to: "Spotlight Cam", urls: [*ring-us] }
+    - { from: "Spotlight Cam (1st Gen), Mount", to: "Spotlight Cam", urls: [*ring-us] }
+    - { from: "Spotlight Cam Plus Solar, Spotlight Cam Plus Wired, Spotlight Cam Plus Plug-In, Spotlight Cam Plus Battery", to: "Spotlight Cam Plus", urls: [*ring-us] }
+    - { from: "Spotlight Cam Pro Battery, Spotlight Cam Pro Wired, Spotlight Cam Pro Plug-in, Spotlight Cam Pro Solar", to: "Spotlight Cam Pro", urls: [*ring-us] }
+    - { from: "Stick Up Cam Elite (2nd Gen)", to: "Stick Up Cam Elite (2nd Generation)", urls: [*ring-us] }
+    - { from: "Stick Up Cam Pro, Battery, Plug-In or Solar", to: "Stick Up Cam Pro", urls: [*ring-us] }
+    - { from: "Video Doorbell (1st Generation) - Satin Nickel, Venetian Bronze (discontinued)", to: "Video Doorbell (1st Generation)", urls: [*ring-us] }
+    - { from: "Video Doorbell (2nd Generation) - Satin Nickel, Venetian Bronze", to: "Video Doorbell (2nd Generation)", urls: [*ring-us] }
+    - { from: "Video Doorbell 3 Plus (discontinued)", to: "Video Doorbell 3 Plus", urls: [*ring-us] }
+    - { from: "Video Doorbell 4 (2021 release)", to: "Video Doorbell 4", urls: [*ring-gb, *ring-au, *ring-us] }
+    - { from: "Wired Doorbell Plus (formerly Video Doorbell Pro)", to: "Video Doorbell Pro", urls: [*ring-us] }
+    - { from: "Wired Video Doorbell Pro (formerly Video Doorbell Pro 2) (2021 release)", to: "Wired Video Doorbell Pro", urls: [*ring-gb, *ring-au] }
+    - { from: "Wired Doorbell Pro (formerly Video Doorbell Pro 2 (2nd Generation))", to: "Wired Video Doorbell Pro", urls: [*ring-us] }
   # The D33 splits (#42) and the two glass break sensors kept apart (#43) carry notes that name the other record; the
-  # seed Floodlight Cam's note tells it from the 2K model; the Motion Sensor's note gives the US page's section.
+  # seed Floodlight Cam's note tells it from the 2K model; the Motion Sensor's note gives the US page's section; the
+  # seed Video Doorbell 3 carries the note "Seed record." (B4).
   parser_exceptions:
+    - ring-video-doorbell-3
     - ring-video-doorbell-4
     - ring-video-doorbell-4-us
     - ring-spotlight-cam-4k-pro
@@ -268,14 +301,21 @@
   # statement of compliance (one page per model, linked from the third URL) covers AU.
   regions_by_url:
     https://support.google.com/product-documentation/answer/10231940?hl=en: [GLOBAL]
-    https://support.google.com/product-documentation/answer/14869041?hl=en: [UK]
+    ? &google-uk https://support.google.com/product-documentation/answer/14869041?hl=en
+    : [UK]
     https://support.google.com/chromecast/answer/10367042: [AU]
-    https://support.google.com/product-documentation/answer/16888142?hl=en: [AU]
-    https://support.google.com/product-documentation/answer/16888345?hl=en: [AU]
-    https://support.google.com/product-documentation/answer/16888555?hl=en: [AU]
-    https://support.google.com/product-documentation/answer/16888621?hl=en: [AU]
-    https://support.google.com/product-documentation/answer/16889039?hl=en: [AU]
-    https://support.google.com/product-documentation/answer/16890804?hl=en: [AU]
+    ? &google-au-16888142 https://support.google.com/product-documentation/answer/16888142?hl=en
+    : [AU]
+    ? &google-au-16888345 https://support.google.com/product-documentation/answer/16888345?hl=en
+    : [AU]
+    ? &google-au-16888555 https://support.google.com/product-documentation/answer/16888555?hl=en
+    : [AU]
+    ? &google-au-16888621 https://support.google.com/product-documentation/answer/16888621?hl=en
+    : [AU]
+    ? &google-au-16889039 https://support.google.com/product-documentation/answer/16889039?hl=en
+    : [AU]
+    ? &google-au-16890804 https://support.google.com/product-documentation/answer/16890804?hl=en
+    : [AU]
   # The Nest table's sentence; the UK and Australian statements both start their period sentence the same way.
   at_least:
     - "Google Nest connected home devices will receive automatic security updates for at least 5 years from the date we start selling them on the US Google Store."
@@ -312,9 +352,22 @@
     - { model: 'Google Home|Nest Audio|Nest Mini', category: smart-speaker }
     - { model: 'Nest Protect|Nest Secure', category: other }
     - { model: 'Yale', category: smart-lock }
+  # The names the UK and Australian statements write for the Nest table's models, so the parser can add a statement's
+  # region and items to the table's record (B4). A statement entry with no row here is reported, never linked.
+  renames:
+    - { from: "Nest Cam wired (GJQ9T)", to: "Nest Cam (wired)", urls: [*google-uk, *google-au-16888142] }
+    - { from: "Nest Cam outdoor or indoor battery (G3AL9)", to: "Nest Cam (battery)", urls: [*google-uk, *google-au-16888555] }
+    - { from: "Nest Cam with Floodlight (GM493)", to: "Nest Cam with Floodlight", urls: [*google-uk, *google-au-16888621] }
+    - { from: "Nest Doorbell wired (G28DR)", to: "Nest Doorbell (wired)", urls: [*google-uk] }
+    - { from: "Nest Doorbell battery (GWX3T)", to: "Nest Doorbell (battery)", urls: [*google-uk, *google-au-16890804] }
+    - { from: "Nest Hello (A0077)", to: "Nest Hello", urls: [*google-uk] }
+    - { from: "Google Nest Cam Outdoor (wired, 2nd generation) (G7LYP)", to: "Nest Cam Outdoor (wired, 2nd gen)", urls: [*google-au-16888345] }
+    - { from: "Google Nest Cam Indoor (wired, 3rd generation)(G1NRR)", to: "Nest Cam Indoor (wired, 3rd gen)", urls: [*google-au-16889039] }
+  # For the regulatory page (chromecast/answer/10367042) the rows are its links to Australian statements (10 on 27 Oct 2026).
   min_rows:
     https://support.google.com/product-documentation/answer/10231940?hl=en: 35
     https://support.google.com/product-documentation/answer/14869041?hl=en: 5
+    https://support.google.com/chromecast/answer/10367042: 9
     https://support.google.com/product-documentation/answer/16888142?hl=en: 1
     https://support.google.com/product-documentation/answer/16888345?hl=en: 1
     https://support.google.com/product-documentation/answer/16888555?hl=en: 1
