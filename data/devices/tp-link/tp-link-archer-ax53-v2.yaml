@@ -17,7 +17,7 @@ evidence:
   - url: https://www.tp-link.com/au/landing/au-cyber-compliance/
     quote: "Wi-Fi 6 Router Archer AX53 V2 7/01/2029"
     retrieved: "2026-10-22"
-    archive_url: null
+    archive_url: https://web.archive.org/web/20261027034648/https://www.tp-link.com/au/landing/au-cyber-compliance/
     regime: au_smart_device_rules
 verification:
   status: verified
