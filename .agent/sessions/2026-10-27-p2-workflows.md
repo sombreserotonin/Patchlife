@@ -6,3 +6,4 @@
 - Owner steps after merging are in #128: a dry-run Housekeeping, a `due=0 limit=5` re-verify that opens the test PR as the App, `data-gate` into ruleset 25530330 once it has reported, `BOT_MERGE=on` and a real Housekeeping run, and Actions failure emails.
 - Expect the watchdog to go red on 29 Oct over #102 (`needs-human` for 7 days), then #117 and #123: the alarm working.
 - Verified: see LOG. Inefficient: the first gate simulation changed no data because `end_date` is nested under `support:`.
+- The owner merged #128 at 03:42 UTC and said Max ends on 19 Nov. The plan's dates are re-cut around that: build to 4 Nov, shadow 5 to 18 Nov, Stage 3's PRs by 18 Nov, removals on 19 Nov.
