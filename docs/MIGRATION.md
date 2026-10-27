@@ -182,7 +182,7 @@ Tier C starts only after Tiers A and B have merged. If the Max time runs short, 
   - `scripts/check-licences.mjs`: checks each `package-lock.json` entry's `license` against the lists in D9 and D30. All 116 entries carry one (22 Oct), so a missing licence is reported for a person to look at, with no fallback;
   - tests using an injected fetch. They cover forks, each label, red checks, files outside the allowlist, a SHA that moved, and an `audited` label added by the App;
   - `ops/renewals.yml`.
-- **P2 (protected; merge only once the App exists):**
+- **P2 (protected; open as #128 since 27 Oct, after the App was created in #126):**
   - **A new `housekeeping.yml`:**
     - runs on `23 21 * * *` and on `workflow_dispatch`, and mints the App token;
     - checks out with `fetch-depth: 0`, because the watchdog dates stale records from git history, and passes `GH_TOKEN` and `GITHUB_REPOSITORY`;
@@ -335,7 +335,7 @@ Tier C starts only after Tiers A and B have merged. If the Max time runs short, 
   - ARCHITECTURE lines 15 to 33 (the daily build, the `Crawl` allowlist and the agent threat model), rewritten for runners and you.
 
 **Your actions in Stage 1** (about 4 to 5 hours, *estimate*):
-1. **Create the App** (15 minutes; human gate; the full steps are in #126). Whether registering one costs anything is unverified.
+1. **Create the App.** Done on 27 Oct (#126: `patchlife-bot`, installed on this repository only, with `BOT_APP_ID`, `BOT_CLIENT_ID`, `BOT_MERGE=off`, `DATA_REFRESH=off` and the secret `BOT_APP_PRIVATE_KEY`).
    - Go to Settings > Developer settings > GitHub Apps > New, and turn the webhook off.
    - Repository permissions:
      - Contents, Pull requests, Issues and Actions: read and write;
@@ -346,7 +346,7 @@ Tier C starts only after Tiers A and B have merged. If the Max time runs short, 
      - the variables `BOT_APP_ID` and `BOT_CLIENT_ID`. GitHub's current `actions/create-github-app-token` example takes the Client ID, and older ones the App ID;
      - the secret `BOT_APP_PRIVATE_KEY`;
      - the variables `BOT_MERGE=off` and `DATA_REFRESH=off`.
-2. **Merge P2 and P3** following O2, about 20 minutes each. (#101 is merged.)
+2. **Merge P2 (#128) and P3** following O2, about 20 minutes each, then run the steps in each PR's description. (#101 is merged.)
    - Between them, they add only `schedule`, `workflow_dispatch` and `pull_request` triggers. None uses `pull_request_target`.
    - Expect `protected-paths` to fail on Dependabot's PRs, because their runs get a read-only token [11]. Merge those yourself once `test` is green.
 3. **Approve the five profiles in B2,** 20 to 30 minutes each, including the `conditions` sentences and the category maps.
