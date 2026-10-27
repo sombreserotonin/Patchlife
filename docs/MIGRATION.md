@@ -297,7 +297,7 @@ All of it lands by 4 Nov, because Max ends on 19 Nov (D46) and the shadow fortni
   - the M3 part 2 drill as an `npm test` case: a broken fixture source on a local server. It then runs on every PR.
 
   The fetching scripts need `node --use-env-proxy` in `Crawl` (D16). CLAUDE.md documents them like the existing commands.
-- **P3 (protected, after B4 and B5):**
+- **P3 (protected, after B4 and B5). First part merged 27 Oct (#140: `owner-tools.yml` and the CLAUDE.md lines for the owner's scripts); the second part, below, follows B4:**
   - **A new `data-refresh.yml`:**
     - its weekly schedule (`17 16 * * 0`) acts only when the variable `DATA_REFRESH` is `on`, which you switch on in Stage 2. So it never doubles up with the nightly `Crawl` task, which hits the same hosts at 14:17 UTC;
     - mints the App token for checkout, push and PR;
