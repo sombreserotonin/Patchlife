@@ -114,6 +114,7 @@ Targets are estimates. Each milestone closes only when its exit checks in ROADMA
 - **Coverage for M4:** at least 150 verified records, at least 40 of them in small-office categories (routers, printers, NVRs). Seed sources: TP-Link, GL.iNet, Kyocera, ASUS, NETGEAR. Also the follow-ups found in the audits: Google's Australian statements, AU and US evidence for the Ring seed records, TP-Link's TC and TD rows.
 - **Exit:**
   - three consecutive nightly runs each end in a correct PR or a correct "nothing to do";
+    - *Proposed, decision 12 (MIGRATION.md):* redefine this part on the new jobs, as MIGRATION Stage 2's exit check puts it: three consecutive nights of `reverify.yml` and `housekeeping.yml`, plus one `data-refresh.yml` run, all ending correctly with no session.
   - a deliberately broken fixture source is caught.
 
 ### M4 Demand check (four weeks)
@@ -207,13 +208,13 @@ Atom feeds and the monthly stats as `/stats/`, not email alerts (D46), once ther
 | Measure | Now | M1 | M3 | M4 start |
 | --- | --- | --- | --- | --- |
 | Verified records on `main` | 338 | 50 or more | 150 or more | 150 or more |
-| Brands with verified records | 5 | 4 | 6 or more | 6 or more |
+| Brands with verified records | 5 | 4 | 6 or more (met: seven brands on `main`, 27 Oct 2026) | 6 or more |
 | Share with a computable status | 100% | n/a | 60% or more | 60% or more |
 | Stale records | 0 | 0 | under 2% | under 2% |
-| Daily build heartbeats reporting OK (counted from 22 Oct) | n/a | n/a | 5 or more a week | 5 or more a week |
+| Clean watchdog days (proposed, decision 12: replaces the daily build heartbeat, which stops at MIGRATION Stage 2) | n/a | n/a | Every day, or each alert explained | Every day, or each alert explained |
 | Oldest open `needs-human` item | under 1 day | under 7 days | under 7 days | under 7 days |
 
-The first four rows of **Now** are the first four lines of `node scripts/data-report.mjs`, run on 21 Oct 2026 (UTC).
+The first four rows of **Now** are the first four lines of `node scripts/data-report.mjs`, run on 21 Oct 2026 (UTC). From #128 the current figures live in [`MEASURES.md`](MEASURES.md): `housekeeping.yml` regenerates it from that command on the 1st of each month (UTC), from 1 November 2026, and the merge bot merges it, so read the figures there rather than here. *Proposed, decision 12 (MIGRATION.md):* M3's exit check part 1 is redefined on the new jobs (above), the heartbeat row is replaced by clean watchdog days, and the brand target is already met with seven brands on `main` (27 Oct 2026).
 
 ## Action plan: next 14 days
 Who: **A** = agent (daily build or coordinating session), **O** = owner.
