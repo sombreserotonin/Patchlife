@@ -158,7 +158,7 @@ flowchart LR
 
 - **Daily build.** A scheduled task runs every morning at 06:08 Sydney time with the prompt in [`.agent/prompts/daily-build.md`](.agent/prompts/daily-build.md). It merges green agent PRs, does one roadmap task, and opens a PR.
 - **Two environments.** Code, tests and docs happen in the `Default` cloud environment, whose network cannot reach manufacturer sites. Everything that reads a manufacturer page, from adding records to `npm run verify:evidence`, runs in the `Crawl` environment, whose network allowlist adds a fixed list of manufacturer hosts (see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)). Step-by-step procedures are in [`docs/RUNBOOKS.md`](docs/RUNBOOKS.md).
-- **Branch protection.** `main` needs a pull request and a passing `test` check, and force pushes and deletion are blocked.
+- **Branch protection.** `main` needs a pull request and passing `test` and `data-gate` checks, and force pushes and deletion are blocked.
 - **Protected files.** CI labels any PR from a branch in this repository that changes `.github/`, `.claude/`, `.agent/prompts/`, `CLAUDE.md`, `package.json` or `package-lock.json` with `needs-human-merge`, and agents leave those PRs for the owner to merge. This is a project rule, not a GitHub permission: agents act with the owner's GitHub identity (see the security model in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)).
 - **Human gates.** Anything that needs a person (money, accounts, secrets, DNS, legal text, publishing) becomes a `needs-human` issue with exact steps.
 - **Memory.** Agents start every session from [`CLAUDE.md`](CLAUDE.md) and the files in [`.agent/`](.agent/): durable decisions, current context, the roadmap, an append-only log and a note per session.

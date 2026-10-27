@@ -10,8 +10,8 @@
   due: null
   note: Paid plan or free forwarding unknown. It is the privacy page contact (MIGRATION decision 13).
 - name: GitHub App private key rotation
-  due: null
-  note: Keys don't expire, so rotate the key yearly. Set this a year after the key is created, once the App exists (MIGRATION decision 1).
+  due: "2027-10-27"
+  note: Keys don't expire, so rotate the key yearly (RUNBOOKS O12 step 8). The key was created with the App on 27 Oct 2026 (#126, MIGRATION decision 1).
 - name: Cloudflare plan
   due: null
   note: The Free plan is expected but unverified. Set a date only if the zone is on a paid plan.
