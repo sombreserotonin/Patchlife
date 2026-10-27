@@ -123,7 +123,15 @@ test("a future at-least date uses the SPEC 4 sentence and the model page shows e
   assert.match(words, /Conditions If bought new on ring\.com, at least four years from purchase\./);
   assert.match(page, /<blockquote cite="https:\/\/ring\.com\/gb\/en\/support\/articles\/ri2p1"><p>Ring Video Doorbell 3 31 December 2027<\/p><\/blockquote>/);
   assert.match(page, /<a class="url" href="https:\/\/ring\.com\/gb\/en\/support\/articles\/ri2p1">/);
-  assert.match(page, /<a href="https:\/\/github\.com\/sombreserotonin\/Patchlife\/issues\/new\/choose">Report a correction<\/a>/);
+  // The correction link opens the "Wrong or outdated date" form with the device and this page filled in (C1).
+  const correction = page.match(/<a href="(https:\/\/github\.com\/sombreserotonin\/Patchlife\/issues\/new\?[^"]*)">Report a wrong date<\/a>/);
+  assert.ok(correction, "the correction link");
+  assert.deepEqual(Object.fromEntries(new URL(correction[1].replace(/&amp;/g, "&")).searchParams), {
+    template: "wrong-date.yml",
+    title: "Correction: Ring Video Doorbell 3",
+    device: "Ring Video Doorbell 3",
+    "our-page": "https://patchlife.tech/devices/ring-video-doorbell-3/",
+  });
   assert.match(page, /<html lang="en-AU">/);
   assert.equal(page.match(/<script/g).length, 1, "a model page has no JavaScript besides JSON-LD");
   const structured = JSON.parse(ldJson(page));
