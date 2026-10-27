@@ -309,6 +309,13 @@ function start() {
 input.addEventListener("focus", start);
 input.addEventListener("input", start);
 form.addEventListener("submit", (event) => event.preventDefault());
+// A link such as /?q=Tapo%20C200 opens with its search done (M5, D46). What is typed is never written back into the
+// URL, so it stays out of the address bar, the history and any analytics beacon that reports URL changes.
+const query = new URLSearchParams(location.search).get("q");
+if (query) {
+  input.value = query;
+  start();
+}
 </script>`;
 
 const link = (ctx, path) => `${ctx.base}${path}`;
