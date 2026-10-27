@@ -1,8 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { changedIds, pickIds, sampleLines, sampleSize } from "../scripts/audit-sample.mjs";
+import { changedIds, changedSinceBranch, pickIds, sampleLines, sampleSize } from "../scripts/audit-sample.mjs";
 
 const SCRIPT = fileURLToPath(new URL("../scripts/audit-sample.mjs", import.meta.url));
 const VALID = fileURLToPath(new URL("./fixtures/valid", import.meta.url));
@@ -26,6 +29,35 @@ test("the same PR number always picks the same records, whatever the order given
 test("changedIds keeps the ids of changed device records and nothing else", () => {
   const paths = ["data/devices/acme/acme-cam-1.yaml", "data/devices/acme/acme-hub-4.yaml", "data/sources/seed.yaml", "docs/PLAN.md", "", "data/devices/README.md"];
   assert.deepEqual(changedIds(paths), ["acme-cam-1", "acme-hub-4"]);
+});
+
+// A throwaway repository where main moves on after the branch leaves it, as it does when re-verifications merge daily.
+test("with no ids, the records are those changed since the branch left main, not those only main changed since", (t) => {
+  const dir = mkdtempSync(join(tmpdir(), "patchlife-sample-"));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const git = (...args) => execFileSync("git", args, { cwd: dir, encoding: "utf8" }).trim();
+  const write = (id, text) => writeFileSync(join(dir, "data", "devices", "acme", `${id}.yaml`), text);
+  const commit = (message) => {
+    git("add", ".");
+    git("-c", "user.name=t", "-c", "user.email=t@example.invalid", "commit", "-qm", message);
+  };
+  mkdirSync(join(dir, "data", "devices", "acme"), { recursive: true });
+  git("init", "-q", "-b", "main");
+  write("acme-cam-1", "id: acme-cam-1\n");
+  write("acme-cam-2", "id: acme-cam-2\n");
+  commit("base");
+  git("checkout", "-q", "-b", "claude/data-acme");
+  write("acme-cam-3", "id: acme-cam-3\n");
+  commit("add cam 3");
+  git("checkout", "-q", "main");
+  write("acme-cam-1", "id: acme-cam-1\nverification: {status: stale}\n");
+  commit("re-verify");
+  git("checkout", "-q", "claude/data-acme");
+  // An edit not committed yet counts too.
+  write("acme-cam-2", "id: acme-cam-2\nmodel: Cam 2\n");
+  assert.deepEqual(changedSinceBranch("main", dir), ["acme-cam-2", "acme-cam-3"]);
+  // Against main itself, acme-cam-1 would be listed although only main changed it.
+  assert.deepEqual(changedIds(git("diff", "--name-only", "main", "--", "data/devices").split("\n")), ["acme-cam-1", "acme-cam-2", "acme-cam-3"]);
 });
 
 test("each line gives the id, brand and model, end date or rule, and the first quote highlighted on its page", () => {

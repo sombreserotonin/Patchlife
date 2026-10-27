@@ -3,8 +3,9 @@
 // each id as scripts/watchdog.mjs ranks the weekly spot check, so the same PR always gives the same sample and nobody
 // chooses which records get checked. Prints one line per record: id, brand and model, end date (or the rule when
 // there is none) and the cited page with the quote highlighted (a text fragment link). With no ids it takes the
-// records changed under data/devices/ against origin/main, so run it on the PR's branch with origin fetched. Reads
-// only local files. Exits 2 on bad arguments.
+// records under data/devices/ changed since the branch left main (the working tree against the merge base of
+// origin/main and HEAD), so run it on the PR's branch with origin fetched. Reads only local files. Exits 2 on bad
+// arguments.
 // Usage: node scripts/audit-sample.mjs <pr number> [id ...]
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -40,6 +41,16 @@ export function changedIds(paths) {
   return paths.flatMap((path) => path.match(DEVICE)?.[1] ?? []);
 }
 
+// The ids of the records changed since the branch left main: the working tree against the merge base of mainRef and
+// HEAD, not against main itself, because a branch behind main (most data PRs, since re-verifications merge daily)
+// would otherwise pick up every record that only main changed. cwd must be the repository root, so paths come back
+// relative to it.
+export function changedSinceBranch(mainRef = "origin/main", cwd = ROOT) {
+  const git = (...args) => execFileSync("git", args, { cwd, encoding: "utf8" }).trim();
+  const base = git("merge-base", mainRef, "HEAD");
+  return changedIds(git("diff", "--name-only", base, "--", "data/devices").split("\n"));
+}
+
 // One tab-separated line per id: id, brand and model, end date or rule, and the first quoted item's page with its
 // quote highlighted (the first item's plain URL when no item has a quote). An id with no file, such as a record the
 // PR removes, says so.
@@ -63,13 +74,13 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   let ids = named;
   if (!ids.length) {
     try {
-      ids = changedIds(execFileSync("git", ["diff", "--name-only", "origin/main", "--", "data/devices"], { cwd: ROOT, encoding: "utf8" }).split("\n"));
+      ids = changedSinceBranch();
     } catch (err) {
-      console.error(`Could not list the records changed against origin/main: ${err.message}`);
+      console.error(`Could not list the records changed since the branch left main: ${err.message}`);
       process.exit(1);
     }
     if (!ids.length) {
-      console.log("No device records changed against origin/main.");
+      console.log("No device records changed since the branch left main.");
       process.exit(0);
     }
   }
