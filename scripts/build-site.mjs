@@ -320,6 +320,10 @@ if (query) {
 
 const link = (ctx, path) => `${ctx.base}${path}`;
 const absolute = (ctx, path) => `${ctx.siteUrl}${ctx.base}${path}`;
+// A model page's correction link opens the "Wrong or outdated date" form with the device, the page and the title
+// filled in (MIGRATION C1). GitHub prefills a form field from the query parameter named by the field's id.
+const correctionUrl = (ctx, name, path) =>
+  `${REPO_URL}/issues/new?${new URLSearchParams({ template: "wrong-date.yml", title: `Correction: ${name}`, device: name, "our-page": absolute(ctx, path) })}`;
 const disclaimerNote = (ctx) => html`<p class="disclaimer">${DISCLAIMER} <a href="${link(ctx, "/methodology/")}">How the dates are checked</a>.</p>`;
 
 function footer(ctx) {
@@ -445,7 +449,7 @@ ${quoted.map(
 ${searched.length ? html`<p>Pages searched:</p>
 <ul>${searched.map((ev) => html`<li>${sourceLink(ev.url)}, ${shortTime(ev.retrieved)}</li>`)}</ul>` : ""}
 <h2>Something wrong?</h2>
-<p><a href="${CORRECTION_URL}">Report a correction</a> and link the manufacturer's own page. Dates only change when a primary source supports the change.</p>`;
+<p><a href="${correctionUrl(ctx, name, path)}">Report a wrong date</a> and link the manufacturer's own page. Dates only change when a primary source supports the change.</p>`;
   return layout(ctx, { path, title: `${name} security updates | Patchlife`, description, head: structured, body });
 }
 
