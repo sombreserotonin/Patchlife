@@ -17,12 +17,12 @@ evidence:
   - url: https://www.tp-link.com/au/landing/au-cyber-compliance/
     quote: "Easy Managed Switch ES208G V1 31/12/2028 or later*"
     retrieved: "2026-10-22"
-    archive_url: null
+    archive_url: https://web.archive.org/web/20261027034648/https://www.tp-link.com/au/landing/au-cyber-compliance/
     regime: au_smart_device_rules
   - url: https://www.tp-link.com/au/landing/au-cyber-compliance/
     quote: "*The non-EOL product’s defined support period may be refreshed to extend specified date."
     retrieved: "2026-10-22"
-    archive_url: null
+    archive_url: https://web.archive.org/web/20261027034648/https://www.tp-link.com/au/landing/au-cyber-compliance/
     regime: au_smart_device_rules
 verification:
   status: verified

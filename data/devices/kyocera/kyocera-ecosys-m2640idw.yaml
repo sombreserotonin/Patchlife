@@ -16,12 +16,12 @@ evidence:
   - url: https://www.kyoceradocumentsolutions.co.uk/en/support/product-security.html
     quote: "ECOSYS M2640idw Date of first availability in the UK: Nov-16 End of support date: 31st December 2026"
     retrieved: "2026-10-22"
-    archive_url: null
+    archive_url: https://web.archive.org/web/20261027034542/https://www.kyoceradocumentsolutions.co.uk/en/support/product-security.html
     regime: uk_psti
   - url: https://www.kyoceradocumentsolutions.co.uk/en/support/product-security.html
     quote: "These support periods are reviewed on a continual basis and extended where it is deemed prudent to do so, for the benefit of the consumer. At no point shall the support periods advertised on this webpage be reduced"
     retrieved: "2026-10-22"
-    archive_url: null
+    archive_url: https://web.archive.org/web/20261027034542/https://www.kyoceradocumentsolutions.co.uk/en/support/product-security.html
     regime: uk_psti
 verification:
   status: verified
