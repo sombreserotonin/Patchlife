@@ -267,7 +267,8 @@ test("Google's dated note accepts any date in the {date} position, and the state
   assert.equal(second.reports[0].changed[0].notes, true);
   assert.ok(second.flags.some((f) => f.startsWith("changed: google-nest-cam-ultra: only the notes differ")), second.flags.join("\n"));
   const third = await run(dir, { get, brands: ["google"] });
-  assert.deepEqual(third.written.map((w) => [w.id, w.kind, w.before.notes.endsWith("Hand-written."), w.after.notes.endsWith("Hand-written.")]), [["google-nest-cam-ultra", "changed", true, false]]);
+  assert.deepEqual(third.written.map((w) => [w.id, w.kind]), [["google-nest-cam-ultra", "changed"], ["google-home-orb", "new"]]);
+  assert.ok(third.written[0].before.notes.endsWith("Hand-written.") && !third.written[0].after.notes.endsWith("Hand-written."));
 });
 
 test("a written record the validator rejects is removed again, a rewritten one restored, and the run fails", async () => {
