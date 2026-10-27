@@ -361,7 +361,7 @@ test("the sitemap lists every HTML page and nothing else", (t) => {
   const pages = htmlFiles(site.outDir).map((file) => `https://patchlife.tech/${file.replace(/index\.html$/, "")}`);
   const locs = [...site.read("sitemap.xml").matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]).sort();
   assert.deepEqual(locs, pages.sort());
-  assert.equal(pages.length, 1 + 5 + 1 + 5 + 4, "home, 5 models, 1 brand, 5 categories, 4 info pages");
+  assert.equal(pages.length, 1 + 5 + 1 + 5 + 6, "home, 5 models, 1 brand, 5 categories, 6 info pages");
   assert.equal(site.read("robots.txt"), "User-agent: *\nAllow: /\n\nSitemap: https://patchlife.tech/sitemap.xml\n");
 });
 
@@ -836,7 +836,7 @@ test("the CLI runs when the script is reached through a symlink", (t) => {
   const outDir = join(tmp, "out");
   const run = spawnSync(process.execPath, [link, outDir, VALID], { encoding: "utf8", env: { ...process.env, BUILD_DATE: TODAY } });
   assert.equal(run.status, 0, run.stderr);
-  assert.match(run.stdout, /16 page\(s\) for 5 record\(s\)/);
+  assert.match(run.stdout, /18 page\(s\) for 5 record\(s\)/);
   assert.ok(existsSync(join(outDir, "index.html")));
 });
 
@@ -951,4 +951,112 @@ test("time left counts whole years, months and days to the last day", () => {
   assert.equal(timeLeft("2027-01-31", "2027-03-01"), "1 month and 1 day");
   assert.equal(timeLeft("2026-10-21", "2026-10-22"), "1 day");
   assert.equal(timeLeft("2026-10-21", "2026-10-21"), null);
+});
+
+// ---------- Atom feeds and stats (M7, D46) ----------
+// One record per feed outcome on TODAY, plus a hostile model name to check the XML escaping.
+function feedRecords() {
+  const base = (id, model, support) => {
+    const record = structuredClone(byId(fixtures(), "acme-cam-1"));
+    return Object.assign(record, {
+      id,
+      model,
+      aliases: [],
+      support: { rule: "fixed_date", end_date: null, years: null, anchor_date: null, at_least: false, conditions: null, ...support },
+      evidence: [{ url: "https://acme.example/support", quote: `${model} ${support.end_date ?? ""}`, retrieved: "2026-10-01", regime: "vendor_policy" }],
+      verification: { status: "verified", checked: "2026-10-20" },
+    });
+  };
+  return [
+    base("acme-soon-1", "Soon & <1>", { end_date: "2027-03-15" }),
+    base("acme-min-2", "Min 2", { end_date: "2026-09-30", at_least: true }),
+    base("acme-month-3", "Month 3", { end_date: "2027-04" }),
+    base("acme-gone-4", "Gone 4", { end_date: "2026-09" }),
+    base("acme-fine-5", "Fine 5", { end_date: "2029-01-01" }),
+    base("acme-none-6", "None 6", { rule: "none_published" }),
+  ];
+}
+
+const entriesOf = (feed) =>
+  [...feed.matchAll(/<entry>\n<title>([^<]*)<\/title>\n<id>([^<]*)<\/id>\n<link rel="alternate" type="text\/html" href="([^"]*)"\/>\n<updated>([^<]*)<\/updated>\n<summary>([^<]*)<\/summary>\n<\/entry>/g)].map(
+    ([, title, id, href, updated, summary]) => ({ title, id, href, updated, summary }),
+  );
+
+test("the Atom feeds list the models ending within 12 months or ended, newest first, dated by the status rules (M7, D46)", (t) => {
+  const site = build(t, { records: feedRecords() });
+  const soon = site.read("feeds/ending-soon.xml");
+  assert.ok(soon.startsWith('<?xml version="1.0" encoding="utf-8"?>\n<feed xmlns="http://www.w3.org/2005/Atom">\n'), soon.slice(0, 120));
+  assert.match(soon, /<id>https:\/\/patchlife\.tech\/feeds\/ending-soon\.xml<\/id>\n<link rel="self" type="application\/atom\+xml" href="https:\/\/patchlife\.tech\/feeds\/ending-soon\.xml"\/>/);
+  assert.match(soon, /<author><name>Patchlife<\/name><uri>https:\/\/patchlife\.tech\/<\/uri><\/author>/);
+  assert.match(soon, new RegExp(`<rights>Data licence: ODbL 1\\.0\\. ${ATTRIBUTION.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} Quoted manufacturer statements remain the property of their owners\\.</rights>`));
+  // Ending soon: 12 months before the end, or before the month's first day; the feed's date is its newest entry's.
+  assert.deepEqual(
+    entriesOf(soon).map(({ title, id, updated }) => [title, id, updated]),
+    [
+      ["Acme Month 3: Ending soon", "https://patchlife.tech/devices/acme-month-3/", "2026-04-01T00:00:00Z"],
+      ["Acme Soon &amp; &lt;1&gt;: Ending soon", "https://patchlife.tech/devices/acme-soon-1/", "2026-03-15T00:00:00Z"],
+    ],
+  );
+  assert.match(soon, /<\/rights>\n<entry>/);
+  assert.match(soon, /<updated>2026-04-01T00:00:00Z<\/updated>\n<author>/, "the feed is dated by its newest entry");
+  assert.equal(entriesOf(soon)[1].summary, "Security updates until 15 March 2027, as published by Acme (checked 20 Oct 2026). Australian and UK statements.");
+  assert.doesNotMatch(soon, /&(?!(?:amp|lt|gt|quot|#39);)/, "every ampersand is an entity");
+  // Ended: the day after the end date or the month's last day; same-day entries are in name order.
+  const ended = site.read("feeds/ended.xml");
+  assert.deepEqual(
+    entriesOf(ended).map(({ title, updated }) => [title, updated]),
+    [
+      ["Acme Gone 4: Ended", "2026-10-01T00:00:00Z"],
+      ["Acme Min 2: Minimum passed", "2026-10-01T00:00:00Z"],
+    ],
+  );
+  assert.equal(entriesOf(ended)[1].summary, "Minimum support period ended on 30 September 2026. Acme may still provide updates. Date as published by Acme (checked 20 Oct 2026). Australian and UK statements.");
+  // The brand feed holds both kinds; supported and unknown models are in no feed.
+  const brand = site.read("feeds/brands/acme.xml");
+  assert.match(brand, /<title>Patchlife: Acme security updates ending or ended<\/title>/);
+  assert.deepEqual(
+    entriesOf(brand).map(({ title }) => title),
+    ["Acme Gone 4: Ended", "Acme Min 2: Minimum passed", "Acme Month 3: Ending soon", "Acme Soon &amp; &lt;1&gt;: Ending soon"],
+  );
+  for (const feed of [soon, ended, brand]) assert.doesNotMatch(feed, /Fine 5|None 6/);
+  // Autodiscovery on the home and brand pages, and visible links on the brand page, the feeds page and the footer.
+  const home = site.read("index.html");
+  assert.match(home, /<link rel="alternate" type="application\/atom\+xml" href="https:\/\/patchlife\.tech\/feeds\/ending-soon\.xml" title="Patchlife: security updates ending within 12 months">\n<link rel="alternate" type="application\/atom\+xml" href="https:\/\/patchlife\.tech\/feeds\/ended\.xml" title="Patchlife: security updates ended">/);
+  assert.equal(home.match(/application\/atom\+xml/g).length, 2);
+  const brandPage = site.read("brands/acme/index.html");
+  assert.match(brandPage, /<link rel="alternate" type="application\/atom\+xml" href="https:\/\/patchlife\.tech\/feeds\/brands\/acme\.xml" title="Patchlife: Acme security updates ending or ended">/);
+  assert.match(brandPage, /<p><a href="\/feeds\/brands\/acme\.xml">Atom feed<\/a>: models from Acme ending within 12 months or ended\.<\/p>/);
+  assert.doesNotMatch(site.read("categories/camera/index.html"), /atom\+xml|Atom feed/);
+  const feeds = site.read("feeds/index.html");
+  assert.match(feeds, /<a href="\/feeds\/ending-soon\.xml">Patchlife: security updates ending within 12 months<\/a>/);
+  assert.match(feeds, /<a href="\/feeds\/ended\.xml">Patchlife: security updates ended<\/a>/);
+  assert.match(feeds, /<h2>By brand<\/h2>\n<ul><li><a href="\/feeds\/brands\/acme\.xml">Acme<\/a><\/li><\/ul>/);
+  assert.match(home, /<li><a href="\/feeds\/">Feeds \(Atom\)<\/a><\/li>\n<li><a href="\/stats\/">Stats<\/a><\/li>/);
+  assert.match(site.read("sitemap.xml"), /<loc>https:\/\/patchlife\.tech\/feeds\/<\/loc>/);
+  assert.doesNotMatch(site.read("sitemap.xml"), /\.xml<\/loc>/, "feeds are not pages");
+});
+
+test("a feed with no entries is dated the build date, and a month-only end date gives both feed dates (D38)", (t) => {
+  const site = build(t, { records: [feedRecords()[4]] });
+  const ended = site.read("feeds/ended.xml");
+  assert.equal(entriesOf(ended).length, 0);
+  assert.match(ended, /<updated>2026-10-21T00:00:00Z<\/updated>\n<author>/);
+  assert.match(ended, /<\/rights>\n<\/feed>\n$/);
+  // Month 3 (2027-04) is ending soon from 1 April 2026 and would be ended from 1 May 2027.
+  const later = build(t, { records: [feedRecords()[2]], today: "2027-05-01" });
+  assert.deepEqual(entriesOf(later.read("feeds/ended.xml")).map(({ title, updated }) => [title, updated]), [["Acme Month 3: Ended", "2027-05-01T00:00:00Z"]]);
+  assert.equal(entriesOf(later.read("feeds/ending-soon.xml")).length, 0);
+});
+
+test("the stats page counts records by status, brand, category and verification state as at the build date (M7, D46)", (t) => {
+  const site = build(t, { records: feedRecords() });
+  const page = site.read("stats/index.html");
+  const words = text(page);
+  assert.match(words, /Counts from the data as at 21 Oct 2026, when this site was last built\./);
+  assert.match(words, /Measures Verified records 6 Brands with verified records 1 Share of verified records with a computable status 83% \(5 of 6\) Stale records 0 Records in all 6 Oldest automated check 20 Oct 2026/);
+  assert.match(words, /Records by status Supported 1 Ending soon 2 Ended or minimum passed 2 Unknown 1/);
+  assert.match(words, /Records by brand Acme 6 Records by category Cameras 6 Records by verification state Verified 6 Not yet checked 0 Stale 0 Disputed 0/);
+  assert.match(page, /<th scope="row"><a href="\/brands\/acme\/">Acme<\/a><\/th>/);
+  assert.match(page, /<th scope="row"><a href="\/categories\/camera\/">Cameras<\/a><\/th>/);
+  assert.equal(page.match(/<script/g), null, "the stats page has no JavaScript");
 });
