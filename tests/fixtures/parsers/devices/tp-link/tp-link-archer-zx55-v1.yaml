@@ -1,0 +1,24 @@
+id: tp-link-archer-zx55-v1
+brand: TP-Link
+brand_slug: tp-link
+model: Archer ZX55 (V1)
+aliases:
+  - Archer ZX55 V1
+category: router
+regions: [AU]
+support:
+  rule: fixed_date
+  end_date: "2029-01-07"
+  years: null
+  anchor_date: null
+  at_least: false
+  conditions: Hardware version V1 only.
+evidence:
+  - url: https://www.tp-link.com/au/landing/au-cyber-compliance/
+    quote: "Wi-Fi 6 Router Archer ZX55 V1 7/01/2029"
+    retrieved: "2026-10-01"
+    regime: au_smart_device_rules
+verification:
+  status: verified
+  checked: 2026-10-01
+  text_sha256: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
