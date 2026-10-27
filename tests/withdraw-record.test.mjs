@@ -66,6 +66,8 @@ test("an unknown id throws, and the notes keep the schema's limit", () => {
 });
 
 test("the CLI exits 2 with the usage line on bad arguments and 1 for an unknown id, writing nothing", () => {
+  const dataStatus = () => spawnSync("git", ["status", "--porcelain", "--", "data"], { encoding: "utf8" }).stdout;
+  const before = dataStatus();
   const bad = spawnSync(process.execPath, [SCRIPT, "acme-cam-1"], { encoding: "utf8" });
   assert.equal(bad.status, 2);
   assert.match(bad.stderr, /^Usage: node scripts\/withdraw-record\.mjs <id> <reason>\n$/);
@@ -75,5 +77,5 @@ test("the CLI exits 2 with the usage line on bad arguments and 1 for an unknown 
   const unknown = spawnSync(process.execPath, [SCRIPT, "nobody-cam-0", "a reason"], { encoding: "utf8" });
   assert.equal(unknown.status, 1);
   assert.match(unknown.stderr, /^No record has the id "nobody-cam-0"\n$/);
-  assert.equal(spawnSync("git", ["status", "--porcelain", "--", "data"], { encoding: "utf8" }).stdout, "", "the real data is untouched");
+  assert.equal(dataStatus(), before, "the real data is untouched");
 });
