@@ -48,6 +48,8 @@ Progress: the broken-source half passed on 22 Oct 2026 (drill of the `reverify.y
 
 Exit: a `?q=` link opens the matching records, with tests that prefer the longest exact match (PLAN, "Matching").
 
+Done 27 Oct 2026 (MIGRATION C4): the home page reads `?q=` on load and runs the search; what is typed is never written into the URL.
+
 ## M7 Growth (D46: feeds, not email)
 - Atom feeds in place of email alerts, and the monthly stats report as `/stats/` (SPEC 7). No email provider, subscriber list or personal data.
 

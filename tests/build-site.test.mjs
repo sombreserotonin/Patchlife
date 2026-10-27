@@ -462,6 +462,9 @@ test("BASE_PATH, SITE_URL and BUILD_DATE from the environment shape links, and e
   assert.match(home, /data-base="\/Patchlife"/);
   const loaderPaths = [...home.matchAll(/base \+ "(\/[^"]+)"/g)].map((m) => m[1]);
   assert.deepEqual(loaderPaths.sort(), ["/search-index.json", "/search.js"]);
+  // A search link (M5, D46) is read on load; what is typed never goes into the URL, so the privacy page stays true.
+  assert.match(home, /const query = new URLSearchParams\(location\.search\)\.get\("q"\);/);
+  assert.doesNotMatch(home, /history\.(pushState|replaceState)|location\.(search|hash) =/);
   for (const path of loaderPaths) resolves(`/Patchlife${path}`, "search loader");
   assert.equal(read("search.js"), readFileSync(join(ROOT, "site", "search.js"), "utf8"));
   for (const file of htmlFiles(outDir)) {
@@ -499,8 +502,9 @@ test("attachSearch renders base-prefixed links and replaces results on each inpu
   assert.equal(dom.count.textContent, "");
 });
 
-// Runs the home page's inline search loader with a fake document, import() and fetch(), and records what it asks for.
-function runLoader(page, { fetchOk = true } = {}) {
+// Runs the home page's inline search loader with a fake document, location, import() and fetch(), and records what it
+// asks for. search is the page URL's query string, "?q=..." for a search link.
+function runLoader(page, { fetchOk = true, search = "" } = {}) {
   const code = page.match(/<script type="module">([\s\S]*?)<\/script>/)[1];
   const element = (props = {}) => ({ listeners: {}, addEventListener(type, fn) { this.listeners[type] = fn; }, ...props });
   const form = element({ dataset: { base: page.match(/data-base="([^"]*)"/)[1] } });
@@ -517,7 +521,7 @@ function runLoader(page, { fetchOk = true } = {}) {
     calls.fetches.push(url);
     return fetchOk ? { ok: true, json: async () => ({ devices: ["d"] }) } : { ok: false, status: 404 };
   };
-  new Function("document", "loadModule", "fetch", code.replace(/\bimport\(/g, "loadModule("))({ getElementById: (id) => nodes[id] }, fakeImport, fakeFetch);
+  new Function("document", "loadModule", "fetch", "location", code.replace(/\bimport\(/g, "loadModule("))({ getElementById: (id) => nodes[id] }, fakeImport, fakeFetch, { search });
   const settle = () => new Promise((done) => setTimeout(done, 0));
   return { form, input, count, list, calls, settle };
 }
@@ -545,6 +549,22 @@ test("the home page search loader loads lazily from the base path and wires up a
   let prevented = false;
   loader.form.listeners.submit({ preventDefault: () => (prevented = true) });
   assert.ok(prevented, "submitting the search form does not reload the page");
+});
+
+test("a search link fills the box and runs the search on load; without one nothing loads (M5, D46)", async (t) => {
+  const home = build(t, { basePath: "/Patchlife" }).read("index.html");
+  const linked = runLoader(home, { search: "?q=Tapo%20C200" });
+  await linked.settle();
+  assert.equal(linked.input.value, "Tapo C200", "decoded, as the box would show it");
+  assert.deepEqual(linked.calls.imports, ["/Patchlife/search.js"]);
+  assert.deepEqual(linked.calls.fetches, ["/Patchlife/search-index.json"]);
+  assert.equal(linked.calls.attached.length, 1, "attachSearch searches the box's value as soon as it is wired up");
+  for (const search of ["", "?q=", "?page=2"]) {
+    const plain = runLoader(home, { search });
+    await plain.settle();
+    assert.equal(plain.input.value, "", search);
+    assert.deepEqual(plain.calls.imports, [], `nothing loads for "${search}"`);
+  }
 });
 
 test("the search loader says when search cannot load, and tries again on the next focus", async (t) => {
@@ -885,6 +905,19 @@ test("matchDevices finds aliases and model numbers and needs every term", (t) =>
   assert.deepEqual(ids("acme nonexistent"), [], "every term must match");
   assert.deepEqual(ids("   "), []);
   assert.equal(ids("acme").length, 5);
+});
+
+test("a search link's query prefers the longest exact name, whichever order the index has (PLAN, Matching)", () => {
+  // Old models whose names are prefixes of new ones: the audits found "Nest Cam Indoor" (2015) inside "Nest Cam Indoor (wired, 3rd gen)".
+  const old = { id: "google-nest-cam-indoor", brand: "Google", model: "Nest Cam Indoor", aliases: [] };
+  const wired = { id: "google-nest-cam-indoor-wired-3rd-gen", brand: "Google", model: "Nest Cam Indoor (wired, 3rd gen)", aliases: [] };
+  for (const index of [[old, wired], [wired, old]]) {
+    const order = (query) => matchDevices(index, query).map((d) => d.id);
+    assert.deepEqual(order("Nest Cam Indoor (wired, 3rd gen)"), [wired.id], "the full name finds only its own model: every term must match");
+    assert.deepEqual(order("Nest Cam Indoor"), [old.id, wired.id], "the shorter name is exact, the longer one only starts with it");
+    assert.deepEqual(order("Google Nest Cam Indoor (wired, 3rd gen)"), [wired.id], "with the brand in front too");
+    assert.deepEqual(order("google nest cam indoor"), [old.id, wired.id], "brand and model, any case");
+  }
 });
 
 test("matchDevices ranks an exact model or alias first, then prefix matches, then the rest", (t) => {
