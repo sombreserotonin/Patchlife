@@ -45,6 +45,9 @@ The rules for one record, whoever writes or reviews it. They were the `add-devic
 8. `npm run verify:evidence -- <id>` reports `verified` before the record is committed. A quote that does not match is re-copied from the page text; a date is never changed to make a quote match.
 9. `npm run validate` and `npm test` pass, and the commit is `data(<brand_slug>): add <model>` or `data(<brand_slug>): update <model>`, one source per PR (D19).
 
+## Source profiles
+Each source's entry in `data/sources/seed.yaml` can carry a profile of how its pages state support (MIGRATION B2, #135): the regions each page covers, the sentences that make a date a minimum, the allowed `conditions` sentences (with `{version}` for a hardware version), the notes templates, the category map and its exceptions, whether the pages list models by hardware version, the fewest rows a parser must find, the maker's rename table and the records a parser must never write to. `npm run validate` checks every record against its brand's profile (rules R1 to R8 in `scripts/validate-data.mjs`), and the parsers regenerate records from the same profile, so a judgement lives in the profile, never only in one record. Every sentence in a profile comes from records that were audited against the pages, and changing a profile is the owner's decision (MIGRATION's proposed D49): the registry is data, so its PR needs `audited`.
+
 ## Display
 - Always show "as published by <brand>", the date checked and a link to the source.
 - Lists and search results show "as published by <brand>" and the date checked, and link to the model page, which shows the quote and the source link.

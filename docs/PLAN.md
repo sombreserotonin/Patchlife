@@ -165,15 +165,12 @@ Order set by M4. Scope as in SPEC 5 and 6. M6 is in Planned with M4 (D45); M5 is
 Atom feeds and the monthly stats as `/stats/`, not email alerts (D46), once there's an audience.
 
 ## Running it unattended (next 30 days)
-1. **Heartbeat.**
-   - Every daily build run comments its one-line result on [#27](https://github.com/sombreserotonin/Patchlife/issues/27) (from 22 Oct, #29).
-   - With own-activity emails on (G1), each comment reaches your inbox.
-   - No comment for two days means O4.
+1. **Heartbeat.** Until MIGRATION Stage 2 (5 Nov 2026), every daily build run comments its one-line result on [#27](https://github.com/sombreserotonin/Patchlife/issues/27) (from 22 Oct, #29), and no comment for two days means O4. From Stage 2 there is no daily line (MIGRATION decision 7): a red `Housekeeping` run, the `watchdog` issue and the Sunday summary on #27 are the alarms ([`OPERATIONS.md`](OPERATIONS.md), "Alerts"; RUNBOOKS O4 and O5).
 2. **Security settings (G3):**
    - Dependabot alerts;
    - secret scanning with push protection (Settings > Code security);
    - auto-renew and two-factor sign-in at your domain registrar for `patchlife.tech`.
-3. **Pulling a wrong date fast:** RUNBOOKS O8. It works once the site is live.
+3. **Pulling a wrong date fast:** RUNBOOKS O8, or the `withdraw` action of the Owner tools workflow once P3 merges (#140).
 4. **Usage:** one coordinating session at a time, and none during the daily build window.
 
 ## Legal checklist (H9, split by when it's needed)
