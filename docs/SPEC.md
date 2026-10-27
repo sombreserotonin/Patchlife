@@ -44,6 +44,7 @@ Against today's date: `supported` (more than 12 months left), `ending_soon` (12 
 - Tests run against saved HTML fixtures for each retailer.
 
 ## 6. B2B (M6)
+- **Planned (D45, 22 Oct 2026):** the business side is shelved until MIGRATION Stage 4's exit check; nothing below is built before then. The drafts are in #99.
 - CSV upload (make, model) produces an unsupported and ending-soon report, processed in the browser.
 - Paid API keys: Stripe Checkout, a webhook issues the key, the key is checked at the edge. Test mode first.
 - Supplier check: SKU list in, statement found or not found out, with links.
