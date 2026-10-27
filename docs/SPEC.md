@@ -30,7 +30,7 @@ Against today's date: `supported` (more than 12 months left), `ending_soon` (12 
 
 ## 4. Public site (M2)
 - Pages: home search, model, brand, category, methodology, corrections, about.
-- Model page: end date or rule in words, time left, status, quote, source link, date checked, "Report a correction" link.
+- Model page: end date or rule in words, time left, status, quote, source link, date checked, "Report a wrong date" link that opens the correction form with the device and page filled in.
 - Copy pattern: "Security updates until at least 31 December 2027, as published by Ring (checked 21 Oct 2026)."
 - Static output, client-side search, sitemap, structured data, WCAG 2.1 AA, fast on mobile.
 - JSON: `/api/v1/devices.json` (all records) and `/api/v1/devices/<id>.json`. Every response includes `license: "ODbL-1.0"` and the attribution line from `data/NOTICE.md`.
