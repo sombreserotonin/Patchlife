@@ -1,0 +1,29 @@
+# The #22 audit catch: the bare alias C200 also names the C200 V1 to V4, which the statement's row does not cover.
+id: tp-link-tapo-c200-v5
+brand: TP-Link
+brand_slug: tp-link
+model: Tapo C200 (V5)
+aliases:
+  - Tapo C200 V5
+  - C200
+category: camera
+regions: [AU]
+support:
+  rule: fixed_date
+  end_date: "2028-12-31"
+  years: null
+  anchor_date: null
+  at_least: true
+  conditions: Hardware version V5 only.
+evidence:
+  - url: https://www.tp-link.com/au/landing/au-cyber-compliance/
+    quote: "Wired Indoor Camera Tapo C200 V5 31/12/2028 or later*"
+    retrieved: "2026-10-21"
+    regime: au_smart_device_rules
+  - url: https://www.tp-link.com/au/landing/au-cyber-compliance/
+    quote: "*The non-EOL product’s defined support period may be refreshed to extend specified date."
+    retrieved: "2026-10-21"
+    regime: au_smart_device_rules
+verification:
+  status: unverified
+notes: The statement's footnote says the date may be extended for products not yet at end of life.

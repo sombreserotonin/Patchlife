@@ -1,0 +1,10 @@
+- brand: Acme
+  brand_slug: acme
+  kind: per_model_dates
+  urls: [https://example.com/acme/security]
+  last_checked: "2026-10-21"
+  category_map:
+    - { model: 'Doorbell', category: doorbell }
+    - { row: '^Camera\b', category: camera }
+  category_exceptions:
+    acme-hub-4: hub

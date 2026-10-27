@@ -1,0 +1,9 @@
+- brand: Acme
+  brand_slug: acme
+  kind: per_model_dates
+  urls: [https://example.com/acme/security]
+  last_checked: null
+  regions_by_url:
+    https://example.com/acme/security: [NZ]
+  category_map:
+    - { model: Cam, row: '^Camera', category: camera }

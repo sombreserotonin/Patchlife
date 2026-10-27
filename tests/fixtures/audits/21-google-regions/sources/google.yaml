@@ -1,0 +1,16 @@
+# The Google profile as the #21 audit read the Nest table, before D24: the page names no region and anchors its dates
+# to the US Google Store, so it covers the US. (seed.yaml records it as GLOBAL under D24.) The at-least sentence is
+# the table's own.
+- brand: Google
+  brand_slug: google
+  kind: per_model_dates
+  urls: [https://support.google.com/product-documentation/answer/10231940?hl=en]
+  date_order: mdy
+  last_checked: "2026-10-21"
+  regions_by_url:
+    https://support.google.com/product-documentation/answer/10231940?hl=en: [US]
+  at_least:
+    - "Google Nest connected home devices will receive automatic security updates for at least 5 years from the date we start selling them on the US Google Store."
+  conditions:
+    https://support.google.com/product-documentation/answer/10231940?hl=en:
+      - "Covers critical issues that Google can fix with a remote software update."

@@ -1,0 +1,18 @@
+# The EZVIZ profile's categories and conditions, as seed.yaml carries them.
+- brand: EZVIZ
+  brand_slug: ezviz
+  kind: eol_list
+  urls: [https://support.ezviz.com/faq/article/EZVIZ-EOL-Product-List, https://www.ezviz.com/inter/trust-center/security/upgrade-policy]
+  last_checked: "2026-10-21"
+  regions_by_url:
+    https://support.ezviz.com/faq/article/EZVIZ-EOL-Product-List: [EU]
+  at_least: []
+  conditions:
+    https://support.ezviz.com/faq/article/EZVIZ-EOL-Product-List:
+      - "EZVIZ gives this as an expected EOL date and says its EOL product list is subject to change."
+  category_map:
+    - { row: '^Smart Home Camera\b', category: camera }
+    - { row: '^Smart Video Doorbell\b', category: doorbell }
+  category_exceptions:
+    ezviz-cs-cmt-a0-chime: other
+    ezviz-cs-dl01p-bt: smart-lock

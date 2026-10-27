@@ -1,0 +1,16 @@
+id: acme-plug-3
+brand: Acme
+brand_slug: acme
+model: Plug 3
+category: smart-plug
+regions: [AU]
+support:
+  rule: none_published
+  at_least: false
+evidence:
+  - url: https://example.com/acme/security
+    retrieved: "2026-10-01"
+    regime: au_smart_device_rules
+verification:
+  status: unverified
+notes: A none_published record has no row, so no conditions and no hardware version; its category is a listed exception.

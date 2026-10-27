@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { addYears, ambiguousDates, mentionsDate, mentionsYears, validateDevices, validateSources } from "../scripts/validate-data.mjs";
+import { addYears, ambiguousDates, mentionsDate, mentionsYears, plainScalarProblems, validateDevices, validateSources, versionsIn, writesToken } from "../scripts/validate-data.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FIXTURES = join(HERE, "fixtures");
@@ -150,6 +150,7 @@ const rejectedSources = [
   ["duplicate-url", /^schema: \/0\/urls must NOT have duplicate items/],
   ["future-last-checked", /^last_checked 2026-10-22 for "acme" is in the future$/],
   ["bad-date-order", /^schema: \/0\/date_order must be equal to one of the allowed values$/],
+  ["bad-pattern", /^category_map pattern "\(" for "acme" is not a regular expression: /],
 ];
 
 for (const [name, pattern] of rejectedSources) {
@@ -167,11 +168,157 @@ test("rejects a brand_slug listed twice, across files or within one", () => {
   assert.equal(errors.length, 2, text);
 });
 
+test("a profile's shape follows the schema: a known region per page, one pattern per category_map entry", () => {
+  assert.deepEqual(messages(runSources("bad-profile").errors).split("\n"), [
+    "acme.yaml: schema: /0/regions_by_url/https:~1~1example.com~1acme~1security/0 must be equal to one of the allowed values",
+    "acme.yaml: schema: /0/category_map/0 must NOT have more than 2 properties",
+  ]);
+});
+
+// Profile rules (MIGRATION B2): each case holds its own sources and devices, and the sources' errors follow the devices'.
+const profiled = (group, name) => {
+  const dir = join(FIXTURES, group, name);
+  const sources = validateSources(join(dir, "sources"), { today: TODAY });
+  const devices = validateDevices(join(dir, "devices"), { today: TODAY, sources: sources.entries });
+  return { files: devices.files, errors: [...devices.errors, ...sources.errors] };
+};
+
+test("records that follow a full profile pass every rule, and a none_published record has no row to check", () => {
+  const { files, errors } = profiled("rules", "valid");
+  assert.equal(files, 3);
+  assert.deepEqual(errors, [], messages(errors));
+});
+
+const R1 = (alias) => `R1: alias "${alias}" is not quoted in any evidence item, is not the model with the brand in front, and is not a rename of the model in the profile`;
+const R3 = "R3: at_least is true, but no evidence quote states one of the profile's at-least sentences";
+const R4_MISSING = "R4: conditions is missing, but the profile lists the sentences a record citing these pages carries";
+const R5 = (quote) => `R5: quote "${quote}" carries the footnote marker "*", but no other evidence item from the same page quotes a footnote starting with it`;
+
+const rejectedByRule = [
+  ["r1-alias", [`acme/acme-cam-1.yaml: ${R1("AC-1")}`]],
+  ["r2-region", ["acme/acme-cam-1.yaml: R2: region US is not covered by any cited page (the profile says they cover AU, UK)"]],
+  ["r3-at-least", [`acme/acme-cam-1.yaml: ${R3}`, `globex/globex-cam-1.yaml: ${R3}`]],
+  [
+    "r4-conditions",
+    [
+      'acme/acme-cam-1-v2.yaml: R4: conditions names hardware version "v2", which no quoted row from the page writes that way',
+      "acme/acme-cam-2-v1.yaml: R4: conditions \"Version V1 only.\" is not one of the profile's sentences for the cited pages",
+      `acme/acme-cam-3-v1.yaml: ${R4_MISSING}`,
+      'acme/acme-cam-4.yaml: R4: conditions "Sold in the US only." is set, but the profile lists no conditions sentence for the cited pages',
+    ],
+  ],
+  ["r5-footnote", [`acme/acme-cam-1.yaml: ${R5("Cam 1 30 June 2029 or later*")}`, `acme/acme-cam-2.yaml: ${R5("Cam 2 30 June 2029 or later*")}`]],
+  [
+    "r6-version",
+    [
+      'acme/acme-cam-1.yaml: R6: neither model "Cam 1" nor conditions carries a hardware version the quotes write (v2)',
+      'acme/acme-cam-2-v1.yaml: R6: alias "Cam 2" carries no hardware version the quotes write (v1), so it would match other versions of the model',
+      "acme/acme-cam-3-v1.yaml: R6: the profile says this source lists models by hardware version, but no evidence quote writes one",
+    ],
+  ],
+  [
+    "r7-category",
+    [
+      "acme/acme-cam-1.yaml: R7: category \"other\" differs from the profile's camera for row pattern \"^Camera\\b\"",
+      "acme/acme-hub-4.yaml: R7: category \"other\" is not the profile's exception for this record (hub)",
+      'acme/acme-plug-3.yaml: R7: no category_map entry of the profile matches model "Plug 3" or its quotes, and category_exceptions does not list this record',
+    ],
+  ],
+];
+
+for (const [name, expected] of rejectedByRule) {
+  test(`rule fixture ${name} fails on its rule alone`, () => {
+    assert.deepEqual(messages(profiled("rules", name).errors).split("\n"), expected);
+  });
+}
+
+test('R8 rejects a plain value a comment cuts short, in a record or a source file; YAML itself rejects ": " in one', () => {
+  const { errors } = profiled("rules", "r8-plain-scalar");
+  const text = messages(errors);
+  assert.match(text, /^acme\/acme-cam-1\.yaml: R8: line 18: plain value "Seed record \(the original Cam 1\)" ends at the comment "# not the 2K model": quote the value or reword it \(D25\)$/m);
+  assert.match(text, /^acme\/acme-cam-2\.yaml: YAML parse error: Nested mappings are not allowed in compact mappings/m);
+  assert.match(text, /^acme\.yaml: R8: line 5: plain value "From a 2024 list" ends at the comment "# may have moved": quote the value or reword it \(D25\)$/m);
+  assert.equal(errors.length, 3, text);
+});
+
+// The past audit catches (LOG.md, 21 Oct 2026): each fixture holds the record as it was submitted, and must fail.
+const audits = [
+  [
+    "24-ring-conditions",
+    "R4",
+    [
+      "ring/ring-video-doorbell-3.yaml: R4: conditions \"If bought new on ring.com, or from Amazon as the seller, at least four years from purchase or this date, whichever is later.\" is not one of the profile's sentences for the cited pages",
+    ],
+  ],
+  ["22-tp-link-alias", "R6", ['tp-link/tp-link-tapo-c200-v5.yaml: R6: alias "C200" carries no hardware version the quotes write (v5), so it would match other versions of the model']],
+  [
+    "21-google-regions",
+    "R2 and R3",
+    [
+      "google/google-nest-cam-indoor.yaml: R2: region GLOBAL is not covered by any cited page (the profile says they cover US)",
+      `google/google-nest-cam-iq-indoor-and-outdoor.yaml: ${R3}`,
+    ],
+  ],
+  [
+    "51-ezviz-categories",
+    "R4 and R7",
+    [
+      `ezviz/ezviz-cs-cmt-a0-chime.yaml: ${R4_MISSING}`,
+      "ezviz/ezviz-cs-cmt-a0-chime.yaml: R7: category \"doorbell\" is not the profile's exception for this record (other)",
+      `ezviz/ezviz-cs-dl01p-bt.yaml: ${R4_MISSING}`,
+      "ezviz/ezviz-cs-dl01p-bt.yaml: R7: category \"doorbell\" is not the profile's exception for this record (smart-lock)",
+    ],
+  ],
+];
+
+for (const [name, rules, expected] of audits) {
+  test(`the #${name.split("-")[0]} audit catch fails ${rules}`, () => {
+    assert.deepEqual(messages(profiled("audits", name).errors).split("\n"), expected);
+  });
+}
+
+test("versionsIn finds hardware versions that stand alone, lowercased", () => {
+  assert.deepEqual(versionsIn("Wired Indoor Camera Tapo C200 V5 31/12/2028 or later*"), ["v5"]);
+  assert.deepEqual(versionsIn("Easy Managed Switch ES206X-M2 v1 31/12/2028 or later*"), ["v1"]);
+  assert.deepEqual(versionsIn("Tapo C410 KIT V2.20 and Deco X50-5G(1-pack) V2"), ["v2.20", "v2"]);
+  assert.deepEqual(versionsIn("Archer VR2100 RE605X 5G"), []);
+  assert.deepEqual(versionsIn(null), []);
+});
+
+test("writesToken matches a whole word with its own casing", () => {
+  const row = "Easy Managed Switch ES206X-M2 v1 31/12/2028 or later*";
+  assert.ok(writesToken(row, "v1"));
+  assert.equal(writesToken(row, "V1"), false);
+  assert.equal(writesToken(row, "v"), false);
+  assert.ok(writesToken("Tapo\u00a0C200\u00a0V5", "V5"));
+});
+
+test("plainScalarProblems finds a plain value a comment cuts short, and nothing else", () => {
+  const source = [
+    "# a comment line",
+    "note: Some text # lost",
+    "urls: # a comment after a key",
+    "  - https://example.com/a # lost",
+    'quoted: "a: b" # fine',
+    "list: [a, b] # fine",
+    "block: |",
+    "  text # not a comment",
+    "last: done",
+    "",
+  ].join("\n");
+  assert.deepEqual(plainScalarProblems(source), [
+    'line 2: plain value "Some text" ends at the comment "# lost": quote the value or reword it (D25)',
+    'line 4: plain value "https://example.com/a" ends at the comment "# lost": quote the value or reword it (D25)',
+  ]);
+});
+
 test("the CLI checks source files as well as device records", () => {
   const args = [join(HERE, "..", "scripts", "validate-data.mjs"), join(FIXTURES, "valid"), join(FIXTURES, "sources", "non-https-url")];
   const { status, stdout, stderr } = spawnSync(process.execPath, args, { encoding: "utf8" });
   assert.match(stderr, /^acme\.yaml: schema: \/0\/urls\/0 must match pattern/m);
-  assert.match(stdout, /^5 record\(s\) and 1 source\(s\) checked, 1 error\(s\)$/m);
+  // With its registry rejected, acme-cam-1 has no rename table to vouch for its alias AC-1 (rule R1).
+  assert.match(stderr, /^acme\/acme-cam-1\.yaml: R1: alias "AC-1" /m);
+  assert.match(stdout, /^5 record\(s\) and 1 source\(s\) checked, 2 error\(s\)$/m);
   assert.equal(status, 1);
 });
 

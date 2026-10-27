@@ -1,0 +1,8 @@
+# No profile field: R5 runs on every record.
+- brand: Acme
+  brand_slug: acme
+  kind: per_model_dates
+  urls:
+    - https://example.com/acme/security
+    - https://example.com/acme/us/security
+  last_checked: "2026-10-21"

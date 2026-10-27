@@ -1,0 +1,17 @@
+id: globex-cam-1
+brand: Globex
+brand_slug: globex
+model: Cam 1
+category: camera
+regions: [AU]
+support:
+  rule: fixed_date
+  end_date: "2027-12-31"
+  at_least: true
+evidence:
+  - url: https://example.com/globex/end-of-life
+    quote: Cam 1 31 December 2027 or later
+    retrieved: "2026-10-01"
+    regime: vendor_policy
+verification:
+  status: unverified

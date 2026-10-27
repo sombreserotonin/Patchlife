@@ -11,7 +11,7 @@ support:
   at_least: true
 evidence:
   - url: https://example.com/acme/security
-    quote: Acme Cam 1 30 June 2029
+    quote: Acme Cam 1 (AC-1) 30 June 2029
     retrieved: "2026-10-01"
     archive_url: https://web.archive.org/web/20261022015106/https://example.com/acme/other
     regime: au_smart_device_rules
