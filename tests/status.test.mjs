@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { computeStatus } from "../scripts/status.mjs";
+import { computeStatus, statusSince } from "../scripts/status.mjs";
 
 const TODAY = "2026-10-21";
 const record = (support) => ({ support: { at_least: false, ...support } });
@@ -53,4 +53,28 @@ test("relative rules without an anchor are unknown", () => {
 
 test("none_published is unknown", () => {
   assert.equal(computeStatus(record({ rule: "none_published" }), TODAY), "unknown");
+});
+
+// statusSince gives the first day computeStatus returns the status, so the two agree day by day (M7 feeds).
+test("statusSince is the first day the status applies, for day and month-only dates and across 29 February", () => {
+  const dayBefore = (isoDate) => new Date(Date.parse(`${isoDate}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
+  const cases = [
+    ["2026-10-20", "ended", "2026-10-21"],
+    ["2026-10-20", "ending_soon", "2025-10-20"],
+    ["2028-02-29", "ending_soon", "2027-03-01"],
+    ["2028-02-29", "ended", "2028-03-01"],
+    ["2027-02-28", "ending_soon", "2026-02-28"],
+    ["2026-10", "ended", "2026-11-01"],
+    ["2027-10", "ending_soon", "2026-10-01"],
+    ["2028-02", "ended", "2028-03-01"],
+  ];
+  for (const [end, status, expected] of cases) {
+    const since = statusSince(fixed(end), status);
+    assert.equal(since, expected, `${end} ${status}`);
+    assert.equal(computeStatus(fixed(end), since), status, `${end} ${status} on ${since}`);
+    assert.notEqual(computeStatus(fixed(end), dayBefore(since)), status, `${end} ${status} the day before`);
+  }
+  assert.equal(statusSince(fixed("2026-10-20"), "supported"), null);
+  assert.equal(statusSince(fixed("2026-10-20"), "unknown"), null);
+  assert.equal(statusSince(record({ rule: "years_after_eol", end_date: null }), "ended"), null);
 });

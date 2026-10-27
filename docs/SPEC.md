@@ -34,6 +34,7 @@ Against today's date: `supported` (more than 12 months left), `ending_soon` (12 
 - Copy pattern: "Security updates until at least 31 December 2027, as published by Ring (checked 21 Oct 2026)."
 - Static output, client-side search, sitemap, structured data, WCAG 2.1 AA, fast on mobile.
 - JSON: `/api/v1/devices.json` (all records) and `/api/v1/devices/<id>.json`. Every response includes `license: "ODbL-1.0"` and the attribution line from `data/NOTICE.md`.
+- Atom feeds and `/stats/`: section 7.
 - Footer on every page: links to the source code (AGPL-3.0-or-later), the data licence (ODbL) and the attribution line.
 
 ## 5. Browser extension (M5)
@@ -49,6 +50,7 @@ Against today's date: `supported` (more than 12 months left), `ending_soon` (12 
 
 ## 7. Alerts and reports (M7)
 - **Cut (D46, 27 Oct 2026):** Atom feeds replace email alerts; the monthly stats report stays, as `/stats/`.
+- **Shipped 27 Oct 2026 (MIGRATION C2):** `/feeds/ending-soon.xml`, `/feeds/ended.xml` and `/feeds/brands/<slug>.xml`, listed at `/feeds/` and announced in the heads of the home and brand pages. An entry is a model whose status is ending soon or ended, dated the first day that status applied under section 2's rules (`statusSince` in `scripts/status.mjs`), never the build date, so readers show it once. `/stats/` shows the counts from `scripts/data-report.mjs` as at the build date.
 - Email alerts per device with double opt-in and one-click unsubscribe.
 - Monthly stats report generated from the data, for example the share of on-sale cameras with under two years of support left.
 

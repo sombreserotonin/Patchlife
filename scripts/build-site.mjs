@@ -1,4 +1,5 @@
-// Builds the static site (SPEC 4): HTML pages, the JSON feed, the search index, sitemap.xml and robots.txt.
+// Builds the static site (SPEC 4): HTML pages, the JSON feed, the Atom feeds (M7), the search index, sitemap.xml and
+// robots.txt.
 // Usage: node scripts/build-site.mjs [outDir] [devicesDir]
 // outDir defaults to _site/; an empty or blank argument counts as absent. The CLI empties what is inside outDir before
 // writing, and refuses one that is the cwd, the repository, a parent of either, holds the device records, is a symlink
@@ -11,7 +12,8 @@ import { copyFileSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSy
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import YAML from "yaml";
-import { computeStatus } from "./status.mjs";
+import { buildReport } from "./data-report.mjs";
+import { computeStatus, statusSince } from "./status.mjs";
 import { listYamlFiles } from "./validate-data.mjs";
 import {
   answerText,
@@ -269,6 +271,10 @@ h2{font-size:1.25rem;margin:1.75rem 0 .5rem}
 .unknown{background:#eceff1;color:#36454f}
 dt{font-weight:600}
 dd{margin:0 0 .75rem}
+table{border-collapse:collapse;margin:0 0 1.25rem}
+caption{text-align:left;font-weight:600;padding:0 0 .25rem}
+th,td{text-align:left;vertical-align:top;padding:.1rem 1.25rem .1rem 0}
+th[scope=row]{font-weight:400}
 blockquote{margin:0;padding:.5rem 1rem;border-left:4px solid #6b6b6b;background:#f5f5f5}
 blockquote p{margin:0}
 figure{margin:0 0 1.25rem}
@@ -336,12 +342,14 @@ function footer(ctx) {
 <li><a href="${link(ctx, "/corrections/")}">Corrections</a></li>
 <li><a href="${link(ctx, "/about/")}">About</a></li>
 <li><a href="${link(ctx, "/privacy/")}">Privacy</a></li>
+<li><a href="${link(ctx, "/feeds/")}">Feeds (Atom)</a></li>
+<li><a href="${link(ctx, "/stats/")}">Stats</a></li>
 <li><a href="${link(ctx, "/api/v1/devices.json")}">Data feed (JSON)</a></li>
 </ul></nav>
 </footer>`;
 }
 
-function layout(ctx, { path, title, description, body, head }) {
+function layout(ctx, { path, title, description, body, head, feeds = [] }) {
   return html`<!doctype html>
 <html lang="en-AU">
 <head>
@@ -351,7 +359,8 @@ function layout(ctx, { path, title, description, body, head }) {
 <meta name="description" content="${description}">
 ${ctx.noindex ? html`<meta name="robots" content="noindex">` : ""}
 <link rel="canonical" href="${absolute(ctx, path)}">
-<link rel="icon" href="data:,">
+${feeds.map((feed) => html`<link rel="alternate" type="application/atom+xml" href="${absolute(ctx, feed.path)}" title="${feed.title}">
+`)}<link rel="icon" href="data:,">
 ${CSS}
 ${head}
 </head>
@@ -453,15 +462,17 @@ ${searched.length ? html`<p>Pages searched:</p>
   return layout(ctx, { path, title: `${name} security updates | Patchlife`, description, head: structured, body });
 }
 
-function listPage(ctx, { path, title, heading, intro, trail, items }) {
+function listPage(ctx, { path, title, heading, intro, trail, items, feed }) {
   return layout(ctx, {
     path,
     title: `${title} | Patchlife`,
     description: `${heading}: when each model stops getting security updates, as published by the manufacturer.`,
+    feeds: feed ? [feed] : [],
     body: html`${breadcrumbs(ctx, trail)}
 <h1>${heading}</h1>
 <p>${intro} Status as at ${shortTime(ctx.today)}.</p>
 ${disclaimerNote(ctx)}
+${feed ? html`<p><a href="${link(ctx, feed.path)}">Atom feed</a>: models from ${heading.replace(/ security updates$/, "")} ending within 12 months or ended.</p>` : ""}
 ${deviceList(ctx, items)}`,
   });
 }
@@ -470,6 +481,7 @@ function homePage(ctx, { items, brands, categories, coverage }) {
   return layout(ctx, {
     path: "/",
     title: "Patchlife: when smart devices stop getting security updates",
+    feeds: STATUS_FEEDS,
     description: "Look up when a smart device stops getting security updates, with the manufacturer's own words as evidence.",
     body: html`<h1>When does your smart device stop getting security updates?</h1>
 <p>Patchlife looks up when smart devices stop getting security updates, and quotes the manufacturer's own words as evidence. So far it covers ${plural(items.length, "device")}: ${coverage}.</p>
@@ -570,6 +582,7 @@ function aboutPage(ctx, { coverage }) {
 <li>The code is free software under the <a href="${AGPL_URL}">GNU Affero General Public License v3.0 or later</a>: <a href="${REPO_URL}">source code on GitHub</a>.</li>
 <li>The data is available under the <a href="${ODBL_URL}">Open Database License v1.0</a>. Attribute it as: "${ctx.attribution}" Quoted manufacturer statements remain the property of their owners and are included only as evidence. <a href="${NOTICE_URL}">Data licence details</a>.</li>
 <li>Every record as JSON: <a href="${link(ctx, "/api/v1/devices.json")}">${link(ctx, "/api/v1/devices.json")}</a>. One record: ${link(ctx, "/api/v1/devices/")}&lt;id&gt;.json.</li>
+<li><a href="${link(ctx, "/feeds/")}">Atom feeds</a> of the models ending within 12 months or ended, in total and by brand, and <a href="${link(ctx, "/stats/")}">counts</a> by brand, category, status and verification state.</li>
 </ul>
 <h2>Who runs it</h2>
 <p>Claude Code, an AI coding tool, builds and runs Patchlife. A human owner makes the decisions that need a person, such as money, accounts, legal text and publishing.</p>
@@ -605,6 +618,121 @@ export function readAttribution(noticePath = join(ROOT, "data/NOTICE.md")) {
   const match = readFileSync(noticePath, "utf8").match(/Attribute it as: "([^"]+)"/);
   if (!match) throw new Error(`no attribution line found in ${noticePath}`);
   return match[1];
+}
+
+// ---------- Atom feeds and stats (M7, D46) ----------
+// An entry is a model whose published period ends within 12 months or has ended, dated by statusSince: the day its
+// last 12 months began, or the day after it ended. The date says when the event happened, not when the site was
+// built, so a reader shows each entry once and in order. The html tag's escapes are XML's too.
+const STATUS_FEEDS = [
+  {
+    path: "/feeds/ending-soon.xml",
+    title: "Patchlife: security updates ending within 12 months",
+    subtitle: "Models whose published security update period ends within the next 12 months. Each entry is dated the day its last 12 months began.",
+    statuses: ["ending_soon"],
+  },
+  {
+    path: "/feeds/ended.xml",
+    title: "Patchlife: security updates ended",
+    subtitle: "Models whose published security update period has ended, or whose published minimum has passed. Each entry is dated the day after the published end.",
+    statuses: ["ended"],
+  },
+];
+const brandFeed = (brand) => ({
+  path: `/feeds/brands/${brand.slug}.xml`,
+  title: `Patchlife: ${brand.name} security updates ending or ended`,
+  subtitle: `${brand.name} models whose published security update period ends within 12 months or has ended.`,
+  statuses: ["ending_soon", "ended"],
+});
+
+// Newest first; models that changed on the same day are in name order.
+function feedEntries(ctx, items, statuses) {
+  return items
+    .filter((item) => statuses.includes(item.status))
+    .map(({ record, entry, status }) => ({
+      title: `${displayName(record.brand, record.model)}: ${statusLabel(entry)}`,
+      url: absolute(ctx, `/devices/${record.id}/`),
+      updated: statusSince(record, status),
+      summary: summaryText(entry),
+    }))
+    .sort((a, b) => b.updated.localeCompare(a.updated) || a.title.localeCompare(b.title, "en-AU", { numeric: true, sensitivity: "base" }));
+}
+
+function atomFeed(ctx, feed, entries) {
+  const stamp = (isoDate) => `${isoDate}T00:00:00Z`;
+  const updated = entries.map((entry) => entry.updated).sort().at(-1) ?? ctx.today;
+  return html`<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+<title>${feed.title}</title>
+<subtitle>${feed.subtitle}</subtitle>
+<id>${absolute(ctx, feed.path)}</id>
+<link rel="self" type="application/atom+xml" href="${absolute(ctx, feed.path)}"/>
+<link rel="alternate" type="text/html" href="${absolute(ctx, "/")}"/>
+<updated>${stamp(updated)}</updated>
+<author><name>Patchlife</name><uri>${absolute(ctx, "/")}</uri></author>
+<rights>Data licence: ODbL 1.0. ${ctx.attribution} Quoted manufacturer statements remain the property of their owners.</rights>
+${entries.map(
+  (entry) => html`<entry>
+<title>${entry.title}</title>
+<id>${entry.url}</id>
+<link rel="alternate" type="text/html" href="${entry.url}"/>
+<updated>${stamp(entry.updated)}</updated>
+<summary>${entry.summary}</summary>
+</entry>
+`,
+)}</feed>
+`;
+}
+
+function feedsPage(ctx, { brands }) {
+  return layout(ctx, {
+    path: "/feeds/",
+    title: "Feeds | Patchlife",
+    description: "Atom feeds of the smart devices whose security updates end within 12 months or have ended, in total and by brand.",
+    feeds: STATUS_FEEDS,
+    body: html`<h1>Feeds</h1>
+<p>Atom feeds to follow in a feed reader. A model appears when its published security update period comes within 12 months of its end, and again when the period has ended, each entry dated the day that happened. No account or email is needed.</p>
+<ul>${STATUS_FEEDS.map((feed) => html`<li><a href="${link(ctx, feed.path)}">${feed.title}</a></li>`)}</ul>
+<h2>By brand</h2>
+<ul>${brands.map((brand) => html`<li><a href="${link(ctx, brandFeed(brand).path)}">${brand.name}</a></li>`)}</ul>
+<p>Every record is also available as JSON: <a href="${link(ctx, "/api/v1/devices.json")}">${link(ctx, "/api/v1/devices.json")}</a>.</p>`,
+  });
+}
+
+const STATUS_WORDS = { supported: "Supported", ending_soon: "Ending soon", ended: "Ended or minimum passed", unknown: "Unknown" };
+const VERIFICATION_WORDS = { verified: "Verified", unverified: "Not yet checked", stale: "Stale", disputed: "Disputed" };
+
+// The counts scripts/data-report.mjs prints, as at the build date (SPEC 7).
+function statsPage(ctx, { report, brands }) {
+  const brandName = Object.fromEntries(brands.map((brand) => [brand.slug, brand.name]));
+  const table = (caption, rows) => html`<table>
+<caption>${caption}</caption>
+<tbody>${rows.map(
+    ([label, count, href]) => html`<tr>
+<th scope="row">${href ? html`<a href="${link(ctx, href)}">${label}</a>` : label}</th>
+<td>${count}</td>
+</tr>`,
+  )}</tbody>
+</table>`;
+  return layout(ctx, {
+    path: "/stats/",
+    title: "Stats | Patchlife",
+    description: "How many devices Patchlife covers, by brand, category, support status and verification state.",
+    body: html`<h1>Stats</h1>
+<p>Counts from the data as at ${shortTime(ctx.today)}, when this site was last built. Status is worked out from each record's published dates on that day.</p>
+${table("Measures", [
+  ["Verified records", report.verification.verified],
+  ["Brands with verified records", report.brandsVerified],
+  ["Share of verified records with a computable status", `${report.computablePercent}% (${report.computable} of ${report.verification.verified})`],
+  ["Stale records", report.verification.stale],
+  ["Records in all", report.records],
+  ["Oldest automated check", report.oldestChecked ? shortTime(report.oldestChecked) : "none"],
+])}
+${table("Records by status", Object.entries(report.status).map(([key, count]) => [STATUS_WORDS[key] ?? key, count]))}
+${table("Records by brand", Object.entries(report.brands).map(([slug, count]) => [brandName[slug] ?? slug, count, `/brands/${slug}/`]))}
+${table("Records by category", Object.entries(report.categories).map(([slug, count]) => [CATEGORY_LABELS[slug] ?? slug, count, `/categories/${slug}/`]))}
+${table("Records by verification state", Object.entries(report.verification).map(([key, count]) => [VERIFICATION_WORDS[key] ?? key, count]))}`,
+  });
 }
 
 // Every record under devicesDir. A file that does not parse to a mapping is reported with its path.
@@ -678,8 +806,8 @@ const within = (dir, path) => {
 
 // Every path buildSite writes, relative to the output folder: its files, and the folders that hold them.
 const BUILD_FILE =
-  /^(?:index\.html|robots\.txt|sitemap\.xml|search-index\.json|search\.js|(?:about|methodology|corrections|privacy)\/index\.html|(?:devices|brands|categories)\/[a-z0-9]+(?:-[a-z0-9]+)*\/index\.html|api\/v1\/devices\.json|api\/v1\/devices\/[a-z0-9]+(?:-[a-z0-9]+)*\.json)$/;
-const BUILD_FOLDER = /^(?:about|methodology|corrections|privacy|devices|brands|categories|api|api\/v1|api\/v1\/devices|(?:devices|brands|categories)\/[a-z0-9]+(?:-[a-z0-9]+)*)$/;
+  /^(?:index\.html|robots\.txt|sitemap\.xml|search-index\.json|search\.js|(?:about|methodology|corrections|privacy|feeds|stats)\/index\.html|(?:devices|brands|categories)\/[a-z0-9]+(?:-[a-z0-9]+)*\/index\.html|api\/v1\/devices\.json|api\/v1\/devices\/[a-z0-9]+(?:-[a-z0-9]+)*\.json|feeds\/(?:ending-soon|ended)\.xml|feeds\/brands\/[a-z0-9]+(?:-[a-z0-9]+)*\.xml)$/;
+const BUILD_FOLDER = /^(?:about|methodology|corrections|privacy|feeds|feeds\/brands|stats|devices|brands|categories|api|api\/v1|api\/v1\/devices|(?:devices|brands|categories)\/[a-z0-9]+(?:-[a-z0-9]+)*)$/;
 
 // True when everything under dir is a file or folder buildSite writes (so no symlinks, dotfiles, .git, CNAME or notes)
 // and api/v1/devices.json has the shape of this build's feed.
@@ -788,6 +916,7 @@ export function buildSite({ records, outDir, basePath = "", siteUrl = DEFAULT_SI
       intro: `${plural(brand.items.length, "model")} from ${brand.name}.`,
       trail: [["Home", "/"], [brand.name, `/brands/${brand.slug}/`]],
       items: brand.items,
+      feed: brandFeed(brand),
     }));
   }
   for (const category of categories) {
@@ -805,6 +934,15 @@ export function buildSite({ records, outDir, basePath = "", siteUrl = DEFAULT_SI
   writePage("/corrections/", correctionsPage(ctx));
   writePage("/about/", aboutPage(ctx, { coverage }));
   writePage("/privacy/", privacyPage(ctx));
+  writePage("/feeds/", feedsPage(ctx, { brands }));
+  writePage("/stats/", statsPage(ctx, { report: buildReport(records, today), brands }));
+
+  // Atom feeds (M7, D46): the two status feeds and one per brand.
+  for (const feed of STATUS_FEEDS) write(feed.path, atomFeed(ctx, feed, feedEntries(ctx, items, feed.statuses)));
+  for (const brand of brands) {
+    const feed = brandFeed(brand);
+    write(feed.path, atomFeed(ctx, feed, feedEntries(ctx, brand.items, feed.statuses)));
+  }
 
   // JSON feed (SPEC 4): every response carries the licence, the attribution line and the build date.
   const licence = { license: "ODbL-1.0", license_url: ODBL_URL, attribution, notice_url: NOTICE_URL, build_date: today };
