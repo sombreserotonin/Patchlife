@@ -22,6 +22,9 @@ If these files disagree with each other or with the code, say so in your PR rath
 - `node scripts/archive-evidence.mjs [--limit <n>] [url ...]` asks the Wayback Machine to capture each cited page (or the ones named) that has an item with no `archive_url`, and links each item whose quote the capture holds; always exits 0; needs archive.org, so it runs in the nightly `Re-verify evidence` workflow, not in `Crawl` (D43)
 - `node --use-env-proxy scripts/unquoted-dates.mjs [url ...]` lists the dates on cited pages (or the ones named) that no record's quote covers, with the text before each: rows not yet recorded, or prose; needs the `Crawl` environment
 - `node scripts/probe-hosts.mjs [devicesDir]` checks robots.txt and the first cited page on each evidence host with the polite fetcher and prints one line per host (host, robots.txt result, HTTP status or error); always exits 0; runs on GitHub's runners through the manual `Probe hosts` workflow, or under `node --use-env-proxy` in `Crawl`
+- `node scripts/merge-bot.mjs [--dry-run]` merges the routine PRs the App opened (`claude/reverify-*`, `claude/measures-*`) once every rule in `mergeDecision` holds (env: `GH_TOKEN`, `GITHUB_REPOSITORY`, `BOT_LOGIN`, the App's login `patchlife-bot[bot]`); the nightly `Housekeeping` workflow runs it while the repository variable `BOT_MERGE` is `on`
+- `node scripts/watchdog.mjs [--dry-run] [--summary]` checks the workflows, run ages, re-verify branches, unchecked records, stale records, `needs-human` items, the site and `ops/renewals.yml`, keeps one `watchdog` issue and, with `--summary`, posts the weekly summary on #27; exits 1 on any problem (env: `GH_TOKEN`, `GITHUB_REPOSITORY`); the nightly `Housekeeping` workflow runs it; under `node --use-env-proxy` in a cloud session
+- `node scripts/check-licences.mjs [lockfile]` checks every `package-lock.json` entry's licence against D9 and D30; CI runs it
 
 Add every new command here when you create it.
 

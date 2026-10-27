@@ -1,29 +1,56 @@
 name: Re-verify evidence
 
-# Nightly re-verification on GitHub's runners, with no model (docs/COSTS.md stage 1, D42). It checks up to 40 verified
-# records whose last check is more than 60 days old and pushes the results to claude/reverify-<date>-<run id> when the
-# data changes are verification only (RUNBOOKS A9). The daily build opens that PR, so CI runs, and merges it. The run
-# fails when the verifier breaks or a record can't be checked, and the nightly Crawl task re-checks those records.
-# It also archives up to 5 cited pages that have items with no archive link (D43), in the same branch.
+# Nightly re-verification on GitHub's runners, with no model (D42; docs/MIGRATION.md P2). It checks every verified
+# record whose last check is more than 60 days old, at most 1000 a night (decision 13), archives up to 5 cited pages
+# that have items with no archive link (D43), and pushes the results to claude/reverify-<date>-<run id> when the data
+# changes are verification only (RUNBOOKS A9). With the App's token (#126) the push gets CI and the run opens the PR,
+# which the Housekeeping workflow or the daily build merges; without it the run pushes with Actions' token and the
+# daily build opens the PR. The run fails when the verifier itself breaks. Records it couldn't check are a warning,
+# which the watchdog counts and the nightly Crawl task re-checks.
 # Every evidence host answered a runner on 21 Oct 2026 (Probe hosts run 39695382968).
 on:
   schedule:
     - cron: '41 12 * * *'
   workflow_dispatch:
+    inputs:
+      due:
+        description: Re-check verified records last checked more than this many days ago
+        default: '60'
+      limit:
+        description: At most this many records, oldest first
+        default: '1000'
 
 permissions:
   contents: write
 
+# One group for every workflow that fetches makers' pages (decision 14), so two never run at once. queue keeps a
+# waiting run instead of cancelling it.
 concurrency:
-  group: reverify
+  group: crawl
   cancel-in-progress: false
+  queue: max
 
 jobs:
   reverify:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      # The inputs reach the shell through env, never inline; on a schedule they are empty and the defaults apply.
+      DUE: ${{ inputs.due || '60' }}
+      LIMIT: ${{ inputs.limit || '1000' }}
     steps:
+      - id: app-token
+        # Skipped while the App's variables are missing, when the run pushes with Actions' token and opens no PR.
+        if: vars.BOT_CLIENT_ID != ''
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.BOT_CLIENT_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
       - uses: actions/checkout@v7
+        with:
+          token: ${{ steps.app-token.outputs.token || github.token }}
       - name: Stop while an earlier re-verification is unmerged
         # Its records still look due on main, so this run would check them again and conflict with it.
         run: |
@@ -41,8 +68,12 @@ jobs:
         # Exit 1 means a record was stale, failed or errored, which the steps below handle. Any other exit, or output
         # without the closing summary line, means the verifier itself broke (an uncaught error also exits 1).
         run: |
+          if ! [[ "$DUE" =~ ^[0-9]{1,5}$ && "$LIMIT" =~ ^[0-9]{1,5}$ ]]; then
+            echo "::error::due and limit must be whole numbers, not \"$DUE\" and \"$LIMIT\""
+            exit 1
+          fi
           set +e
-          npm run verify:evidence -- --due 60 --limit 40 2>&1 | tee "$RUNNER_TEMP/verify.txt"
+          npm run verify:evidence -- --due "$DUE" --limit "$LIMIT" 2>&1 | tee "$RUNNER_TEMP/verify.txt"
           status=${PIPESTATUS[0]}
           set -e
           sed 's/^/    /' "$RUNNER_TEMP/verify.txt" >> "$GITHUB_STEP_SUMMARY"
@@ -62,26 +93,46 @@ jobs:
       - run: npm run validate
       - run: npm test
       - name: Push verification changes
+        # The step name is read by scripts/watchdog.mjs; keep it.
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+          REPO: ${{ github.repository }}
         run: |
           if [ -z "$(git status --porcelain -- data)" ]; then
             echo "Nothing to push: no record was due, or nothing changed." | tee -a "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           node scripts/verification-only.mjs
-          branch="claude/reverify-$(date -u +%F)-$GITHUB_RUN_ID"
+          if [ -n "$APP_SLUG" ]; then
+            name="${APP_SLUG}[bot]"
+            email="$(gh api "users/$name" --jq .id)+${name}@users.noreply.github.com"
+          else
+            name='github-actions[bot]'
+            email='41898282+github-actions[bot]@users.noreply.github.com'
+          fi
+          date=$(date -u +%F)
+          branch="claude/reverify-$date-$GITHUB_RUN_ID"
           git switch -c "$branch"
           git add data
-          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
-            commit -q -m "data: re-verify $(date -u +%F)" -m "$(tail -n 1 "$RUNNER_TEMP/verify.txt")" -m "$(tail -n 1 "$RUNNER_TEMP/archive.txt")" \
+          git -c user.name="$name" -c user.email="$email" \
+            commit -q -m "data: re-verify $date" -m "$(tail -n 1 "$RUNNER_TEMP/verify.txt")" -m "$(tail -n 1 "$RUNNER_TEMP/archive.txt")" \
             -m "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           git push origin "$branch"
           echo "Pushed $branch" | tee -a "$GITHUB_STEP_SUMMARY"
+          if [ -z "$GH_TOKEN" ]; then
+            echo "No App token: the daily build opens the PR (RUNBOOKS A9)." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          body="$(git log -1 --format=%b)"$'\n\n'"RUNBOOKS A9"
+          url=$(gh api -X POST "repos/$REPO/pulls" -f title="data: re-verify $date" -f head="$branch" -f base=main -f body="$body" --jq .html_url)
+          echo "Opened $url" | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Flag records that could not be checked
         # An error (a redirect, robots.txt, HTTP 403 or 5xx, a timeout) changes no file, so the same records would come
-        # first again every night. The nightly Crawl task reads this annotation and re-checks the ids (data-refresh step 2).
+        # first again every night. The annotation title is read by scripts/watchdog.mjs, which reports ids that recur
+        # on 3 nights, and by the nightly Crawl task, which re-checks them (data-refresh step 2).
         run: |
           ids=$(sed -nE 's/^([a-z0-9]+(-[a-z0-9]+)*): error \(.*/\1/p' "$RUNNER_TEMP/verify.txt" | tr '\n' ' ')
           if [ -n "$ids" ]; then
-            echo "::error title=Records not checked::$ids"
-            exit 1
+            echo "::warning title=Records not checked::$ids"
           fi
