@@ -37,6 +37,7 @@ Against today's date: `supported` (more than 12 months left), `ending_soon` (12 
 - Footer on every page: links to the source code (AGPL-3.0-or-later), the data licence (ODbL) and the attribution line.
 
 ## 5. Browser extension (M5)
+- **Cut (D46, 27 Oct 2026):** no extension is built. M5 is `?q=` search links in `site/search.js`; the rest of this section is kept for reference.
 - Manifest V3. On product pages of three chosen AU or UK retailers, match the model locally against a downloaded index and show a badge with status and end date, plus up to three longer-supported alternatives.
 - No browsing data leaves the device. Matching uses the page title and model numbers only.
 - Tests run against saved HTML fixtures for each retailer.
@@ -47,6 +48,7 @@ Against today's date: `supported` (more than 12 months left), `ending_soon` (12 
 - Supplier check: SKU list in, statement found or not found out, with links.
 
 ## 7. Alerts and reports (M7)
+- **Cut (D46, 27 Oct 2026):** Atom feeds replace email alerts; the monthly stats report stays, as `/stats/`.
 - Email alerts per device with double opt-in and one-click unsubscribe.
 - Monthly stats report generated from the data, for example the share of on-sale cameras with under two years of support left.
 

@@ -43,15 +43,15 @@ Exit: three consecutive nightly runs each end in a correct PR or a correct no-op
 
 Progress: the broken-source half passed on 22 Oct 2026 (drill of the `reverify.yml` steps, TASKS.md); the three nightly runs start that night.
 
-## M5 Browser extension (scope set by MIGRATION decision 4, #102)
-- As in SPEC 5, for three retailers. Zip built in CI. Store submission is H10.
+## M5 Search links (D46: no browser extension)
+- `?q=` search in the existing `site/search.js`, so a link such as `https://patchlife.tech/?q=<model>` opens the matching records. No store extension, bookmarklet or store accounts, so H10 isn't needed.
 
-Exit: fixture tests pass for all three retailers; the zip is attached to a CI run.
+Exit: a `?q=` link opens the matching records, with tests that prefer the longest exact match (PLAN, "Matching").
 
-## M7 Growth
-- Monthly report generator and alerts (SPEC 7).
+## M7 Growth (D46: feeds, not email)
+- Atom feeds in place of email alerts, and the monthly stats report as `/stats/` (SPEC 7). No email provider, subscriber list or personal data.
 
-Exit: first report published; alert flow tested against a test inbox.
+Exit: the feeds validate, and `/stats/` builds with the site.
 
 ## Planned (not active)
 The owner shelved the business side on 22 Oct 2026 (D45): revisit once the no-AI setup is up and working (`docs/MIGRATION.md`, after Stage 4's exit check). Nothing here starts before then. The H9b drafts are in #99, on `claude/m4-drafts`.

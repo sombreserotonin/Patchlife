@@ -26,12 +26,12 @@ This is the plan as at 22 Oct 2026. It was revised the same day after a feasibil
     - Atom feeds instead of email alerts (M7);
     - the business side (M4's demand test, and M6's paid feed, API and reports) waits in Planned until this setup is up and working (D45; see "Planned: the business side").
 - **Timeline.**
-  - By 27 Oct: answer decisions 1, 3, 4 and 5 on #102 (2 is settled: the VPS stays). #101 is already merged, so nothing moves to Node 26 when it becomes LTS on 28 Oct.
+  - 27 Oct: you answered decisions 1, 3, 4 and 5 on #102 (D46); 2 was settled on 22 Oct (the VPS stays). #101 is already merged, so nothing moves to Node 26 when it becomes LTS on 28 Oct.
   - 23 Oct to 8 Nov: build the replacements in parallel lanes, using the Max time you have already paid for.
   - 9 to 22 Nov: run in shadow, with no AI doing operations. AI-audited backlog batches finish in the same window.
   - 23 to 30 Nov: retire and cancel.
   - 21 and 22 Dec: watch the first large re-verification.
-- **Most of this depends on one human gate:** a private GitHub App for the bot (decision 1).
+- **Most of this depends on one human gate:** a private GitHub App for the bot (decision 1). Its steps are in #126.
 
 ## State on 22 Oct 2026
 
@@ -153,7 +153,7 @@ Checked with `git` and the GitHub API at 03:25 UTC:
 
 - **Done:** #100 put this plan, D44 and the COSTS note on `main`.
 - This revision lands as a docs PR, as #102 promised.
-- **Your actions:** answer decisions 1, 3, 4 and 5 on #102. (#101 merged at 03:23 UTC, and decision 2 is settled.)
+- **Done 27 Oct:** you answered decisions 1, 3, 4 and 5 on #102 (D46): create the App (steps in #126), don't renew Max, accept the scope cuts, and decision 5 as recommended. Decision 2 was settled on 22 Oct, and #101 merged then.
 - **Let M3 exit check part 1 run as scheduled.** If it fails, note it on #102. Don't spend Max time repairing the daily build, because decision 12 redefines part 1 on the new jobs.
 - **Tonight's re-verify run pushes its first branch.** If the daily build hasn't merged it by 12:00 UTC on 23 Oct, merge it yourself (A9):
   - open a PR from the branch on GitHub;
@@ -164,6 +164,8 @@ Checked with `git` and the GitHub API at 03:25 UTC:
   - a scheduled `Re-verify evidence` run has happened, and its branch has been merged per A9;
   - #101 is merged;
   - decisions 1 to 5 are answered.
+
+  All three held on 27 Oct.
 
 ### Stage 1: build (23 Oct to 8 Nov, Max)
 
@@ -192,7 +194,7 @@ Tier C starts only after Tiers A and B have merged. If the Max time runs short, 
     - opens its own PR through `gh api`;
     - gains `due` and `limit` inputs, with a default of `--limit 1000`;
     - turns "Flag records that could not be checked" into a `::warning::`, keeping the step name "Push verification changes" and the annotation title "Records not checked", which the watchdog reads;
-    - falls back to today's push-only path when `vars.BOT_APP_ID` is empty.
+    - falls back to today's push-only path when `vars.BOT_CLIENT_ID` is empty.
   - A new `data-gate.yml` (decision 3). Its job must be named exactly `data-gate`: `merge-bot.mjs` (A1) requires a check run of that name from GitHub Actions on the head commit, so any other name means nothing ever merges.
   - **`pages.yml`:** Lighthouse moves to its own `lighthouse` job, with `if: github.event_name == 'pull_request'`. A score dip then can't block the daily rebuild that moves statuses (D7), or a bot merge.
   - **`ci.yml`:** the licence check.
@@ -312,7 +314,7 @@ Tier C starts only after Tiers A and B have merged. If the Max time runs short, 
   - Both workflows join the `crawl` group.
   - **The `protected-paths` regex gains:**
     - `scripts/merge-bot.mjs`, `scripts/watchdog.mjs`, `scripts/verification-only.mjs` and `scripts/validate-data.mjs`;
-    - `data/sources/seed.yaml`, because profiles become binding (D48);
+    - `data/sources/seed.yaml`, because profiles become binding (D49);
     - `data/schema/`.
   - The new commands in CLAUDE.md.
 
@@ -333,7 +335,7 @@ Tier C starts only after Tiers A and B have merged. If the Max time runs short, 
   - ARCHITECTURE lines 15 to 33 (the daily build, the `Crawl` allowlist and the agent threat model), rewritten for runners and you.
 
 **Your actions in Stage 1** (about 4 to 5 hours, *estimate*):
-1. **Create the App** (15 minutes; human gate). Whether registering one costs anything is unverified.
+1. **Create the App** (15 minutes; human gate; the full steps are in #126). Whether registering one costs anything is unverified.
    - Go to Settings > Developer settings > GitHub Apps > New, and turn the webhook off.
    - Repository permissions:
      - Contents, Pull requests, Issues and Actions: read and write;
@@ -341,7 +343,7 @@ Tier C starts only after Tiers A and B have merged. If the Max time runs short, 
      - Workflows: none.
    - Install it on `sombreserotonin/Patchlife` only, and generate a private key.
    - Add these to the repository:
-     - the variable `BOT_APP_ID`;
+     - the variables `BOT_APP_ID` and `BOT_CLIENT_ID`. GitHub's current `actions/create-github-app-token` example takes the Client ID, and older ones the App ID;
      - the secret `BOT_APP_PRIVATE_KEY`;
      - the variables `BOT_MERGE=off` and `DATA_REFRESH=off`.
 2. **Merge P2 and P3** following O2, about 20 minutes each. (#101 is merged.)
@@ -415,13 +417,13 @@ While Max is still active, sessions open the PRs below. You cancel, then merge P
     - CRAWLER.md: requests now come from GitHub's runners and your own machines;
     - DATA-POLICY line 39, which names Claude Code's fetch tool.
 - **A docs PR with new decisions:**
-  - D46: the bot's merge scope and the raised nightly limit (amends D42).
-  - D47: the rules, the regression test and your sample replace D20's second session (narrows D17).
+  - D47: the bot's merge scope and the raised nightly limit (amends D42).
+  - D48: the rules, the regression test and your sample replace D20's second session (narrows D17).
     - Data you write yourself has no second reader.
     - On a parsed source, the parser must reproduce your edit.
     - On any other source, you re-read it through its highlight link the next day.
-  - D48: source profiles are binding.
-  - D49: manufacturer pages are read only through the polite fetcher, on GitHub's runners (`owner-tools.yml`) or your own machine. The `Crawl` environment is retired.
+  - D49: source profiles are binding.
+  - D50: manufacturer pages are read only through the polite fetcher, on GitHub's runners (`owner-tools.yml`) or your own machine. The `Crawl` environment is retired.
   - Retired: D12, D15, D22, D26, D27 and D35, the environment clause of D17, and the parallel-session clause of D19.
 - **The Stage 4 PR, opened as a draft** (see Stage 4), because no session will exist later to write it.
 - **Your actions** (about 20 minutes):
@@ -524,7 +526,7 @@ Incidents add 5 to 15 minutes a week on average (*estimate*).
 | One parser error repeats across many rows | The parser gate on the 695 audited records, `quoteMatches`, `date_order`, R1 to R8, your sample, and an A8 audit of each parser's first PR before cut-over |
 | A footnote marker fuses into a model or date | `table-rows.mjs` keeps `<sup>` content apart, and a fixture tests it |
 | A maker adds a qualifier in prose, with no date | It shows up only as a changed row or a footnote marker, plus the `unquoted-dates.mjs` output in each PR. Accept this as residual risk |
-| Data you write yourself has no second reader | D47: the parser must reproduce your edit, or you re-read it the next day through its highlight link |
+| Data you write yourself has no second reader | D48: the parser must reproduce your edit, or you re-read it the next day through its highlight link |
 | A host blocks GitHub's runners | Every evidence host answered a runner on 21 Oct (Probe hosts run 39695382968). If one blocks, run `npm run verify:evidence -- <ids>` from Unraid or your PC |
 | You are away | The site keeps serving and re-verification continues; alerts wait for you. The December wave takes two nights, and stale records stay marked until you are back |
 | A Node, npm or action change breaks CI | A pinned Node version, monthly grouped Dependabot PRs with a 7-day cooldown [10], and the licence check. If a major version breaks, add an `ignore` entry rather than fixing code |
@@ -557,11 +559,11 @@ You shelved the business side on 22 Oct 2026, to come back to once this setup is
 
 ## Open decisions
 
-1. **Create the GitHub App `patchlife-bot`?** Recommended: yes. Without it, every bot PR waits for your click.
+1. **Create the GitHub App `patchlife-bot`?** Settled on 27 Oct: yes (D46), with the steps in #126. Without it, every bot PR waits for your click.
 2. **The Pangolin VPS.** Settled on 22 Oct: it stays. You pay for it for other projects, so Patchlife adds no cost to it. When the business side resumes, M6 runs on Unraid published through it (D40). Cloudflare Tunnel from Unraid remains the fallback; it is available on all plans [20].
-3. **Max renewal.** Recommended: don't renew. If the renewal date falls before Stage 3, take Pro billed monthly for one month.
-4. **Scope cuts and maintenance mode.** The business side is settled: it is in Planned (D45). Recommended: accept the rest of the table above, with maintenance mode as the default.
-5. **Clear the backlog before cancelling?** Recommended: yes, for TP-Link AU, EZVIZ and Google, in 60-row batches with A8 audits. They run from about 9 to 30 Nov, once Tiers A and B are on `main`. Otherwise one weekly 60-row PR feeds the backlog in slowly: TP-Link AU alone would take about 14 weeks (*estimate*).
+3. **Max renewal.** Settled on 27 Oct: you won't renew (D46), so Stages 1 to 3 have to fit inside the current period. If it ends before Stage 3, whatever is unbuilt waits, or you take one month of Pro billed monthly.
+4. **Scope cuts and maintenance mode.** Settled on 27 Oct: accepted (D46). The business side is in Planned (D45), and the rest of the table above applies, with maintenance mode as the default.
+5. **Clear the backlog before cancelling?** Settled on 27 Oct: you left it to me, and I took the recommendation (D46). Yes, for TP-Link AU, EZVIZ and Google, in 60-row batches with A8 audits, from about 9 Nov, once Tiers A and B are on `main`, until the Max period ends. Whatever is left then goes to the weekly 60-row PR: TP-Link AU alone would take about 14 weeks that way (*estimate*).
 6. **Break-glass.** Recommended: none by default. If a breakage beats you, the options are:
    - paste the log into a local model on the RX 9070 XT. This needs no account or secret. llama.cpp's server binds to 127.0.0.1 by default [28]; whether the card works with its Vulkan build is unverified;
    - a one-off Anthropic API key on prepaid credits, with auto-reload off [24]. This involves account and spending gates. Sonnet 5.5 costs US$2 per million input tokens and US$10 per million output [23], so a fix costs about US$1 to 5 (*estimate*);
