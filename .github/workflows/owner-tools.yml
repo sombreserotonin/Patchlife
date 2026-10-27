@@ -1,0 +1,195 @@
+name: Owner tools
+
+# The owner's five by-hand actions on a GitHub runner, which reaches the makers' pages, so none needs a session or a
+# local clone (docs/MIGRATION.md P3; RUNBOOKS O8, O11). Dispatch only. Every input reaches the shell through env,
+# never inline in a script. read-page and check-source only print; verify opens a re-verify PR as patchlife-bot,
+# which the merge bot merges; repoint and withdraw open PRs for the owner to review and merge with `audited`.
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: What to run
+        type: choice
+        required: true
+        options:
+          - read-page
+          - check-source
+          - verify
+          - repoint
+          - withdraw
+      url:
+        description: "read-page and check-source: the page. repoint: the old URL"
+        default: ''
+      new_url:
+        description: "repoint: the new URL"
+        default: ''
+      ids:
+        description: "verify: record ids separated by spaces. withdraw: one record id"
+        default: ''
+      text:
+        description: "read-page: print only the lines holding this text. withdraw: why the date is pulled"
+        default: ''
+
+permissions:
+  contents: read
+
+# One group for every workflow that fetches makers' pages (decision 14), so two never run at once.
+concurrency:
+  group: crawl
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  owner-tools:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ACTION: ${{ inputs.action }}
+      URL: ${{ inputs.url }}
+      NEW_URL: ${{ inputs.new_url }}
+      IDS: ${{ inputs.ids }}
+      TEXT: ${{ inputs.text }}
+    steps:
+      - name: Check the inputs
+        # Each action's inputs, before anything is fetched: an https URL where one is needed, ids shaped like record
+        # ids, and a reason for a withdrawal.
+        run: |
+          https='^https://'
+          id='^[a-z0-9]+(-[a-z0-9]+)*$'
+          case "$ACTION" in
+            read-page|check-source)
+              [[ "$URL" =~ $https ]] || { echo "::error::url must start with https://"; exit 1; } ;;
+            repoint)
+              [[ "$URL" =~ $https && "$NEW_URL" =~ $https ]] || { echo "::error::url (the old URL) and new_url must start with https://"; exit 1; }
+              [ "$URL" != "$NEW_URL" ] || { echo "::error::url and new_url are the same"; exit 1; } ;;
+            verify)
+              [ -n "$IDS" ] || { echo "::error::ids must name at least one record"; exit 1; }
+              for one in $IDS; do [[ "$one" =~ $id ]] || { echo "::error::\"$one\" is not a record id"; exit 1; }; done ;;
+            withdraw)
+              [[ "$IDS" =~ $id ]] || { echo "::error::ids must be exactly one record id"; exit 1; }
+              [ -n "${TEXT// }" ] || { echo "::error::text must say why the date is pulled"; exit 1; } ;;
+            *) echo "::error::Unknown action \"$ACTION\""; exit 1 ;;
+          esac
+      - id: app-token
+        if: inputs.action == 'verify' || inputs.action == 'repoint' || inputs.action == 'withdraw'
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.BOT_CLIENT_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+      - uses: actions/checkout@v7
+        with:
+          token: ${{ steps.app-token.outputs.token || github.token }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Read the page
+        if: inputs.action == 'read-page'
+        # The page as the verifier sees it (RUNBOOKS O11 step 3), in the job summary. Exit 1 (the page can't be read,
+        # or --grep matched nothing) is the answer, not a broken tool, so the run stays green and says so.
+        run: |
+          set +e
+          if [ -n "$TEXT" ]; then
+            node scripts/page-text.mjs --grep "$TEXT" "$URL" > "$RUNNER_TEMP/page.txt" 2> "$RUNNER_TEMP/err.txt"
+          else
+            node scripts/page-text.mjs "$URL" > "$RUNNER_TEMP/page.txt" 2> "$RUNNER_TEMP/err.txt"
+          fi
+          status=$?
+          set -e
+          {
+            echo "## read-page: $URL"
+            if [ -n "$TEXT" ]; then echo; echo "Lines holding \"$TEXT\", numbered as in the full output, where line 1 is the URL."; fi
+            echo; echo '```'
+            cat "$RUNNER_TEMP/page.txt" "$RUNNER_TEMP/err.txt"
+            echo '```'
+            if [ "$status" -ne 0 ]; then echo; echo "page-text.mjs exited $status: the page could not be read, or nothing holds the text."; fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          cat "$RUNNER_TEMP/err.txt"
+      - name: Check the source
+        if: inputs.action == 'check-source'
+        # The RUNBOOKS O11 step 2 triage; its last line is the verdict, so the run stays green either way.
+        run: |
+          set +e
+          node scripts/check-source.mjs "$URL" > "$RUNNER_TEMP/check.txt" 2>&1
+          status=$?
+          set -e
+          { echo "## check-source: $URL"; echo; echo '```'; cat "$RUNNER_TEMP/check.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          cat "$RUNNER_TEMP/check.txt"
+          echo "check-source.mjs exited $status (0 usable, 1 not usable, 2 bad arguments)"
+      - name: Re-verify the records
+        if: inputs.action == 'verify'
+        # Exit 1 means a record was stale, failed or errored, which the PR shows; the gate below refuses anything but
+        # verification changes.
+        run: |
+          set +e
+          npm run verify:evidence -- $IDS 2>&1 | tee "$RUNNER_TEMP/verify.txt"
+          status=${PIPESTATUS[0]}
+          set -e
+          sed 's/^/    /' "$RUNNER_TEMP/verify.txt" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$status" -gt 1 ]; then echo "::error::The verifier did not finish (exit $status)"; exit 1; fi
+          node scripts/verification-only.mjs
+      - name: Repoint the source
+        if: inputs.action == 'repoint'
+        # Exit 1 means a moved record did not verify, which the PR shows; the owner decides.
+        run: |
+          set +e
+          node scripts/repoint-source.mjs "$URL" "$NEW_URL" 2>&1 | tee "$RUNNER_TEMP/repoint.txt"
+          status=${PIPESTATUS[0]}
+          set -e
+          sed 's/^/    /' "$RUNNER_TEMP/repoint.txt" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$status" -gt 1 ]; then echo "::error::repoint-source.mjs did not finish (exit $status)"; exit 1; fi
+      - name: Withdraw the record
+        if: inputs.action == 'withdraw'
+        # Exit 1 (no such record, already withdrawn, or the result does not validate) stops the run before any push.
+        run: |
+          set +e
+          node scripts/withdraw-record.mjs "$IDS" "$TEXT" 2>&1 | tee "$RUNNER_TEMP/withdraw.txt"
+          status=${PIPESTATUS[0]}
+          set -e
+          sed 's/^/    /' "$RUNNER_TEMP/withdraw.txt" >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
+      - name: Validate and test
+        if: inputs.action == 'verify' || inputs.action == 'repoint' || inputs.action == 'withdraw'
+        run: |
+          npm run validate
+          npm test
+      - name: Push and open the PR
+        if: inputs.action == 'verify' || inputs.action == 'repoint' || inputs.action == 'withdraw'
+        # verify pushes claude/reverify-manual-<run id>, which the merge bot merges once its checks pass (decision 2),
+        # and which stops the nightly re-verify at its guard until then. repoint and withdraw push claude/<action>-<run id>
+        # for the owner, whose `audited` label lets data-gate pass.
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ -z "$(git status --porcelain -- data)" ]; then
+            echo "Nothing to push: no record changed." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          name="${APP_SLUG}[bot]"
+          email="$(gh api "users/$name" --jq .id)+${name}@users.noreply.github.com"
+          date=$(date -u +%F)
+          case "$ACTION" in
+            verify)
+              branch="claude/reverify-manual-$GITHUB_RUN_ID"
+              title="data: re-verify $date ($IDS)"
+              body="$(tail -n 1 "$RUNNER_TEMP/verify.txt")"$'\n\n'"Owner tools, verify, run $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. RUNBOOKS A9: the merge bot merges it." ;;
+            repoint)
+              branch="claude/repoint-$GITHUB_RUN_ID"
+              title="data: repoint $URL to $NEW_URL"
+              body="$(cat "$RUNNER_TEMP/repoint.txt")"$'\n\n'"Owner tools, repoint, run $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. Review the records, add \`audited\`, then merge (RUNBOOKS O5 step 2)." ;;
+            withdraw)
+              branch="claude/withdraw-$GITHUB_RUN_ID"
+              title="data: withdraw $IDS pending review"
+              body="$(cat "$RUNNER_TEMP/withdraw.txt")"$'\n\n'"Owner tools, withdraw, run $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. Add \`audited\` and merge (RUNBOOKS O8); the site then shows no date for the record. Then open a data-correction issue for the proper fix." ;;
+          esac
+          git switch -c "$branch"
+          git add data
+          git -c user.name="$name" -c user.email="$email" commit -q -m "$title" -m "$body"
+          git push origin "$branch"
+          url=$(gh api -X POST "repos/$REPO/pulls" -f title="$title" -f head="$branch" -f base=main -f body="$body" --jq .html_url)
+          echo "Opened $url" | tee -a "$GITHUB_STEP_SUMMARY"
