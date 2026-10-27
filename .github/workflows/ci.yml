@@ -19,6 +19,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - run: node scripts/check-licences.mjs
       - run: npm run validate
       - run: npm test
 

@@ -1,0 +1,66 @@
+name: Data gate
+
+# RUNBOOKS A9 as a required check (docs/MIGRATION.md decision 3). A PR may change data/ only in what a
+# re-verification changes: verification blocks, empty archive links filled with a capture of the item's own page, and
+# page-hashes.json. Anything more needs the `audited` label added by the repository owner (RUNBOOKS A8). The PR is
+# judged with the base branch's copy of scripts/, so a PR can't weaken the check it is judged by, and every push
+# removes `audited`, so each new push needs a fresh review. The job must be named data-gate: scripts/merge-bot.mjs
+# requires a check run of that name on the head commit.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: write
+
+concurrency:
+  group: data-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  data-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+      PR: ${{ github.event.pull_request.number }}
+      OWNER: ${{ github.repository_owner }}
+    steps:
+      - name: Remove the audited label after a push
+        # A fork's PR gets a read-only token, so there the label stays and the owner reviews the new push by hand.
+        if: github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'audited') && github.event.pull_request.head.repo.full_name == github.repository
+        run: gh api -X DELETE "repos/$REPO/issues/$PR/labels/audited" > /dev/null
+      - uses: actions/checkout@v7
+        with:
+          # The PR's merge commit: HEAD^1 is the base branch, so the diff against it is what the PR changes.
+          fetch-depth: 2
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Check the data changes with the base branch's scripts
+        id: gate
+        run: |
+          git checkout HEAD^1 -- scripts
+          if node scripts/verification-only.mjs HEAD^1; then
+            echo "verified=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "verified=no" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Accept an audit by the repository owner
+        # The last labeled or unlabeled event for `audited` decides, and only the owner's label counts: the App, or
+        # anyone else, can't audit a PR.
+        if: steps.gate.outputs.verified == 'no'
+        run: |
+          actor=$(gh api "repos/$REPO/issues/$PR/events?per_page=100" --paginate --slurp \
+            --jq '[.[][] | select(.label.name == "audited")] | last | if . == null or .event != "labeled" then "" else .actor.login end')
+          if [ -n "$actor" ] && [ "$actor" = "$OWNER" ]; then
+            echo "The data changes go beyond a re-verification, and $OWNER added the audited label (RUNBOOKS A8)."
+          else
+            echo "::error::The data changes go beyond a re-verification (RUNBOOKS A9), and the PR has no audited label added by $OWNER (RUNBOOKS A8)."
+            exit 1
+          fi

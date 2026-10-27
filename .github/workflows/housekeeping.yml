@@ -1,0 +1,98 @@
+name: Housekeeping
+
+# The nightly run with no model (docs/MIGRATION.md A1 and P2; decisions 2, 7 and 8). The merge bot merges the routine
+# PRs the App opened, the watchdog checks the workflows, the site and the records, and on the 1st of the month the
+# run opens the measures PR. Every write uses patchlife-bot's token (#126), so the PRs it opens get CI. The merge bot
+# runs only while the repository variable BOT_MERGE is `on`, the kill switch; the daily build keeps merging meanwhile.
+on:
+  schedule:
+    - cron: '23 21 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Only read and print; merge nothing, post nothing, open no measures PR
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  housekeeping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DRY_RUN: ${{ inputs.dry_run == true && '--dry-run' || '' }}
+    steps:
+      - id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.BOT_CLIENT_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+          permission-actions: write
+          permission-checks: read
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
+      - uses: actions/checkout@v7
+        with:
+          # The watchdog dates stale records from git history; the measures branch is pushed with the App's token.
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Merge the routine PRs
+        if: vars.BOT_MERGE == 'on'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          BOT_LOGIN: ${{ steps.app-token.outputs.app-slug }}[bot]
+        run: node scripts/merge-bot.mjs $DRY_RUN
+      - name: Watchdog
+        # Runs even when the merge bot failed, so a broken bot is itself reported. On Sundays (UTC) --summary also
+        # posts the weekly summary on #27. Exit 1 turns the run red, which is the alarm.
+        if: ${{ !cancelled() && steps.app-token.outcome == 'success' }}
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          summary=""
+          if [ "$(date -u +%u)" = 7 ]; then summary="--summary"; fi
+          node scripts/watchdog.mjs $DRY_RUN $summary
+      - name: Open the monthly measures PR
+        # On the 1st (UTC): docs/MEASURES.md from data-report.mjs, on claude/measures-<yyyy-mm>, which the merge bot
+        # merges the next night. Skipped while that branch exists, so a re-run opens no second PR.
+        if: ${{ !cancelled() && steps.app-token.outcome == 'success' && inputs.dry_run != true }}
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ "$(date -u +%d)" != 01 ]; then
+            echo "Not the 1st: no measures PR."
+            exit 0
+          fi
+          month=$(date -u +%Y-%m)
+          branch="claude/measures-$month"
+          if [ -n "$(git ls-remote --heads origin "$branch")" ]; then
+            echo "$branch exists: no second measures PR."
+            exit 0
+          fi
+          {
+            echo "# Measures"
+            echo
+            echo "Generated on $(date -u +%F) (UTC) by housekeeping.yml from \`node scripts/data-report.mjs\`. The first four rows are the Measures in docs/PLAN.md."
+            echo
+            echo '```'
+            node scripts/data-report.mjs
+            echo '```'
+          } > docs/MEASURES.md
+          name="${APP_SLUG}[bot]"
+          email="$(gh api "users/$name" --jq .id)+${name}@users.noreply.github.com"
+          git switch -c "$branch"
+          git add docs/MEASURES.md
+          git -c user.name="$name" -c user.email="$email" commit -q -m "docs: measures $month"
+          git push origin "$branch"
+          gh api -X POST "repos/$REPO/pulls" -f title="docs: measures $month" -f head="$branch" -f base=main \
+            -f body="docs/MEASURES.md regenerated from \`node scripts/data-report.mjs\` by housekeeping.yml. The merge bot merges it (docs/MIGRATION.md decision 2)." --jq .html_url

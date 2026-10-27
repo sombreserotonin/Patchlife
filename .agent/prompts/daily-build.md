@@ -2,7 +2,7 @@
 
 You are running unattended in the `Default` cloud environment, which cannot reach manufacturer sites (D17): you do code, test and docs work only. Follow CLAUDE.md, including its read order. Nobody will answer questions: make the safe choice and explain it in the PR. Dates are UTC (`date -u +%F`).
 
-1. Re-verification (RUNBOOKS A9): the `Re-verify evidence` workflow pushes `claude/reverify-<date>-<run id>` branches and opens no PR, and it stops while any such branch exists. For each one, look up its PRs (`gh api "repos/sombreserotonin/Patchlife/pulls?state=all&head=sombreserotonin:<branch>"`):
+1. Re-verification (RUNBOOKS A9): the `Re-verify evidence` workflow pushes `claude/reverify-<date>-<run id>` branches and opens a PR for each with the bot's token (it opens none only while the App's variables are missing), and it stops while any such branch exists. The `Housekeeping` workflow (21:23 UTC) merges those PRs itself while the repository variable `BOT_MERGE` is `on`. For each branch, look up its PRs (`gh api "repos/sombreserotonin/Patchlife/pulls?state=all&head=sombreserotonin:<branch>"`):
    - No PR: open one with `gh api`, titled with the branch's commit subject, its body the commit message plus `RUNBOOKS A9`. Check out the branch and run `node scripts/verification-only.mjs $(git merge-base origin/main HEAD)`. If it prints `Only verification changed`, poll the PR's check runs for up to 15 minutes and merge it once every check has passed, so tonight's run starts from the merged dates. Otherwise label it `needs-human` with a comment.
    - An open PR: handle it in housekeeping below.
    - Only closed, unmerged PRs: agents can't delete branches, so end with `WAITING:` asking the owner to delete it.

@@ -9,6 +9,12 @@ on:
 permissions:
   contents: read
 
+# The group of every workflow that fetches makers' pages (docs/MIGRATION.md decision 14).
+concurrency:
+  group: crawl
+  cancel-in-progress: false
+  queue: max
+
 jobs:
   probe:
     runs-on: ubuntu-latest
