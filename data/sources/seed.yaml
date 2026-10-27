@@ -301,21 +301,14 @@
   # statement of compliance (one page per model, linked from the third URL) covers AU.
   regions_by_url:
     https://support.google.com/product-documentation/answer/10231940?hl=en: [GLOBAL]
-    ? &google-uk https://support.google.com/product-documentation/answer/14869041?hl=en
-    : [UK]
+    https://support.google.com/product-documentation/answer/14869041?hl=en: [UK]
     https://support.google.com/chromecast/answer/10367042: [AU]
-    ? &google-au-16888142 https://support.google.com/product-documentation/answer/16888142?hl=en
-    : [AU]
-    ? &google-au-16888345 https://support.google.com/product-documentation/answer/16888345?hl=en
-    : [AU]
-    ? &google-au-16888555 https://support.google.com/product-documentation/answer/16888555?hl=en
-    : [AU]
-    ? &google-au-16888621 https://support.google.com/product-documentation/answer/16888621?hl=en
-    : [AU]
-    ? &google-au-16889039 https://support.google.com/product-documentation/answer/16889039?hl=en
-    : [AU]
-    ? &google-au-16890804 https://support.google.com/product-documentation/answer/16890804?hl=en
-    : [AU]
+    https://support.google.com/product-documentation/answer/16888142?hl=en: [AU]
+    https://support.google.com/product-documentation/answer/16888345?hl=en: [AU]
+    https://support.google.com/product-documentation/answer/16888555?hl=en: [AU]
+    https://support.google.com/product-documentation/answer/16888621?hl=en: [AU]
+    https://support.google.com/product-documentation/answer/16889039?hl=en: [AU]
+    https://support.google.com/product-documentation/answer/16890804?hl=en: [AU]
   # The Nest table's sentence; the UK and Australian statements both start their period sentence the same way.
   at_least:
     - "Google Nest connected home devices will receive automatic security updates for at least 5 years from the date we start selling them on the US Google Store."
@@ -355,14 +348,14 @@
   # The names the UK and Australian statements write for the Nest table's models, so the parser can add a statement's
   # region and items to the table's record (B4). A statement entry with no row here is reported, never linked.
   renames:
-    - { from: "Nest Cam wired (GJQ9T)", to: "Nest Cam (wired)", urls: [*google-uk, *google-au-16888142] }
-    - { from: "Nest Cam outdoor or indoor battery (G3AL9)", to: "Nest Cam (battery)", urls: [*google-uk, *google-au-16888555] }
-    - { from: "Nest Cam with Floodlight (GM493)", to: "Nest Cam with Floodlight", urls: [*google-uk, *google-au-16888621] }
-    - { from: "Nest Doorbell wired (G28DR)", to: "Nest Doorbell (wired)", urls: [*google-uk] }
-    - { from: "Nest Doorbell battery (GWX3T)", to: "Nest Doorbell (battery)", urls: [*google-uk, *google-au-16890804] }
-    - { from: "Nest Hello (A0077)", to: "Nest Hello", urls: [*google-uk] }
-    - { from: "Google Nest Cam Outdoor (wired, 2nd generation) (G7LYP)", to: "Nest Cam Outdoor (wired, 2nd gen)", urls: [*google-au-16888345] }
-    - { from: "Google Nest Cam Indoor (wired, 3rd generation)(G1NRR)", to: "Nest Cam Indoor (wired, 3rd gen)", urls: [*google-au-16889039] }
+    - { from: "Nest Cam wired (GJQ9T)", to: "Nest Cam (wired)", urls: [https://support.google.com/product-documentation/answer/14869041?hl=en, https://support.google.com/product-documentation/answer/16888142?hl=en] }
+    - { from: "Nest Cam outdoor or indoor battery (G3AL9)", to: "Nest Cam (battery)", urls: [https://support.google.com/product-documentation/answer/14869041?hl=en, https://support.google.com/product-documentation/answer/16888555?hl=en] }
+    - { from: "Nest Cam with Floodlight (GM493)", to: "Nest Cam with Floodlight", urls: [https://support.google.com/product-documentation/answer/14869041?hl=en, https://support.google.com/product-documentation/answer/16888621?hl=en] }
+    - { from: "Nest Doorbell wired (G28DR)", to: "Nest Doorbell (wired)", urls: [https://support.google.com/product-documentation/answer/14869041?hl=en] }
+    - { from: "Nest Doorbell battery (GWX3T)", to: "Nest Doorbell (battery)", urls: [https://support.google.com/product-documentation/answer/14869041?hl=en, https://support.google.com/product-documentation/answer/16890804?hl=en] }
+    - { from: "Nest Hello (A0077)", to: "Nest Hello", urls: [https://support.google.com/product-documentation/answer/14869041?hl=en] }
+    - { from: "Google Nest Cam Outdoor (wired, 2nd generation) (G7LYP)", to: "Nest Cam Outdoor (wired, 2nd gen)", urls: [https://support.google.com/product-documentation/answer/16888345?hl=en] }
+    - { from: "Google Nest Cam Indoor (wired, 3rd generation)(G1NRR)", to: "Nest Cam Indoor (wired, 3rd gen)", urls: [https://support.google.com/product-documentation/answer/16889039?hl=en] }
   # For the regulatory page (chromecast/answer/10367042) the rows are its links to Australian statements (10 on 27 Oct 2026).
   min_rows:
     https://support.google.com/product-documentation/answer/10231940?hl=en: 35

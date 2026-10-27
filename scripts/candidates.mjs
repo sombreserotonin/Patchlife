@@ -2,7 +2,8 @@
 // quotes (MIGRATION B3 and B4), never by generated id, so it can't create a duplicate. The parser gate: every record
 // whose quotes are still on their pages must be reproduced field for field, or nothing is written. With --check it
 // writes nothing and reports per page. Without it, a record whose row has changed (its quote gone, the model's row
-// now giving another date or wording) is rewritten from the parser's row as a proposal, then the rows no record
+// now giving another date or wording, or only the templated notes moved on) is rewritten from the parser's row as a
+// proposal, then the rows no record
 // covers are written as new unverified records, one brand at a time, up to --limit (MIGRATION decision 5). Records in
 // the profile's parser_exceptions are never rewritten. A page with fewer rows than the profile's min_rows stops the
 // run as "parser broken". --report writes a JSON report for the weekly workflow. Reads pages with the polite fetcher.
@@ -140,7 +141,13 @@ export function matchBrand({ urls, brand_slug, profile, candidates, skipped, fla
     for (const c of pinned) matched.add(c);
     const [candidate] = pinned;
     const differences = pinned.length > 1 ? [{ field: "rows", record: items.map((item) => item.quote), parser: pinned.map((c) => c.id) }] : gateDifferences(record, candidate);
-    if (differences.length) report(items, "differ", { id: record.id, differences });
+    if (differences.length && differences.every((d) => d.field === "notes")) {
+      // The row is unchanged and only the templated notes have moved on (Google's dated note once a minimum passes):
+      // a proposal to regenerate the record, not a parser mismatch.
+      report(items, "changed", { id: record.id, quote: items[0].quote, parser: candidate.evidence[0].quote, notes: true });
+      out.push(`changed: ${record.id}: only the notes differ (record ${JSON.stringify(record.notes ?? null)}, parser ${JSON.stringify(candidate.notes ?? null)})`);
+      proposals.push({ record, candidate, quote: items[0].quote });
+    } else if (differences.length) report(items, "differ", { id: record.id, differences });
     else report(items, "reproduced", record.id);
     if (candidate.id !== record.id) report(items, "idDiffers", { id: record.id, parser: candidate.id });
   }
@@ -225,7 +232,7 @@ export async function runCandidates(devicesDir, { brands = [], sources, parsers 
   if (check || reports.some(mismatches)) return { reports, written, flags };
   // Changed rows on any brand come first, then new rows one brand at a time (MIGRATION decision 5), within the limit.
   const restore = new Map();
-  const row = (record, quote) => ({ end_date: record.support.end_date, at_least: record.support.at_least, conditions: record.support.conditions, quote });
+  const row = (record, quote) => ({ end_date: record.support.end_date, at_least: record.support.at_least, conditions: record.support.conditions, quote, notes: record.notes ?? null });
   for (const { proposals, files } of results) {
     for (const { record, candidate, quote } of proposals) {
       if (written.length === limit) break;
@@ -279,7 +286,10 @@ export function format(report) {
   ];
   for (const { id, differences } of report.differ) for (const d of differences) lines.push(`  differs: ${id}: ${d.field}: record ${show(d.record)}, parser ${show(d.parser)}`);
   for (const { id, quote } of report.notReproduced) lines.push(`  not reproduced: ${id}: ${show(quote)}`);
-  for (const { id, quote, parser } of report.changed) lines.push(`  changed: ${id}: ${parser === true ? `a second row names the record ${show(quote)}` : `quote gone ${show(quote)}${parser ? `, the page now has ${show(parser)}` : ", no row names the model now"}`}`);
+  for (const { id, quote, parser, notes } of report.changed) {
+    if (notes) lines.push(`  changed: ${id}: only the notes differ for ${show(quote)}`);
+    else lines.push(`  changed: ${id}: ${parser === true ? `a second row names the record ${show(quote)}` : `quote gone ${show(quote)}${parser ? `, the page now has ${show(parser)}` : ", no row names the model now"}`}`);
+  }
   for (const { id, parser } of report.idDiffers) lines.push(`  id differs: ${id}: parser gives ${parser}`);
   for (const { id, quotes } of report.ambiguous) lines.push(`  ambiguous: ${id}: ${quotes.map(show).join(" and ")}`);
   for (const { id, url, quote } of report.unquotable) lines.push(`  not on ${url}: ${id}: ${show(quote)}`);

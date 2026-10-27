@@ -93,8 +93,8 @@ test("a record whose row changed is rewritten from the parser's row (B4): the ro
   assert.ok(format(tp).includes('  changed: tp-link-tapo-z100-v5: quote gone "Wired Indoor Camera Tapo Z100 V5 31/12/2028 or later*", the page now has "Wired Indoor Camera Tapo Z100 V5 31/12/2029 or later*"'));
   // The changed row is written first, then the new rows; the report says what changed.
   assert.deepEqual(written.map((w) => [w.id, w.kind]), [["tp-link-tapo-z100-v5", "changed"], ["tp-link-archer-zx20-v1-20", "new"], ["tp-link-tapo-z400-kit-v2", "new"]]);
-  assert.deepEqual(written[0].before, { end_date: "2028-12-31", at_least: true, conditions: "Hardware version V5 only.", quote: "Wired Indoor Camera Tapo Z100 V5 31/12/2028 or later*" });
-  assert.deepEqual(written[0].after, { end_date: "2029-12-31", at_least: true, conditions: "Hardware version V5 only.", quote: "Wired Indoor Camera Tapo Z100 V5 31/12/2029 or later*" });
+  assert.deepEqual(written[0].before, { end_date: "2028-12-31", at_least: true, conditions: "Hardware version V5 only.", quote: "Wired Indoor Camera Tapo Z100 V5 31/12/2028 or later*", notes: "The statement's footnote says the date may be extended for products not yet at end of life." });
+  assert.deepEqual(written[0].after, { end_date: "2029-12-31", at_least: true, conditions: "Hardware version V5 only.", quote: "Wired Indoor Camera Tapo Z100 V5 31/12/2029 or later*", notes: "The statement's footnote says the date may be extended for products not yet at end of life." });
   const after = YAML.parse(read("tp-link", "tp-link-tapo-z100-v5"));
   const was = YAML.parse(original);
   assert.equal(after.support.end_date, "2029-12-31");
@@ -204,7 +204,7 @@ test("changed rows on any brand come before new rows, which follow one brand at 
   // GL.iNet's changed Velox row comes first although its brand is second; TP-Link's two new rows empty its backlog
   // before EZVIZ gets one.
   assert.deepEqual(written.map((w) => [w.kind, w.id]), [["changed", "gl-inet-gl-z200"], ["new", "tp-link-archer-zx20-v1-20"], ["new", "tp-link-tapo-z400-kit-v2"], ["new", "gl-inet-gl-z300"]]);
-  assert.deepEqual(written[0].before, { end_date: "2027-06-11", at_least: true, conditions: "Pre-defined support period; the actual period is 2 years after GL.iNet announces end of life, so it can be longer.", quote: "Velox (GL-Z200) June 11, 2027 or later*" });
+  assert.deepEqual(written[0].before, { end_date: "2027-06-11", at_least: true, conditions: "Pre-defined support period; the actual period is 2 years after GL.iNet announces end of life, so it can be longer.", quote: "Velox (GL-Z200) June 11, 2027 or later*", notes: "The page is GL.iNet's PSTI support period table and names no region; recorded as UK, the regime it is published under. The date is the pre-defined minimum, not a guaranteed end." });
   assert.equal(written[0].after.end_date, "2027-06-12");
   assert.deepEqual(validateDevices(dir, { today: TODAY, sources: SOURCES }).errors, []);
 });
@@ -258,10 +258,16 @@ test("Google's dated note accepts any date in the {date} position, and the state
     ["chromecast/answer/10367042", 3, 0, 0, 0, 0],
   ]);
   assert.equal(flags.length, 5);
-  // Any other change to the notes is a difference the gate reports.
+  // Any other difference in the notes alone is a proposal to regenerate the record, never a gate mismatch: when a
+  // minimum passes, the dated note joins the notes while the row stays the same.
   edit("google", "google-nest-cam-ultra", "the 5-year minimum has passed.", "the 5-year minimum has passed. Hand-written.");
   const second = await run(dir, { get, check: true, brands: ["google"] });
-  assert.equal(second.reports[0].differ[0].differences[0].field, "notes");
+  assert.deepEqual(second.reports[0].differ, []);
+  assert.equal(second.reports[0].changed[0].id, "google-nest-cam-ultra");
+  assert.equal(second.reports[0].changed[0].notes, true);
+  assert.ok(second.flags.some((f) => f.startsWith("changed: google-nest-cam-ultra: only the notes differ")), second.flags.join("\n"));
+  const third = await run(dir, { get, brands: ["google"] });
+  assert.deepEqual(third.written.map((w) => [w.id, w.kind, w.before.notes.endsWith("Hand-written."), w.after.notes.endsWith("Hand-written.")]), [["google-nest-cam-ultra", "changed", true, false]]);
 });
 
 test("a written record the validator rejects is removed again, a rewritten one restored, and the run fails", async () => {
