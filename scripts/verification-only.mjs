@@ -1,7 +1,9 @@
 // Checks that, under data/, the working tree differs from a git ref only in what a re-verification may change: the
 // `verification` block of existing device records, an empty `archive_url` filled with a capture of its item's own page
-// (D43), and data/sources/page-hashes.json. Files outside data/ (notes, the log) are not data and are ignored. The nightly re-verify workflow runs it before pushing, and the daily build before
-// merging a re-verification PR without an audit (D20, RUNBOOKS A9).
+// (D43), data/sources/page-hashes.json, and a registry entry's `last_checked` (a revisit that found nothing to add,
+// RUNBOOKS A5 step 4). Files outside data/ (notes, the log) are not data and are ignored. The nightly re-verify
+// workflow runs it before pushing, and the data-gate check and the daily build before merging a PR without an audit
+// (D20, RUNBOOKS A9).
 // Usage: node scripts/verification-only.mjs [ref]   (ref defaults to HEAD; run it from inside the repository)
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -13,6 +15,14 @@ import { isCaptureOf } from "./validate-data.mjs";
 
 const PAGE_HASHES = "data/sources/page-hashes.json";
 const DEVICE = /^data\/devices\/[^/]+\/[^/]+\.yaml$/;
+const REGISTRY = /^data\/sources\/[^/]+\.yaml$/;
+
+// True when two registry files hold the same entries apart from their last_checked dates.
+function sameButLastChecked(before, after) {
+  if (!Array.isArray(before) || !Array.isArray(after) || before.length !== after.length) return false;
+  const rest = ({ last_checked: _, ...entry }) => entry;
+  return before.every((entry, i) => entry && after[i] && isDeepStrictEqual(rest(entry), rest(after[i])));
+}
 
 // The record without its verification block. Given `before`, the archive links filled since then where an item had
 // none are left out too, so those count like verification; the links `before` already had stay on both sides.
@@ -38,8 +48,8 @@ export function verificationOnlyProblems(ref = "HEAD", cwd = process.cwd()) {
   const problems = [];
   for (const path of [...new Set(changed)].sort()) {
     if (path === PAGE_HASHES || !path.startsWith("data/")) continue;
-    if (!DEVICE.test(path)) {
-      problems.push(`${path}: data other than a device record or the page hash file`);
+    if (!DEVICE.test(path) && !REGISTRY.test(path)) {
+      problems.push(`${path}: data other than a device record, a registry file or the page hash file`);
       continue;
     }
     let before;
@@ -56,7 +66,9 @@ export function verificationOnlyProblems(ref = "HEAD", cwd = process.cwd()) {
       problems.push(`${path}: deleted or unreadable`);
       continue;
     }
-    if (!isDeepStrictEqual(comparable(before), comparable(after, before))) problems.push(`${path}: changes more than the verification block`);
+    if (REGISTRY.test(path)) {
+      if (!sameButLastChecked(before, after)) problems.push(`${path}: changes more than last_checked`);
+    } else if (!isDeepStrictEqual(comparable(before), comparable(after, before))) problems.push(`${path}: changes more than the verification block`);
   }
   return problems;
 }
