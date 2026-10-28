@@ -235,9 +235,9 @@ for (const [name, expected] of rejectedByRule) {
 test('R8 rejects a plain value a comment cuts short, in a record or a source file; YAML itself rejects ": " in one', () => {
   const { errors } = profiled("rules", "r8-plain-scalar");
   const text = messages(errors);
-  assert.match(text, /^acme\/acme-cam-1\.yaml: R8: line 18: plain value "Seed record \(the original Cam 1\)" ends at the comment "# not the 2K model": quote the value or reword it \(D25\)$/m);
+  assert.match(text, /^acme\/acme-cam-1\.yaml: R8: line 18: plain value "Seed record \(the original Cam 1\)" ends at the comment "# not the 2K model": move the comment to its own line, or quote a text value \(D25\)$/m);
   assert.match(text, /^acme\/acme-cam-2\.yaml: YAML parse error: Nested mappings are not allowed in compact mappings/m);
-  assert.match(text, /^acme\.yaml: R8: line 5: plain value "From a 2024 list" ends at the comment "# may have moved": quote the value or reword it \(D25\)$/m);
+  assert.match(text, /^acme\.yaml: R8: line 5: plain value "From a 2024 list" ends at the comment "# may have moved": move the comment to its own line, or quote a text value \(D25\)$/m);
   assert.equal(errors.length, 3, text);
 });
 
@@ -307,8 +307,8 @@ test("plainScalarProblems finds a plain value a comment cuts short, and nothing 
     "",
   ].join("\n");
   assert.deepEqual(plainScalarProblems(source), [
-    'line 2: plain value "Some text" ends at the comment "# lost": quote the value or reword it (D25)',
-    'line 4: plain value "https://example.com/a" ends at the comment "# lost": quote the value or reword it (D25)',
+    'line 2: plain value "Some text" ends at the comment "# lost": move the comment to its own line, or quote a text value (D25)',
+    'line 4: plain value "https://example.com/a" ends at the comment "# lost": move the comment to its own line, or quote a text value (D25)',
   ]);
 });
 
