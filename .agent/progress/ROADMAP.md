@@ -53,7 +53,7 @@ Done 27 Oct 2026 (MIGRATION C4): the home page reads `?q=` on load and runs the 
 ## M7 Growth (D46: feeds, not email)
 - Atom feeds in place of email alerts, and the monthly stats report as `/stats/` (SPEC 7). No email provider, subscriber list or personal data.
 
-Exit: the feeds validate, and `/stats/` builds with the site.
+Exit: the feeds validate, and `/stats/` builds with the site. Done 27 Oct 2026 (MIGRATION C2): every feed parses as Atom with the required elements, and `/stats/` builds from `scripts/data-report.mjs`.
 
 ## Planned (not active)
 The owner shelved the business side on 22 Oct 2026 (D45): revisit once the no-AI setup is up and working (`docs/MIGRATION.md`, after Stage 4's exit check). Nothing here starts before then. The H9b drafts are in #99, on `claude/m4-drafts`.

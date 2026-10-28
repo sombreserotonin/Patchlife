@@ -18,7 +18,7 @@
     - &ring-au https://ring.com/au/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
     - &ring-us https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
   note: Per-model "at least" dates in tables on the GB, AU and US pages; each page states the same purchase-channel rule (#105).
-  last_checked: "2026-10-21"
+  last_checked: "2026-10-27"
   regions_by_url:
     https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates: [UK]
     https://ring.com/au/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates: [AU]

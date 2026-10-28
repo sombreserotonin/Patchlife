@@ -87,7 +87,8 @@ test("a change outside the verification block is reported, as is a new, deleted,
   writeFileSync(join(r.dir, "data", "devices", "acme", "acme-new-9.yaml"), "id: acme-new-9\n");
   unlinkSync(r.file("acme-plug-3"));
   renameSync(r.file("acme-hub-4"), r.file("acme-hub-5"));
-  writeFileSync(join(r.dir, "data", "sources", "seed.yaml"), "- brand: Acme\n  last_checked: null\n");
+  writeFileSync(join(r.dir, "data", "sources", "seed.yaml"), "- brand: Acme\n  note: a new note\n");
+  writeFileSync(join(r.dir, "data", "sources", "extra.json"), "{}\n");
   assert.deepEqual(r.problems(), [
     "data/devices/acme/acme-cam-1.yaml: changes more than the verification block",
     "data/devices/acme/acme-hub-4.yaml: deleted or unreadable",
@@ -95,8 +96,23 @@ test("a change outside the verification block is reported, as is a new, deleted,
     "data/devices/acme/acme-leap-5.yaml: changes more than the verification block",
     "data/devices/acme/acme-new-9.yaml: new file",
     "data/devices/acme/acme-plug-3.yaml: deleted or unreadable",
-    "data/sources/seed.yaml: data other than a device record or the page hash file",
+    "data/sources/extra.json: data other than a device record, a registry file or the page hash file",
+    "data/sources/seed.yaml: changes more than last_checked",
   ]);
+});
+
+test("a registry entry's last_checked may move on its own (a revisit that added nothing, A5 step 4); anything else in the registry may not", (t) => {
+  const r = repo(t);
+  const seed = join(r.dir, "data", "sources", "seed.yaml");
+  writeFileSync(seed, "- brand: Acme\n  last_checked: \"2026-10-27\"\n");
+  assert.deepEqual(r.problems(), []);
+  writeFileSync(seed, "- brand: Acme\n  last_checked: \"2026-10-27\"\n  urls: [https://example.com/acme]\n");
+  assert.deepEqual(r.problems(), ["data/sources/seed.yaml: changes more than last_checked"]);
+  writeFileSync(seed, "- brand: Acme\n- brand: Globex\n");
+  assert.deepEqual(r.problems(), ["data/sources/seed.yaml: changes more than last_checked"]);
+  writeFileSync(seed, "- brand: Acme\n");
+  writeFileSync(join(r.dir, "data", "sources", "more.yaml"), "- brand: Globex\n");
+  assert.deepEqual(r.problems(), ["data/sources/more.yaml: new file"]);
 });
 
 test("files outside data/ are not data and are ignored", (t) => {
@@ -124,7 +140,7 @@ test("committed changes count against an earlier ref, and the CLI exits 1 on a p
   writeFileSync(join(r.dir, "data", "sources", "extra.yaml"), "untracked outside the current folder\n");
   const top = spawnSync(process.execPath, [SCRIPT], { cwd: join(r.dir, "data", "devices"), encoding: "utf8" });
   assert.equal(top.status, 1);
-  assert.match(top.stderr, /^data\/sources\/extra\.yaml: data other than a device record or the page hash file$/m);
+  assert.match(top.stderr, /^data\/sources\/extra\.yaml: new file$/m);
 });
 
 test("a committed rename shows as the old record deleted and a new file", (t) => {
