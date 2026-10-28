@@ -99,7 +99,7 @@ export function plainScalarProblems(source) {
     if (token?.type !== "scalar") return;
     const next = token.end?.find((t) => t.type === "comment" || t.type === "newline");
     if (next?.type === "comment") {
-      problems.push(`line ${lines.linePos(token.offset).line}: plain value "${token.source}" ends at the comment "${next.source}": quote the value or reword it (D25)`);
+      problems.push(`line ${lines.linePos(token.offset).line}: plain value "${token.source}" ends at the comment "${next.source}": move the comment to its own line, or quote a text value (D25)`);
     }
   };
   for (const token of new Parser(lines.addNewLine).parse(source)) {
