@@ -22,4 +22,4 @@ verification:
   status: verified
   checked: "2026-10-28"
   text_sha256: 36b5be03f4ad5a6c1ec7482e2c7a7905c561109727fb4f7a91589e60f5597abd
-notes: "GL.iNet's firmware versions table (columns Status, EOL Date, Supported Until; page names no region) gives EOL date June 10, 2025 and Supported Until June 10, 2027, recorded as GLOBAL. The page does not state the category; access-point is taken from the model name and needs the audit's check."
+notes: "GL.iNet's firmware versions table (columns Status, EOL Date, Supported Until; page names no region) gives EOL date June 10, 2025 and Supported Until June 10, 2027, recorded as GLOBAL (D24)."
