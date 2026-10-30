@@ -1,0 +1,18 @@
+id: acme-plug-3
+brand: Acme
+brand_slug: acme
+model: Plug 3
+# No category_map entry matches a plug, and category_exceptions does not list it.
+category: smart-plug
+regions: [AU]
+support:
+  rule: fixed_date
+  end_date: "2029-06-30"
+  at_least: false
+evidence:
+  - url: https://example.com/acme/security
+    quote: Plug 3 30 June 2029
+    retrieved: "2026-10-01"
+    regime: au_smart_device_rules
+verification:
+  status: unverified

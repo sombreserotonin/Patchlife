@@ -4,15 +4,118 @@
 # date_order: how the pages write numeric dates, dmy (31/12/2027) or mdy (12/31/2027). npm run validate reads
 # numeric dates in quotes from URLs starting with these in that order only, and rejects a quote whose numeric date
 # could be read either way when no entry with a date_order covers its URL. Year-first dates (2029/12/31) need none.
+# Profile fields (regions_by_url, at_least, conditions, notes, category_map, category_exceptions, versioned, min_rows,
+# renames, parser_exceptions) describe how a source's pages state support, so npm run validate can check a record's
+# judgement fields against them (rules R1 to R7 in scripts/validate-data.mjs; the schema describes each field) and a
+# parser can regenerate them. A source without a field is not checked by that field's rule. Every sentence here is
+# taken from the records on main, which were audited against the pages (D25: quote any value holding ": " or " #").
 
 - brand: Ring
   brand_slug: ring
   kind: per_model_dates
   urls:
-    - https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
-    - https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
-  note: Per-model "at least" dates in tables; the US page adds a purchase-channel rule.
+    - &ring-gb https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    - &ring-au https://ring.com/au/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    - &ring-us https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+  note: Per-model "at least" dates in tables on the GB, AU and US pages; each page states the same purchase-channel rule (#105).
   last_checked: "2026-10-27"
+  regions_by_url:
+    https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates: [UK]
+    https://ring.com/au/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates: [AU]
+    https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates: [US]
+  at_least:
+    - "We'll support your device with software security updates until at least four years from when you bought it new on amazon.com where Amazon is the seller or on ring.com (or, in each case, until the date stated below if later)."
+  conditions:
+    https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates: &ring-conditions
+      - "If bought new on ring.com, or on amazon.com where Amazon is the seller, at least four years from purchase or this date, whichever is later."
+    https://ring.com/au/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates: *ring-conditions
+    https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates: *ring-conditions
+  # Ring's rows name only the product, so the category comes from the name. Elite 4K is the one name without "Cam".
+  category_map:
+    - { model: 'Doorbell|Door View Cam', category: doorbell }
+    - { model: '\bCam\b', category: camera }
+    - { model: 'Base Station|Bridge|Range Extender', category: hub }
+    - { model: 'Sensor|Detector|Listener|Monitor', category: sensor }
+    - { model: 'Bulb', category: smart-bulb }
+    - { model: 'Smart Plug', category: smart-plug }
+    - { model: 'Smart Light Switch', category: smart-switch }
+    - { model: 'Chime|Keypad|Beacon|Car Tracker|Floodlight Wired|Intercom|Panic Button|Pathlight|Steplight|Wall Light|Spotlight Battery|Smart Fan Control|Smart Light Remote|Transformer', category: other }
+  category_exceptions:
+    ring-elite-4k: camera
+  min_rows:
+    https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates: 56
+    https://ring.com/au/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates: 44
+    https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates: 74
+  # Ring's "product name changes" article (538eg) maps older names to the 2K and 4K names, in US, GB and AU copies; the
+  # GB and AU copies write "Video" in the doorbell names. The 14 records that use these names quote the rows (#41).
+  renames:
+    - from: "Battery Doorbell (2nd Gen)"
+      to: "Battery Doorbell 2K"
+      urls: [&ring-renames-us https://ring.com/support/articles/538eg/ring-product-name-changes]
+    - from: "Battery Video Doorbell (2nd Gen)"
+      to: "Battery Doorbell 2K"
+      urls: [&ring-renames-gb https://ring.com/gb/en/support/articles/538eg/ring-product-name-changes, &ring-renames-au https://ring.com/au/en/support/articles/538eg/ring-product-name-changes]
+    - { from: "Battery Doorbell Plus (2nd Gen)", to: "Battery Doorbell 2K Plus", urls: [*ring-renames-us] }
+    - { from: "Battery Video Doorbell Plus (2nd Gen)", to: "Battery Doorbell 2K Plus", urls: [*ring-renames-gb, *ring-renames-au] }
+    - { from: "Battery Doorbell Pro (2nd Gen)", to: "Battery Doorbell 4K Pro", urls: [*ring-renames-us] }
+    - { from: "Battery Video Doorbell Pro (2nd Gen)", to: "Battery Doorbell 4K Pro", urls: [*ring-renames-gb, *ring-renames-au] }
+    - { from: "Wired Doorbell (2nd Gen)", to: "Wired Doorbell 2K", urls: [*ring-renames-us] }
+    - { from: "Wired Video Doorbell (2nd Gen)", to: "Wired Doorbell 2K", urls: [*ring-renames-gb, *ring-renames-au] }
+    - { from: "Wired Doorbell Plus (2nd Gen)", to: "Wired Doorbell 2K Plus", urls: [*ring-renames-us] }
+    - { from: "Wired Video Doorbell Plus (2nd Gen)", to: "Wired Doorbell 2K Plus", urls: [*ring-renames-gb, *ring-renames-au] }
+    - { from: "Wired Doorbell Pro (3rd Gen)", to: "Wired Doorbell 4K Pro", urls: [*ring-renames-us] }
+    - { from: "Wired Video Doorbell Pro (3rd Gen)", to: "Wired Doorbell 4K Pro", urls: [*ring-renames-gb, *ring-renames-au] }
+    - { from: "Wired Doorbell Elite (2nd Gen)", to: "Wired Doorbell 4K Elite", urls: [*ring-renames-us, *ring-renames-gb, *ring-renames-au] }
+    - { from: "Floodlight Cam (2nd Gen)", to: "Floodlight Cam 2K", urls: [*ring-renames-us, *ring-renames-gb, *ring-renames-au] }
+    - { from: "Floodlight Cam Pro (2nd Gen)", to: "Floodlight Cam 4K Pro", urls: [*ring-renames-us, *ring-renames-gb, *ring-renames-au] }
+    - { from: "Indoor Cam Plus", to: "Indoor Cam 2K", urls: [*ring-renames-us, *ring-renames-gb, *ring-renames-au] }
+    - { from: "Outdoor Cam Pro", to: "Outdoor Cam 4K Pro", urls: [*ring-renames-us, *ring-renames-gb, *ring-renames-au] }
+    - { from: "Spotlight Cam (2nd Gen)", to: "Spotlight Cam 2K", urls: [*ring-renames-us, *ring-renames-gb, *ring-renames-au] }
+    - { from: "Spotlight Cam Pro (2nd Gen)", to: "Spotlight Cam 4K Pro", urls: [*ring-renames-us, *ring-renames-gb, *ring-renames-au] }
+    # The names the ri2p1 pages themselves write for a recorded model (B4): a generation spelt out, a colour or
+    # variant list, a former name in brackets. The parser maps the row to the model and keeps the name as an alias;
+    # several rows of one page that map to one model with the same date are quoted together, as the records are.
+    - { from: "Alarm Base Station (2nd Generation)", to: "Alarm Base Station (2nd Gen)", urls: [*ring-gb] }
+    - { from: "Alarm Range Extender (2nd Generation)", to: "Alarm Range Extender (2nd Gen)", urls: [*ring-gb] }
+    - { from: "Chime (1st Generation)", to: "Chime (1st Gen)", urls: [*ring-au] }
+    - { from: "Chime (2nd Generation)", to: "Chime (2nd Gen)", urls: [*ring-au] }
+    - { from: "Chime Pro (1st Generation)", to: "Chime Pro (1st Gen)", urls: [*ring-au] }
+    - { from: "Chime Pro (2nd Generation)", to: "Chime Pro (2nd Gen)", urls: [*ring-gb, *ring-au] }
+    - { from: "Peephole Cam (also called Door View Cam)", to: "Door View Cam", urls: [*ring-us] }
+    - { from: "Elite 4K (140, 180, 270, 360)", to: "Elite 4K", urls: [*ring-us] }
+    - { from: "Indoor Cam (1st Gen) - Black, White", to: "Indoor Cam (1st Gen)", urls: [*ring-us] }
+    - { from: "Indoor Cam (2nd Gen) - Black, White", to: "Indoor Cam (2nd Gen)", urls: [*ring-us] }
+    - { from: "Outdoor Cam , Plug-In", to: "Outdoor Cam", urls: [*ring-us] }
+    - { from: "Outdoor Cam , Battery", to: "Outdoor Cam", urls: [*ring-us] }
+    - { from: "Outdoor Cam , Solar", to: "Outdoor Cam", urls: [*ring-us] }
+    - { from: "Spotlight Cam (1st Gen), Wired", to: "Spotlight Cam", urls: [*ring-us] }
+    - { from: "Spotlight Cam (1st Gen), Battery", to: "Spotlight Cam", urls: [*ring-us] }
+    - { from: "Spotlight Cam (1st Gen), Solar", to: "Spotlight Cam", urls: [*ring-us] }
+    - { from: "Spotlight Cam (1st Gen), Mount", to: "Spotlight Cam", urls: [*ring-us] }
+    - { from: "Spotlight Cam Plus Solar, Spotlight Cam Plus Wired, Spotlight Cam Plus Plug-In, Spotlight Cam Plus Battery", to: "Spotlight Cam Plus", urls: [*ring-us] }
+    - { from: "Spotlight Cam Pro Battery, Spotlight Cam Pro Wired, Spotlight Cam Pro Plug-in, Spotlight Cam Pro Solar", to: "Spotlight Cam Pro", urls: [*ring-us] }
+    - { from: "Stick Up Cam Elite (2nd Gen)", to: "Stick Up Cam Elite (2nd Generation)", urls: [*ring-us] }
+    - { from: "Stick Up Cam Pro, Battery, Plug-In or Solar", to: "Stick Up Cam Pro", urls: [*ring-us] }
+    - { from: "Video Doorbell (1st Generation) - Satin Nickel, Venetian Bronze (discontinued)", to: "Video Doorbell (1st Generation)", urls: [*ring-us] }
+    - { from: "Video Doorbell (2nd Generation) - Satin Nickel, Venetian Bronze", to: "Video Doorbell (2nd Generation)", urls: [*ring-us] }
+    - { from: "Video Doorbell 3 Plus (discontinued)", to: "Video Doorbell 3 Plus", urls: [*ring-us] }
+    - { from: "Video Doorbell 4 (2021 release)", to: "Video Doorbell 4", urls: [*ring-gb, *ring-au, *ring-us] }
+    - { from: "Wired Doorbell Plus (formerly Video Doorbell Pro)", to: "Video Doorbell Pro", urls: [*ring-us] }
+    - { from: "Wired Video Doorbell Pro (formerly Video Doorbell Pro 2) (2021 release)", to: "Wired Video Doorbell Pro", urls: [*ring-gb, *ring-au] }
+    - { from: "Wired Doorbell Pro (formerly Video Doorbell Pro 2 (2nd Generation))", to: "Wired Video Doorbell Pro", urls: [*ring-us] }
+  # The D33 splits (#42) and the two glass break sensors kept apart (#43) carry notes that name the other record; the
+  # seed Floodlight Cam's note tells it from the 2K model; the Motion Sensor's note gives the US page's section; the
+  # seed Video Doorbell 3 carries the note "Seed record." (B4).
+  parser_exceptions:
+    - ring-video-doorbell-3
+    - ring-video-doorbell-4
+    - ring-video-doorbell-4-us
+    - ring-spotlight-cam-4k-pro
+    - ring-spotlight-cam-4k-pro-au-us
+    - ring-glass-break-sensor
+    - ring-alarm-glass-break-sensor
+    - ring-floodlight-cam
+    - ring-motion-sensor
 
 - brand: Arlo
   brand_slug: arlo
@@ -32,6 +135,63 @@
   date_order: dmy
   note: The AU page gives a date per model and hardware version; the Tapo records (#22) cite it. The UK pages give 3 years after a product's end-of-life date; the UK per-model periods are only in a PDF.
   last_checked: "2026-10-21"
+  regions_by_url:
+    https://www.tp-link.com/au/landing/au-cyber-compliance/: [AU]
+    https://www.tp-link.com/uk/support/psti/: [UK]
+    https://www.tp-link.com/uk/support/faq/3562/: [UK]
+  # A row for a product not yet at end of life reads "31/12/2028 or later*"; an end-of-life row gives a bare date.
+  at_least:
+    - "or later*"
+  conditions:
+    https://www.tp-link.com/au/landing/au-cyber-compliance/:
+      - "Hardware version {version} only."
+  notes:
+    https://www.tp-link.com/au/landing/au-cyber-compliance/:
+      - "The statement's footnote says the date may be extended for products not yet at end of life."
+      - "A two-pack listing on TP-Link's statement."
+  # Each row starts with the page's product line, before the model and its hardware version.
+  category_map:
+    - { row: '^Wi-Fi 5 AP\b', category: access-point }
+    - { row: '^Wi-Fi 6 AP\b', category: access-point }
+    - { row: '^Wi-Fi 7 AP\b', category: access-point }
+    - { row: '^Floodlight Camera\b', category: camera }
+    - { row: '^Solar/Battery Camera\b', category: camera }
+    - { row: '^Wired Indoor Camera\b', category: camera }
+    - { row: '^Wired Indoor/Outdoor Camera\b', category: camera }
+    - { row: '^Wired Outdoor Camera\b', category: camera }
+    - { row: '^Video Doorbell\b', category: doorbell }
+    - { row: '^Hub and HomeBase\b', category: hub }
+    - { row: '^Ceiling-Mount Mesh System\b', category: mesh-wifi }
+    - { row: '^Mesh System with BBA\b', category: mesh-wifi }
+    - { row: '^Outdoor Mesh System\b', category: mesh-wifi }
+    - { row: '^Easy Managed Switch\b', category: network-switch }
+    - { row: '^Easy Smart Switch\b', category: network-switch }
+    - { row: '^Robot Vacuum\b', category: robot-vacuum }
+    - { row: '^Gaming Router\b', category: router }
+    - { row: '^Portable Router\b', category: router }
+    - { row: '^Wi-Fi 5 Router\b', category: router }
+    - { row: '^Wi-Fi 6 Router\b', category: router }
+    - { row: '^Wi-Fi 7 Router\b', category: router }
+    - { row: '^Wi-Fi Router\b', category: router }
+    - { row: '^xDSL\b', category: router }
+    # The product lines of the first backlog batch (#156): gateways, mobile Wi-Fi and xDSL modems are routers, desktop
+    # APs are access points, and the schema has no category for range extenders or powerline adapters, so "other".
+    - { row: '^LTE/5G Gateway\b', category: router }
+    - { row: '^Mobile Wi-Fi\b', category: router }
+    - { row: '^Desktop AP\b', category: access-point }
+    - { row: '^Wi-Fi [4-7] Range Extender\b', category: other }
+    - { row: '^AV\d+(/AV\d+)? Powerline Adapter\b', category: other }
+    - { row: '^Smart Bulb\b', category: smart-bulb }
+    - { row: '^Smart Strip Light\b', category: smart-bulb }
+    - { row: '^Smart Plug\b', category: smart-plug }
+    - { row: '^Smart Switch\b', category: smart-switch }
+  versioned: true
+  min_rows:
+    https://www.tp-link.com/au/landing/au-cyber-compliance/: 199
+  # The two-pack listings (#22) carry a second note sentence.
+  parser_exceptions:
+    - tp-link-tapo-c200p2-v5
+    - tp-link-tapo-c210p2-v3
 
 - brand: GL.iNet
   brand_slug: gl-inet
@@ -40,8 +200,43 @@
     - https://www.gl-inet.com/en-us/pages/psti
     - https://www.gl-inet.com/en-us/pages/psti-support-period
     - https://www.gl-inet.com/en-us/pages/firmware-versions/?status=ended
-  note: Support period runs 2 years from a product's end-of-life date. The second URL is the per-model table the GL.iNet records cite (24 models, "June 11, 2027 or later"). The third URL is the End of Life table the PSTI statement links, with EOL and Supported Until dates (Beryl GL-MT1300 cites it; Velica GL-B2200 is skipped because it conflicts, see #49).
+  note: "Support period runs 2 years from a product's end-of-life date. The second URL is the per-model table the GL.iNet records cite (24 models, \"June 11, 2027 or later\"). The third URL is the End of Life table the PSTI statement links, with EOL and Supported Until dates (Beryl GL-MT1300 cites it; Velica GL-B2200 has a record per page, D39)."
   last_checked: "2026-10-21"
+  # The PSTI pages name no region and are recorded as UK, the regime they are published under; the firmware versions
+  # table names no region either and is recorded as GLOBAL (D24).
+  regions_by_url:
+    https://www.gl-inet.com/en-us/pages/psti: [UK]
+    https://www.gl-inet.com/en-us/pages/psti-support-period: [UK]
+    https://www.gl-inet.com/en-us/pages/firmware-versions/?status=ended: [GLOBAL]
+  # A PSTI support period row reads "June 11, 2027 or later*"; a Supported Until date in the firmware versions table is not a minimum.
+  at_least:
+    - "or later*"
+  conditions:
+    https://www.gl-inet.com/en-us/pages/psti-support-period:
+      - "Pre-defined support period; the actual period is 2 years after GL.iNet announces end of life, so it can be longer."
+    https://www.gl-inet.com/en-us/pages/firmware-versions/?status=ended:
+      - "Status Maintenance: the model has reached end of life and GL.iNet lists a Supported Until date."
+  notes:
+    https://www.gl-inet.com/en-us/pages/psti-support-period:
+      - "The page is GL.iNet's PSTI support period table and names no region; recorded as UK, the regime it is published under."
+      - "The date is the pre-defined minimum, not a guaranteed end."
+    https://www.gl-inet.com/en-us/pages/firmware-versions/?status=ended:
+      - "GL.iNet's firmware versions table (columns Status, EOL Date, Supported Until; page names no region) gives EOL date {eol_date} and Supported Until {end_date}, recorded as GLOBAL (D24)."
+  # The rows name the product and its model code; the Velica series is mesh (#49) and the GL-S hubs carry a code of
+  # up to three digits (GL-S10, GL-S20, GL-S200), unlike the Convexa-S router GL-S1300 (the #135 audit).
+  category_map:
+    - { model: 'Velica', category: mesh-wifi }
+    - { model: '^GL-S\d{1,3}$', category: hub }
+    - { model: '^GL-AP', category: access-point }
+    - { model: 'GL-', category: router }
+  min_rows:
+    https://www.gl-inet.com/en-us/pages/psti-support-period: 20
+    https://www.gl-inet.com/en-us/pages/firmware-versions/?status=ended: 1
+  # The D39 records (Velica's two dates, Beryl's EOL-table date) carry notes that name the other page.
+  parser_exceptions:
+    - gl-inet-gl-b2200
+    - gl-inet-gl-b2200-global
+    - gl-inet-gl-mt1300
 
 - brand: Kyocera
   brand_slug: kyocera
@@ -50,6 +245,22 @@
     - https://www.kyoceradocumentsolutions.co.uk/en/support/product-security.html
   note: Printers; per-model end of support dates.
   last_checked: "2026-10-22"
+  regions_by_url:
+    https://www.kyoceradocumentsolutions.co.uk/en/support/product-security.html: [UK]
+  at_least:
+    - "At no point shall the support periods advertised on this webpage be reduced"
+  conditions:
+    https://www.kyoceradocumentsolutions.co.uk/en/support/product-security.html:
+      - "Kyocera says support periods are reviewed on a continual basis and extended where it is deemed prudent to do so."
+  notes:
+    https://www.kyoceradocumentsolutions.co.uk/en/support/product-security.html:
+      - "The page is Kyocera's UK PSTI statement and covers the UK; it says Kyocera's A4 ECOSYS and TASKalfa devices are in scope."
+      - "The end date is a minimum: the page says the support periods it advertises shall not be reduced."
+  # The page calls the ECOSYS models A4 printers and MFPs; the schema has no MFP category (#111).
+  category_map:
+    - { model: '^ECOSYS', category: printer }
+  min_rows:
+    https://www.kyoceradocumentsolutions.co.uk/en/support/product-security.html: 36
 
 - brand: ASUS
   brand_slug: asus
@@ -58,6 +269,25 @@
   date_order: dmy
   note: UK PSTI list of networking products with a security update end date per group of models (54 router and mesh records). Adapters, cards, repeaters and models whose group row is over 300 characters from their name to the date are skipped.
   last_checked: "2026-10-23"
+  regions_by_url:
+    https://www.asus.com/support/faq/1051929/: [UK]
+  at_least:
+    - "And extended support may be provided after the stated date."
+  conditions:
+    https://www.asus.com/support/faq/1051929/:
+      - "ASUS says extended support may be provided after the stated date."
+  notes:
+    https://www.asus.com/support/faq/1051929/:
+      - "The page is ASUS's UK PSTI security update list for networking products and covers the UK."
+      - "The date is a minimum: ASUS says extended support may be provided after it."
+      - "The page writes the date as 31th December {year}."
+  # Each group row lists many models, so the category comes from the model name: ZenWiFi is ASUS's mesh range and the
+  # other recorded series (4G, DSL, GS, GT, RT, TUF) are routers.
+  category_map:
+    - { model: '^ZenWiFi', category: mesh-wifi }
+    - { model: '^(4G|DSL|GS|GT|RT|TUF)-', category: router }
+  min_rows:
+    https://www.asus.com/support/faq/1051929/: 4
 
 - brand: GoPro
   brand_slug: gopro
@@ -76,6 +306,79 @@
   date_order: mdy
   note: The first URL is the Nest table the Google records cite (#21); the second is from a 2024 list; the third links the Australian statements (#36), including some for products outside cameras.
   last_checked: "2026-10-21"
+  # The Nest table names no region and is recorded as GLOBAL (D24); the UK PSTI statement covers the UK; each Australian
+  # statement of compliance (one page per model, linked from the third URL) covers AU.
+  regions_by_url:
+    https://support.google.com/product-documentation/answer/10231940?hl=en: [GLOBAL]
+    https://support.google.com/product-documentation/answer/14869041?hl=en: [UK]
+    https://support.google.com/chromecast/answer/10367042: [AU]
+    https://support.google.com/product-documentation/answer/16888142?hl=en: [AU]
+    https://support.google.com/product-documentation/answer/16888345?hl=en: [AU]
+    https://support.google.com/product-documentation/answer/16888555?hl=en: [AU]
+    https://support.google.com/product-documentation/answer/16888621?hl=en: [AU]
+    https://support.google.com/product-documentation/answer/16889039?hl=en: [AU]
+    https://support.google.com/product-documentation/answer/16890804?hl=en: [AU]
+  # The Nest table's sentence; the UK and Australian statements both start their period sentence the same way.
+  at_least:
+    - "Google Nest connected home devices will receive automatic security updates for at least 5 years from the date we start selling them on the US Google Store."
+    - "At least five years from when the device first became available on the Google Store in the US"
+  conditions:
+    https://support.google.com/product-documentation/answer/10231940?hl=en:
+      - "Covers critical issues that Google can fix with a remote software update."
+  # A Nest table row ends with a Yes or No cell for "currently receiving critical security updates"; the note follows it.
+  # A record also in the UK and Australian statements uses the combined sentence, which fits the 500-character limit.
+  notes:
+    https://support.google.com/product-documentation/answer/10231940?hl=en:
+      - "Google's table gives the US Google Store release date and the release date plus 5 years (minimum), in US month/day/year format."
+      - "Google's page names no region; dates are anchored to the US Google Store."
+      - "Google's table lists this model as currently receiving critical security updates (checked {date}); the 5-year minimum has passed."
+      - "Google's table lists this model as not currently receiving critical security updates (checked {date})."
+    https://support.google.com/product-documentation/answer/14869041?hl=en:
+      - "Also listed in Google's UK PSTI statement of compliance (April 2024), which applies where sold in the UK."
+      - "Also listed in Google's UK PSTI (April 2024) and Australian Cyber Security Rules (February 2026) statements of compliance, each applying where sold in that country."
+    https://support.google.com/product-documentation/answer/16888142?hl=en: &google-au-note
+      - "Also listed in Google's Australian Cyber Security Rules statement of compliance (February 2026), which applies where sold in Australia."
+    https://support.google.com/product-documentation/answer/16888345?hl=en: *google-au-note
+    https://support.google.com/product-documentation/answer/16888555?hl=en: *google-au-note
+    https://support.google.com/product-documentation/answer/16888621?hl=en: *google-au-note
+    https://support.google.com/product-documentation/answer/16889039?hl=en: *google-au-note
+    https://support.google.com/product-documentation/answer/16890804?hl=en: *google-au-note
+  # The Nest table's rows name only the product, so the category comes from the name.
+  category_map:
+    - { model: 'Chromecast|TV Streamer', category: streaming-device }
+    - { model: 'Nest Cam', category: camera }
+    - { model: 'Doorbell|Nest Hello', category: doorbell }
+    - { model: 'Thermostat', category: thermostat }
+    - { model: 'Nest Hub', category: smart-display }
+    - { model: 'Wifi', category: mesh-wifi }
+    - { model: 'Google Home|Nest Audio|Nest Mini', category: smart-speaker }
+    - { model: 'Nest Protect|Nest Secure', category: other }
+    - { model: 'Yale', category: smart-lock }
+  # The names the UK and Australian statements write for the Nest table's models, so the parser can add a statement's
+  # region and items to the table's record (B4). A statement entry with no row here is reported, never linked.
+  renames:
+    - { from: "Nest Cam wired (GJQ9T)", to: "Nest Cam (wired)", urls: [https://support.google.com/product-documentation/answer/14869041?hl=en, https://support.google.com/product-documentation/answer/16888142?hl=en] }
+    - { from: "Nest Cam outdoor or indoor battery (G3AL9)", to: "Nest Cam (battery)", urls: [https://support.google.com/product-documentation/answer/14869041?hl=en, https://support.google.com/product-documentation/answer/16888555?hl=en] }
+    - { from: "Nest Cam with Floodlight (GM493)", to: "Nest Cam with Floodlight", urls: [https://support.google.com/product-documentation/answer/14869041?hl=en, https://support.google.com/product-documentation/answer/16888621?hl=en] }
+    - { from: "Nest Doorbell wired (G28DR)", to: "Nest Doorbell (wired)", urls: [https://support.google.com/product-documentation/answer/14869041?hl=en] }
+    - { from: "Nest Doorbell battery (GWX3T)", to: "Nest Doorbell (battery)", urls: [https://support.google.com/product-documentation/answer/14869041?hl=en, https://support.google.com/product-documentation/answer/16890804?hl=en] }
+    - { from: "Nest Hello (A0077)", to: "Nest Hello", urls: [https://support.google.com/product-documentation/answer/14869041?hl=en] }
+    - { from: "Google Nest Cam Outdoor (wired, 2nd generation) (G7LYP)", to: "Nest Cam Outdoor (wired, 2nd gen)", urls: [https://support.google.com/product-documentation/answer/16888345?hl=en] }
+    - { from: "Google Nest Cam Indoor (wired, 3rd generation)(G1NRR)", to: "Nest Cam Indoor (wired, 3rd gen)", urls: [https://support.google.com/product-documentation/answer/16889039?hl=en] }
+  # For the regulatory page (chromecast/answer/10367042) the rows are its links to Australian statements (10 on 27 Oct 2026).
+  min_rows:
+    https://support.google.com/product-documentation/answer/10231940?hl=en: 35
+    https://support.google.com/product-documentation/answer/14869041?hl=en: 5
+    https://support.google.com/chromecast/answer/10367042: 9
+    https://support.google.com/product-documentation/answer/16888142?hl=en: 1
+    https://support.google.com/product-documentation/answer/16888345?hl=en: 1
+    https://support.google.com/product-documentation/answer/16888555?hl=en: 1
+    https://support.google.com/product-documentation/answer/16888621?hl=en: 1
+    https://support.google.com/product-documentation/answer/16889039?hl=en: 1
+    https://support.google.com/product-documentation/answer/16890804?hl=en: 1
+  # The wired doorbell's note tells it from Nest Hello and the 3rd gen (#21).
+  parser_exceptions:
+    - google-nest-doorbell-wired
 
 - brand: Lenovo
   brand_slug: lenovo
@@ -118,6 +421,60 @@
   urls: [https://support.ezviz.com/faq/article/EZVIZ-EOL-Product-List, https://www.ezviz.com/inter/trust-center/security/upgrade-policy]
   note: Per-model day of firmware update cessation for Europe; the page says EOL means no security updates. The upgrade policy links the list.
   last_checked: "2026-10-21"
+  # Every row's targeted area is Europe, recorded as EU; the upgrade policy names no region and gives no dates.
+  regions_by_url:
+    https://support.ezviz.com/faq/article/EZVIZ-EOL-Product-List: [EU]
+  # No wording on either page makes a date a minimum (#51), so no EZVIZ record may be at_least: true.
+  at_least: []
+  conditions:
+    https://support.ezviz.com/faq/article/EZVIZ-EOL-Product-List:
+      - "EZVIZ gives this as an expected EOL date and says its EOL product list is subject to change."
+  notes:
+    https://support.ezviz.com/faq/article/EZVIZ-EOL-Product-List:
+      - "EZVIZ lists this as the expected day of firmware update cessation for the targeted area Europe, and says its EOL means no firmware updates, including security updates."
+      - "The page gives the model number only; product line on the page: {product_line}."
+  # Each row starts with the page's product line, before the model number. The exceptions follow EZVIZ's own product
+  # pages (#51): chimes and a keypad listed under doorbells, locks, and doorbells listed under cameras or Smart Entry.
+  category_map:
+    - { row: '^Smart Home Camera\b', category: camera }
+    - { row: '^Action Camera\b', category: camera }
+    - { row: '^Smart Video Doorbell\b', category: doorbell }
+    - { row: '^Smart Entry\b', category: smart-lock }
+    - { row: '^Home Gateway\b', category: hub }
+    - { row: '^Home Sensors\b', category: sensor }
+    - { row: '^Home Networking\b', category: other }
+    - { row: '^Router\b', category: router }
+    - { row: '^Switch\b', category: network-switch }
+    - { row: '^NVR\b', category: nvr }
+    - { row: '^Robot Vacuum Cleaner\b', category: robot-vacuum }
+    - { row: '^Smart Control\b', category: smart-plug }
+  category_exceptions:
+    ezviz-cs-ch1-a0-10awfk: other
+    ezviz-cs-ch1-r100-10awfk: other
+    ezviz-cs-cmt-a0-chime: other
+    ezviz-cs-cmt-b0-chime: other
+    ezviz-cs-db2-a0-1b3wpmfbr: doorbell
+    ezviz-cs-db2c-a0-1e3wpbr: doorbell
+    ezviz-cs-dl01cp-bt: smart-lock
+    ezviz-cs-dl01p-bt: smart-lock
+    ezviz-cs-dp1-a0-4a1wpfbsr: doorbell
+    ezviz-cs-dp1c-a0-4a1wpfbsr: doorbell
+    ezviz-cs-dp2-a0-6e2wpfbs: doorbell
+  min_rows:
+    https://support.ezviz.com/faq/article/EZVIZ-EOL-Product-List: 279
+  # The same eleven records carry a note sentence naming the product page, which no row gives.
+  parser_exceptions:
+    - ezviz-cs-ch1-a0-10awfk
+    - ezviz-cs-ch1-r100-10awfk
+    - ezviz-cs-cmt-a0-chime
+    - ezviz-cs-cmt-b0-chime
+    - ezviz-cs-db2-a0-1b3wpmfbr
+    - ezviz-cs-db2c-a0-1e3wpbr
+    - ezviz-cs-dl01cp-bt
+    - ezviz-cs-dl01p-bt
+    - ezviz-cs-dp1-a0-4a1wpfbsr
+    - ezviz-cs-dp1c-a0-4a1wpfbsr
+    - ezviz-cs-dp2-a0-6e2wpfbs
 
 - brand: Aqara
   brand_slug: aqara

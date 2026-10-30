@@ -1,0 +1,19 @@
+id: acme-doorbell-2-v1
+brand: Acme
+brand_slug: acme
+model: Doorbell 2 (V1)
+aliases: [Acme Doorbell 2 (V1), Doorbell 2 V1]
+category: doorbell
+regions: [US]
+support:
+  rule: fixed_date
+  end_date: "2028-12-31"
+  at_least: false
+  conditions: If bought new from Acme, four years from purchase or this date, whichever is later.
+evidence:
+  - url: https://example.com/acme/us/security
+    quote: Doorbell 2 V1 31 December 2028
+    retrieved: "2026-10-01"
+    regime: vendor_policy
+verification:
+  status: unverified

@@ -1,0 +1,6 @@
+# No profile: R1 still runs, and accepts only a quoted alias or the model with the brand in front.
+- brand: Acme
+  brand_slug: acme
+  kind: per_model_dates
+  urls: [https://example.com/acme/security]
+  last_checked: "2026-10-21"

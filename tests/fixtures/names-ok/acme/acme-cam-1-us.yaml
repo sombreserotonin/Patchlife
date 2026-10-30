@@ -11,7 +11,7 @@ support:
   at_least: true
 evidence:
   - url: https://example.com/acme/us/security
-    quote: "ACME  CAM\u00a01 30 June 2028"
+    quote: "ACME  CAM\u00a01 (AC-1) 30 June 2028"
     retrieved: "2026-10-01"
     regime: vendor_policy
 verification:

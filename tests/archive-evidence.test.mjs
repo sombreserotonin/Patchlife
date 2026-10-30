@@ -5,9 +5,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { archiveEvidence } from "../scripts/archive-evidence.mjs";
-import { validateDevices } from "../scripts/validate-data.mjs";
+import { validateDevices, validateSources } from "../scripts/validate-data.mjs";
 
 const VALID = fileURLToPath(new URL("./fixtures/valid", import.meta.url));
+// The registry the valid fixtures follow: the alias AC-1 of acme-cam-1 comes from its rename table (rule R1).
+const SOURCES = validateSources(fileURLToPath(new URL("./fixtures/sources/valid", import.meta.url))).entries;
 const TS = "20261022015106";
 const capture = (url) => `https://web.archive.org/web/${TS}/${url}`;
 const html = (text) => ({ contentType: "text/html", text });
@@ -55,7 +57,7 @@ test("links each quoted item whose quote the capture holds, and leaves the rest 
   assert.equal(plug, linked(original("acme-plug-3"), "    regime: uk_psti\n", "https://example.com/acme/psti"));
   assert.equal(read("acme-router-2"), linked(original("acme-router-2"), "    regime: uk_psti\n", "https://example.com/acme/psti"));
   for (const name of ["acme-leap-5", "acme-hub-4"]) assert.equal(read(name), original(name));
-  assert.deepEqual(validateDevices(dir, { today: "2026-10-22" }).errors, []);
+  assert.deepEqual(validateDevices(dir, { today: "2026-10-22", sources: SOURCES }).errors, []);
 });
 
 test("skips linked items; urls and limit choose the pages, and the start moves one page a day", async () => {

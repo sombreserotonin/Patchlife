@@ -1,0 +1,22 @@
+id: acme-cam-2
+brand: Acme
+brand_slug: acme
+model: Cam 2
+category: camera
+regions: [AU, US]
+support:
+  rule: fixed_date
+  end_date: "2029-06-30"
+  at_least: true
+evidence:
+  # The footnote is quoted from another page, so it is not the row's footnote.
+  - url: https://example.com/acme/security
+    quote: Cam 2 30 June 2029 or later*
+    retrieved: "2026-10-01"
+    regime: au_smart_device_rules
+  - url: https://example.com/acme/us/security
+    quote: "*The date may move later for a product still on sale."
+    retrieved: "2026-10-01"
+    regime: vendor_policy
+verification:
+  status: unverified

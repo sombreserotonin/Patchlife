@@ -1,0 +1,20 @@
+id: acme-cam-1
+brand: Acme
+brand_slug: acme
+# The row is for V2, but neither the model nor the conditions says so.
+model: Cam 1
+aliases: [Cam 1 V2]
+category: camera
+regions: [AU]
+support:
+  rule: fixed_date
+  end_date: "2029-06-30"
+  at_least: false
+  conditions: null
+evidence:
+  - url: https://example.com/acme/security
+    quote: Cam 1 V2 30 June 2029
+    retrieved: "2026-10-01"
+    regime: au_smart_device_rules
+verification:
+  status: unverified

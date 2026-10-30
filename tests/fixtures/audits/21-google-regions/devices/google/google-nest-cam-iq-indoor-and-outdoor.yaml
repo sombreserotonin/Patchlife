@@ -1,0 +1,30 @@
+# The #21 audit catch: a record past its five-year minimum with at_least: true, but no quote of the sentence that
+# makes the date a minimum; the column header states the years without it.
+id: google-nest-cam-iq-indoor-and-outdoor
+brand: Google
+brand_slug: google
+model: "Nest Cam IQ indoor and outdoor"
+category: camera
+regions: [US]
+support:
+  rule: years_after_launch
+  end_date: "2022-06-28"
+  years: 5
+  anchor_date: "2017-06-28"
+  at_least: true
+  conditions: "Covers critical issues that Google can fix with a remote software update."
+evidence:
+  - url: https://support.google.com/product-documentation/answer/10231940?hl=en
+    quote: "Nest Cam IQ indoor and outdoor 6/28/2017 6/28/2022 Yes"
+    retrieved: "2026-10-21"
+    regime: vendor_policy
+  - url: https://support.google.com/product-documentation/answer/10231940?hl=en
+    quote: "Release date + 5 year minimum"
+    retrieved: "2026-10-21"
+    regime: vendor_policy
+  - url: https://support.google.com/product-documentation/answer/10231940?hl=en
+    quote: "Security updates will address critical issues known to Google Nest that are able to be resolved with a remote software update."
+    retrieved: "2026-10-21"
+    regime: vendor_policy
+verification:
+  status: unverified

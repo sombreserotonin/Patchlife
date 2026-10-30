@@ -1,0 +1,19 @@
+id: acme-cam-3-v1
+brand: Acme
+brand_slug: acme
+model: Cam 3 (V1)
+aliases: [Cam 3]
+category: camera
+regions: [AU]
+support:
+  rule: fixed_date
+  end_date: "2029-06-30"
+  at_least: false
+evidence:
+  # The row writes no hardware version, so the model's V1 comes from nowhere.
+  - url: https://example.com/acme/security
+    quote: Cam 3 30 June 2029
+    retrieved: "2026-10-01"
+    regime: au_smart_device_rules
+verification:
+  status: unverified

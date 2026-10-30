@@ -7,6 +7,9 @@
   date_order: dmy
   note: Per-model dates in a table.
   last_checked: "2026-10-21"
+  # acme-cam-1's alias AC-1 is in none of its quotes; rule R1 accepts it because this table renames it to the model.
+  renames:
+    - { from: AC-1, to: Cam 1, urls: [https://example.com/acme/names] }
 
 - brand: Globex
   brand_slug: globex

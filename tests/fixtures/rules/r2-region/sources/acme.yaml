@@ -1,0 +1,10 @@
+- brand: Acme
+  brand_slug: acme
+  kind: per_model_dates
+  urls:
+    - https://example.com/acme/security
+    - https://example.com/acme/us/security
+  last_checked: "2026-10-21"
+  regions_by_url:
+    https://example.com/acme/security: [AU, UK]
+    https://example.com/acme/us/security: [US]
