@@ -173,7 +173,14 @@
     - { row: '^Wi-Fi 6 Router\b', category: router }
     - { row: '^Wi-Fi 7 Router\b', category: router }
     - { row: '^Wi-Fi Router\b', category: router }
-    - { row: '^xDSL Modem Router\b', category: router }
+    - { row: '^xDSL\b', category: router }
+    # The product lines of the first backlog batch (#156): gateways, mobile Wi-Fi and xDSL modems are routers, desktop
+    # APs are access points, and the schema has no category for range extenders or powerline adapters, so "other".
+    - { row: '^LTE/5G Gateway\b', category: router }
+    - { row: '^Mobile Wi-Fi\b', category: router }
+    - { row: '^Desktop AP\b', category: access-point }
+    - { row: '^Wi-Fi [4-7] Range Extender\b', category: other }
+    - { row: '^AV\d+(/AV\d+)? Powerline Adapter\b', category: other }
     - { row: '^Smart Bulb\b', category: smart-bulb }
     - { row: '^Smart Strip Light\b', category: smart-bulb }
     - { row: '^Smart Plug\b', category: smart-plug }
