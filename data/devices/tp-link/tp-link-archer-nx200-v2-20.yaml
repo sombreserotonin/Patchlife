@@ -1,0 +1,31 @@
+id: tp-link-archer-nx200-v2-20
+brand: TP-Link
+brand_slug: tp-link
+model: Archer NX200 (V2.20)
+aliases:
+  - Archer NX200 V2.20
+category: router
+regions: [AU]
+support:
+  rule: fixed_date
+  end_date: "2028-12-31"
+  years: null
+  anchor_date: null
+  at_least: true
+  conditions: Hardware version V2.20 only.
+evidence:
+  - url: https://www.tp-link.com/au/landing/au-cyber-compliance/
+    quote: "LTE/5G Gateway Archer NX200 V2.20 31/12/2028 or later*"
+    retrieved: "2026-10-30"
+    archive_url: null
+    regime: au_smart_device_rules
+  - url: https://www.tp-link.com/au/landing/au-cyber-compliance/
+    quote: "*The non-EOL product’s defined support period may be refreshed to extend specified date."
+    retrieved: "2026-10-30"
+    archive_url: null
+    regime: au_smart_device_rules
+verification:
+  status: verified
+  checked: "2026-10-30"
+  text_sha256: 9ca0301c111c959545c1041f5e3d5e0da8e333a457a1ec57eef507bda9a36ac9
+notes: The statement's footnote says the date may be extended for products not yet at end of life.
