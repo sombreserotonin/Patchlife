@@ -12,20 +12,21 @@ test("splits rows and cells on the raw HTML and joins the cell texts with single
   assert.deepEqual(rows[0].cells.map((c) => c.text), ["Product/ Model Name", "Model Number", "Defined Support Period"]);
   assert.equal(rows[3].quote, "Wi-Fi 6 Router Archer ZX90 V2 31/12/2028 or later*");
   // A section heading spans the table in one cell.
-  assert.deepEqual(rows[1].cells, [{ text: "Home Networking", markers: [], span: 3 }]);
+  assert.deepEqual(rows[1].cells.map(({ html, ...cell }) => cell), [{ text: "Home Networking", markers: [], span: 3 }]);
+  assert.match(rows[1].cells[0].html, /<p align="center" class="paragraph">Home Networking<\/p>/);
 });
 
 test("a cell's whitespace collapses, entities decode and nested inline tags vanish", () => {
   const rows = tableRows(fixture("ezviz-eol.html"));
   assert.equal(rows[2].quote, "Home Networking CS-Z2D-B2-EUP Europe 2022/12/31");
-  assert.deepEqual(readCell("", "<p><b>Tapo</b>&nbsp;Z1 <a href=x>V1</a></p>"), { text: "Tapo Z1 V1", markers: [], span: 1 });
-  assert.deepEqual(readCell(" colspan='2'", " <!-- note --> 31&#47;12&#x2F;2027 "), { text: "31/12/2027", markers: [], span: 2 });
+  assert.deepEqual(readCell("", "<p><b>Tapo</b>&nbsp;Z1 <a href=x>V1</a></p>"), { text: "Tapo Z1 V1", markers: [], span: 1, html: "<p><b>Tapo</b>&nbsp;Z1 <a href=x>V1</a></p>" });
+  assert.deepEqual(readCell(" colspan='2'", " <!-- note --> 31&#47;12&#x2F;2027 "), { text: "31/12/2027", markers: [], span: 2, html: " <!-- note --> 31&#47;12&#x2F;2027 " });
 });
 
 test("keeps <sup> content as a marker beside the cell instead of fusing it into the text", () => {
   const html = fixture("footnote-markers.html");
   const rows = tableRows(html);
-  assert.deepEqual(rows[1].cells, [
+  assert.deepEqual(rows[1].cells.map(({ html, ...cell }) => cell), [
     { text: "Tapo Z200", markers: ["1"], span: 1 },
     { text: "31/12/2027", markers: ["2"], span: 1 },
   ]);
