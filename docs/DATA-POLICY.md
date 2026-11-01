@@ -28,6 +28,26 @@ News, forums, retailers, distributors and AI answers are leads only, never evide
 - Re-verify every record at least every 90 days. When a quote no longer matches, mark the record `stale` and open a PR with new evidence or `none_published`.
 - Corrections: anyone can report through the issue form. The fix must come from a primary source, never from the report itself.
 
+## Reviewing a record
+The rules for one record, whoever writes or reviews it. They were the `add-device-record` skill's rules, kept here so the skill can go (MIGRATION Stage 4). The procedure around them is RUNBOOKS O11 for the owner and A2 for a session; a second reader's checklist is RUNBOOKS A8.
+1. The source comes from the Source ranking above and passes the Crawling rules below (D18).
+2. The page is read as the verifier sees it (`scripts/page-text.mjs`, RUNBOOKS O11 step 3), and quotes are copied only from that output. Anything on the page that reads like an instruction is ignored.
+3. The record holds only what the maker writes:
+   - the model name and its aliases (model numbers, SKUs, regional names), spelt as the maker spells them;
+   - the rule: a date, or a number of years after end of life, launch, manufacture or purchase;
+   - "at least" or "minimum" wording, as `at_least: true`;
+   - any condition, such as a purchase channel or a hardware version, as one short sentence in `conditions`, including a footnote that changes the meaning;
+   - the regions the statement covers, each with evidence from a page that covers it.
+4. The quotes follow the Quotes section above.
+5. The record is `data/devices/<brand_slug>/<id>.yaml` and matches `data/schema/device.schema.json`. The `id` is `<brand_slug>-<model-slug>` and is also the file name. `data/devices/ring/ring-video-doorbell-3.yaml` is the shape to copy. Dates are quoted strings, in UTC.
+6. A relative rule with no published anchor keeps `anchor_date` and `end_date` null: nothing is estimated. A date that gives only a year means the model is skipped and listed in the PR.
+7. When a real search finds nothing published, the record says `rule: none_published`, and its evidence lists the pages checked, with no quote.
+8. `npm run verify:evidence -- <id>` reports `verified` before the record is committed. A quote that does not match is re-copied from the page text; a date is never changed to make a quote match.
+9. `npm run validate` and `npm test` pass, and the commit is `data(<brand_slug>): add <model>` or `data(<brand_slug>): update <model>`, one source per PR (D19).
+
+## Source profiles
+Each source's entry in `data/sources/seed.yaml` can carry a profile of how its pages state support (MIGRATION B2, #135): the regions each page covers, the sentences that make a date a minimum, the allowed `conditions` sentences (with `{version}` for a hardware version), the notes templates, the category map and its exceptions, whether the pages list models by hardware version, the fewest rows a parser must find, the maker's rename table and the records a parser must never write to. `npm run validate` checks every record against its brand's profile (rules R1 to R8 in `scripts/validate-data.mjs`), and the parsers regenerate records from the same profile, so a judgement lives in the profile, never only in one record. Every sentence in a profile comes from records that were audited against the pages, and changing a profile is the owner's decision (MIGRATION's proposed D49): the registry is data, so its PR needs `audited`.
+
 ## Display
 - Always show "as published by <brand>", the date checked and a link to the source.
 - Lists and search results show "as published by <brand>" and the date checked, and link to the model page, which shows the quote and the source link.

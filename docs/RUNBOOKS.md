@@ -5,6 +5,7 @@ Step-by-step procedures for the owner and for agent sessions. Each runbook says 
 **Where work can run:**
 - **`Default` environment:** code, tests and docs. Its network can't reach manufacturer sites: the shell, Node's `fetch` and Claude Code's fetch tool are all blocked. Connectors that can, such as Firecrawl, must not be used for manufacturer pages, because they don't identify as PatchlifeBot or apply our robots.txt rules (D17). The daily build runs here.
 - **`Crawl` environment:** anything an agent does that reads a manufacturer page: adding records, corrections, re-checking records the nightly Actions re-verify could not, audits (A8) and the M1 exit check. Routine re-verification runs on GitHub Actions with no model (D42). Its allowlist is in [`ARCHITECTURE.md`](ARCHITECTURE.md).
+- **Your own machine, or GitHub's runners:** every command in these runbooks that reads a maker's page (`npm run verify:evidence`, `scripts/check-source.mjs`, `scripts/page-text.mjs`, `scripts/unquoted-dates.mjs` and `scripts/repoint-source.mjs`) also runs on your own computer, with the repository cloned and `npm ci` done, on Node 22.21 or later. There it runs without `--use-env-proxy`, which only cloud sessions need (D16), and there is no allowlist. GitHub's runners are the same (`Re-verify evidence`, `Probe hosts`). Where a runbook says a command needs the `Crawl` environment, read it that way. The operating guide for the owner is [`OPERATIONS.md`](OPERATIONS.md).
 
 All dates in records and logs are UTC (`date -u +%F`). Scheduled runs at 06:08 Sydney are still the previous day in UTC.
 
@@ -40,32 +41,33 @@ All dates in records and logs are UTC (`date -u +%F`). Scheduled runs at 06:08 S
 
 **Done when:** the issue is closed. The next agent session adds the host to the list in ARCHITECTURE.md.
 
-### O4 Recover a failing daily build
-1. Go to https://claude.ai/code/routines, open **Patchlife daily build**, and open the latest run. A green run only means there was no infrastructure error; read the run's last message.
-2. Then, depending on what you find:
-   - **Usage limit reached:** wait for the usage window to reset (usage credits are off, #7).
-   - **GitHub disconnected:** reconnect within 72 hours. After that the task switches itself off, so switch it back on.
-   - **The same task keeps reappearing (duplicate PRs):** close the duplicates. Mark the task `(waiting on #N)` in TASKS.md with an agent session (A6).
-   - **A PR is red or conflicted:** the next run repairs it once (A7). If it is still stuck after two runs, start a session: `Fix PR #<n> per CLAUDE.md`.
-   - **The prompt itself is wrong:** that needs a protected PR to `.agent/prompts/daily-build.md` (O2).
-3. To pause, use the task's on/off switch. To test, use **Run now**.
+### O4 Recover failing housekeeping
+**When:** GitHub emails you that a `Housekeeping` run failed, a `watchdog` issue is open, or the Monday summary on #27 is missing. A red run is the alarm (MIGRATION decision 7): most red runs mean the watchdog found a problem, not that the workflow broke. [`OPERATIONS.md`](OPERATIONS.md), "Alerts", says what each failure line and each `watchdog` line means.
+1. Open https://github.com/sombreserotonin/Patchlife/actions/workflows/housekeeping.yml, open the latest run, then the `housekeeping` job. Find the red step.
+2. **The first step, `Run actions/create-github-app-token@v3`, is red:** the App's token could not be minted, so nothing else ran. Check `BOT_CLIENT_ID` at https://github.com/sombreserotonin/Patchlife/settings/variables/actions, the secret `BOT_APP_PRIVATE_KEY` at https://github.com/sombreserotonin/Patchlife/settings/secrets/actions, and that `patchlife-bot` is still installed at https://github.com/sombreserotonin/Patchlife/settings/installations. A new key is O12 step 8.
+3. **`Merge the routine PRs` is red:** the merge bot stopped. Lines like `#N: skipped (<reason>)` are not errors: they say why a PR waits for you. The last line says what stopped it. `Missing environment variable(s)` or `BOT_LOGIN must be the App's login`: the workflow file changed, which needs a protected PR (O2). `HTTP 4xx` or `5xx`: a GitHub call failed; re-run the workflow once with **Re-run all jobs**. `GitHub did not confirm the merge, so <branch> stays`: the branch moved while merging; the next run tries again. The watchdog still ran, so read step 4 too.
+4. **`Watchdog` is red:** the log lists one `<check>: <message>` line per problem and ends `N problem(s)`. The same lines are in the `watchdog` issue at https://github.com/sombreserotonin/Patchlife/issues?q=is%3Aissue+label%3Awatchdog. Fix each cause; the next run that finds nothing closes the issue. One line needs you and nobody else: `Workflows: <name> (<path>) is switched off`. Open https://github.com/sombreserotonin/Patchlife/actions/workflows/<file> and select **Enable workflow**. The watchdog never re-enables a workflow, because whoever re-enables it gets its failure emails, and GitHub switches scheduled workflows off after 60 days without activity in a public repository. `Set GH_TOKEN and GITHUB_REPOSITORY first` or `Unknown argument` means the workflow file changed (O2).
+5. **`Open the monthly measures PR` is red:** the push or the PR failed on the 1st. Re-run the workflow; it opens no second PR while `claude/measures-<yyyy-mm>` exists. If that branch exists with no PR, open one from https://github.com/sombreserotonin/Patchlife/branches.
+6. **Any other step (the checkout, `Run npm ci`):** a GitHub or npm outage. Check https://www.githubstatus.com and re-run later.
+7. To test a fix without merging or posting anything, select **Run workflow** with **dry_run** ticked. The log then shows `Dry run: would ...` lines instead of actions.
+8. Until Stage 2 pauses them, the Claude scheduled tasks are recovered at https://claude.ai/code/routines: open the task's latest run and read its last message. A usage limit resets on its own (usage credits are off, #7). GitHub disconnected needs reconnecting within 72 hours, after which the task switches itself off, so switch it back on. A wrong prompt needs a protected PR to `.agent/prompts/` (O2). The task's on/off switch pauses it and **Run now** tests it.
 
-**Done when:** the next run's last message reports a task done or a clear wait.
+**Done when:** the next scheduled run is green, or red only for `watchdog` lines you have explained in a comment on the issue.
 
-### O5 Weekly check (about 10 minutes)
-1. **Daily build:** the last seven runs exist, and their last messages make sense (O4).
-2. **Usage:** https://claude.ai/settings/usage.
-3. **Waiting on you:** open `needs-human` issues and `needs-human-merge` PRs.
-4. **Stuck PRs:** `claude/` PRs open for more than two days.
-5. **CI:** failed Actions runs on `main`.
-6. **Progress:** skim `.agent/progress/LOG.md` for the week, and the heartbeat comments on #27.
-7. **Measures:** check that the date under the Measures table in [`PLAN.md`](PLAN.md) is less than a week old. If it isn't, ask an agent session to refresh the first four rows with `node scripts/data-report.mjs` (it runs in `Default`).
-8. **Public queue:**
-   - open `data-correction` and `add-model` issues (start O1 with A3);
-   - PRs from forks (agents never merge them; close or handle them yourself);
-   - data PRs waiting for an A8 audit;
-   - the decisions issue.
-9. **Scheduled tasks:** at https://claude.ai/code/routines, check that each Patchlife task lists no connectors (Edit > Advanced settings > Connectors).
+### O5 Weekly routine (Monday morning, about 30 to 45 minutes)
+**When:** every Monday morning (Sydney time), after Sunday's UTC runs: the data refresh at 16:17 UTC once P3 exists, and the summary at 21:23 UTC (08:23 Monday in daylight time).
+1. **The summary (5 minutes):** read the newest comment on https://github.com/sombreserotonin/Patchlife/issues/27. It must be under 8 days old: apart from the dead-man's switch, this is the only check on the watchdog itself. If it is missing by early afternoon, O4. Read the `watchdog` issue if one is open (https://github.com/sombreserotonin/Patchlife/issues?q=is%3Aissue+label%3Awatchdog) and act on each line per OPERATIONS.md, "Alerts". Act on any GitHub failure email from the week you haven't yet.
+2. **The data PR waiting for you (0 to 20 minutes):** the weekly candidate PR once P3 exists (O9, written after B4 and P3), and until then the audited backlog batches and any other data PR. On your machine, `git fetch origin`, check out the PR's branch, and run `node scripts/audit-sample.mjs <pr number>`. It prints a fixed sample (3 records or 5%, at most 10), one line each: id, model, end date and a link to the maker's page with the quote highlighted. Open each link and check the date and its order (DD/MM against M/D), the model, "or later" or "at least" against `at_least`, and the region. Open the rows the PR body flags too. A wrong category: fix `category_map` or `category_exceptions` in `data/sources/seed.yaml` on the PR's branch (B2's fields, once merged) and, after P3, dispatch `data-refresh.yml` with `refresh_open_pr`. Add `audited` last, because any later push removes it, then **Squash and merge**. A record you wrote yourself has no second reader: re-read it the next day through its highlight link (MIGRATION's proposed D48).
+3. **Spot check (8 to 10 minutes):** the summary's five random records. Open each "maker's page" link and compare the record with the highlighted words: the model, the date, "at least" and any condition. A mismatch: O8 to pull the date now, then a `data-correction` issue for the proper fix (A3 until cut-over, O10 after).
+4. **Waiting on you (0 to 10 minutes):** merge `needs-human-merge` PRs (O2) and clear `needs-human` items (O7). The summary lists both.
+5. **Public queue (0 to 15 minutes):** `data-correction` and `add-model` issues (O10 once written; until then O1 with A3), PRs from forks (agents never merge them; close or handle them yourself), and data PRs waiting for an audit.
+6. **Monthly work, averaged (5 minutes):** O12's monthly items: Dependabot's grouped PRs, CodeQL and Dependabot alerts, Search Console, and `docs/MEASURES.md` against the Measures targets in [`PLAN.md`](PLAN.md).
+7. **Quarterly and yearly work, averaged (2 minutes):** O12.
+8. **Until Stage 2 pauses them:** at https://claude.ai/code/routines, the two Claude scheduled tasks' last seven runs exist, their last messages make sense (O4 step 8) and each task lists no connectors (Edit > Advanced settings > Connectors); and the usage page https://claude.ai/settings/usage.
+
+A red `Re-verify evidence` run means the verifier, validation or the push broke, so read the `watchdog` issue that morning. Records that couldn't be checked show only as a warning; they reach the `watchdog` issue after 3 nights, and then you follow O11 for a blocked source, or O8.
+
+**Done when:** the summary is read and under 8 days old, no `watchdog` line is unexplained, and no PR or `needs-human` issue waits on you.
 
 ### O6 Create the nightly `Crawl` scheduled task
 **When:** decision P1 is B (D27). The prompt fixes (#29) make `data-refresh.md` do one source per run and leave new records for an audit; from #80 it re-checks what the Actions re-verify could not, instead of re-verifying itself (D42). Create it in the UI: a scheduled task an agent creates from a session has no repository attached (tested 21 Oct 2026).
@@ -90,6 +92,58 @@ All dates in records and logs are UTC (`date -u +%F`). Scheduled runs at 06:08 S
 4. Open a `data-correction` issue so an agent fixes the record properly (A3).
 
 **Done when:** the record no longer shows a date.
+
+### O11 Check and add a source
+**When:** you want to add a maker, an `add-model` issue names one, a `needs-human` issue asks about a host, or an entry in `data/sources/seed.yaml` is still waiting with `last_checked: null`. This replaces A2 and A5 for you. One source per PR: one maker's statement, with its regional copies and any page it links for the same models (D19).
+
+**Where to run it:** on your own machine, with the repository cloned and `npm ci` done (Node 22.21 or later), dropping `--use-env-proxy` from the commands below. Until cut-over, a `Crawl` session (O1) runs the same commands with `--use-env-proxy`. After P3, `owner-tools.yml`'s `check-source` and `read-page` actions run steps 2 and 3 on GitHub's runners.
+
+1. **Find the primary source** with the ranking in [`DATA-POLICY.md`](DATA-POLICY.md): the maker's statement of compliance (Australian Smart Device Rules, UK PSTI) or security support page first, then its end-of-life page. News, forums, retailers, distributors and AI answers only lead you to it. To revisit a source already in the data, first run `node --use-env-proxy scripts/unquoted-dates.mjs <cited url>`: it lists each date on the page that no record's quote covers, with the text before it. If none is a new model's row, there is nothing to add: set the entry's `last_checked` (step 6) and stop.
+2. **Triage the page:** `node --use-env-proxy scripts/check-source.mjs <url>`. It prints `robots.txt: ...`, `status: ...`, `final URL: ...` when the page redirected, `dates in the raw response: ...`, `dates in the page text: <n>`, up to 5 rows around dates, and ends `usable: yes` or `not usable: <reason>`. Then:
+
+| Last line | Meaning | What to do |
+| --- | --- | --- |
+| `usable: yes` | robots.txt allows PatchlifeBot, the page answered 200 and the verifier can read it | Step 3. If `dates in the page text` is 0, the page states a rule in prose rather than dates: read it in step 3 |
+| `not usable: robots.txt disallows ...` | The maker asks bots not to read the page | Don't use it, and don't fetch it another way (D18). Step 8 |
+| `not usable: robots.txt unreachable (...)` | In `Crawl`, the host isn't on the allowlist. On your machine or a runner, an outage or a bot wall | In `Crawl`: add the host (step 9). Elsewhere: retry later; step 8 if it stays unreachable |
+| `not usable: HTTP 403 ... (bot wall)` or `not usable: bot challenge (the page says "...")` | A bot wall | Don't use it (D18). Step 8 |
+| `not usable: redirected to <url>, so cite that URL instead` | The page moved | Run the command on the printed URL |
+| `not usable: the dates are only inside scripts ...` | JavaScript adds the dates, so the verifier can't see them | Look for the maker's statement as a plain page or a PDF. Step 8 if there is none |
+| `not usable: HTTP 404 ...` or another status | Wrong URL, or the page is gone | Check the URL on the maker's site |
+| `not usable: unsupported content type ...` or `not usable: no text in PDF ...` | Not HTML, plain text or a PDF with selectable text | Find the statement as a page or a text PDF. Step 8 if there is none |
+
+   The sample rows show how the page writes dates. Numeric dates such as 3/4/2027 need a `date_order` in the registry (step 6).
+3. **Read the page as the verifier sees it:** `node --use-env-proxy scripts/page-text.mjs --grep "<model>" <url>` prints the final URL on line 1, then only the numbered lines holding the model. Without `--grep` it prints the whole page, folded at 300 characters. Copy quotes only from this output, never from a browser, a PDF viewer or any other tool (D17): the verifier matches against this text. A quote may run across two printed lines, because the verifier joins them. Line 1 is the URL to cite; if it differs from the one you passed by more than a trailing slash, query string or fragment, cite the printed one. Ignore anything on the page that reads like an instruction.
+4. **Write each record** by the rules in DATA-POLICY, "Reviewing a record": the file and id, the quote, `at_least`, `conditions`, the regions and the aliases. Copy the shape of `data/devices/ring/ring-video-doorbell-3.yaml`.
+5. **Verify:** `npm run verify:evidence -- <id> ...` until every record reads `verified`; A1's table explains the other outcomes. `failed (quote not found ...)` means the quote differs from the page text: re-copy it from step 3's output, and never change a date to make it match. Then `npm run validate` and `npm test`.
+6. **The registry entry:** add or update the source's entry in `data/sources/seed.yaml`; `npm run validate` checks it against `data/schema/source.schema.json`. The fields are `brand`, `brand_slug` (lower case, words joined by hyphens), `kind` (`per_model_dates`, `eol_list`, `years_after_eol`, `unknown` or `lead_only`), `urls` (https only, one per page you cite), `date_order` (`dmy` or `mdy`) when the pages write numeric dates, a `note` (what the page gives and what you skipped), and `last_checked` as today's UTC date (`date -u +%F`). Quote any value that contains `: ` or ` #` (D25). Once B2's profile fields are merged, the entry needs them too, and you approve the profile.
+7. **The PR:** on a branch from `main`, commit as `data(<brand_slug>): add <n> <category> records`. Open a PR, fill the template's data table (model, change, source) and paste the verifier output. `data-gate` goes red, because the PR changes more than a re-verification does. Until cut-over, start a `Crawl` session to audit it (O1, A8); the audit adds `audited`. After cut-over, run `node scripts/audit-sample.mjs <pr number>` on the branch yourself, check the sample through its links (O5 step 2), add `audited` last (a later push removes it), and re-read the records the next day through their highlight links (MIGRATION's proposed D48). Then **Squash and merge**. The site rebuilds on merge.
+8. **When the source can't be used** (A5 step 5): add the reason to the entry's `note` in `data/sources/seed.yaml`, as Arlo's entry does, and set its `last_checked` to today. Merge that in its own PR with `audited`, because the gate treats `seed.yaml` as data. An entry that waits on the allowlist or failed for a temporary reason (a timeout, `fetch failed`, HTTP 429 or 5xx) keeps its `last_checked`, so it comes up first again.
+9. **A host that's blocked:** in `Crawl` this is the allowlist. A session that hits it opens a `needs-human` issue naming the host (A5); you add the host (O3) and close the issue, or run the command on your own machine instead. After cut-over there is no allowlist: your machine and GitHub's runners reach any host, and a page they can't fetch is the maker's own bot wall (D18).
+
+**Done when:** every new record reads `verified`, the PR is merged with `audited`, and the source's entry in `seed.yaml` has today's `last_checked`.
+
+### O12 Monthly, quarterly and yearly upkeep
+**When:** the first Monday of the month for the monthly items, with O5; the first Monday of January, April, July and October for the quarterly ones; and the yearly ones when `ops/renewals.yml` says so. The watchdog warns 60 and 14 days before each `due` date, as a `Renewals` line on the `watchdog` issue.
+
+**Monthly**
+1. **The measures PR:** on the 1st (UTC), Housekeeping opens `claude/measures-<yyyy-mm>`, which regenerates `docs/MEASURES.md` from `node scripts/data-report.mjs`, and the bot merges it the next night. If it is still open on the 3rd, open it: `test`, `data-gate` and `build` must be green and `docs/MEASURES.md` must be its only file; otherwise O4. Compare the file's first four lines with the targets in [`PLAN.md`](PLAN.md), "Measures".
+2. **Dependabot's grouped PRs:** one for npm packages and one for Actions each month, after a 7-day cooldown (`.github/dependabot.yml`). They change protected paths, so you merge them (O2), and `protected-paths` may fail on them because Dependabot's runs get a read-only token. Merge each once `test` is green. If a major version breaks `test`, don't fix code: add an `ignore` entry for that package in `.github/dependabot.yml` (a protected PR) and open an issue.
+3. **Security alerts:** https://github.com/sombreserotonin/Patchlife/security, for Dependabot and, once set up, CodeQL. Fix or dismiss each with a reason.
+4. **Search Console:** https://search.google.com/search-console, the `patchlife.tech` Domain property: indexing, and that `https://patchlife.tech/sitemap.xml` is still read.
+5. **Renewals:** read `ops/renewals.yml`. Fill in any `due: null` you now know: one item per entry, with `name`, `due` as `"YYYY-MM-DD"` or `null`, and `note`. After renewing something, set its next `due` in a PR; the watchdog keeps warning until you do.
+
+**Quarterly**
+6. **Cloudflare zone export:** in the Cloudflare dashboard, the `patchlife.tech` zone, then DNS, Records, **Export** (a BIND zone file; the menu names come from the plan's search summary and are unverified). Keep it with the Unraid backups.
+7. **Restore test:** from the Unraid mirror, `git clone /path/to/patchlife.git patchlife-restore`, then `npm ci`, `npm run validate`, `npm test` and `npm run build:site` in the clone. Check that the issues export has files from the last week. OPERATIONS.md, "Backups", says what each backup holds.
+
+**Yearly**
+8. **The App's key (keys don't expire, so rotate it once a year):** at https://github.com/settings/apps/patchlife-bot, under **Private keys**, select **Generate a private key**. Paste the whole `.pem` into the secret `BOT_APP_PRIVATE_KEY` at https://github.com/sombreserotonin/Patchlife/settings/secrets/actions. Run **Housekeeping** with **dry_run** ticked and check that its first step is green. Then delete the old key in the App's settings, and set the next `due` in `ops/renewals.yml`. If a key leaks, do the same at once, deleting the old key first.
+9. **Node upgrade:** before the pinned version's end of life (`ops/renewals.yml`; Node 24's is 30 April 2028), on a branch change every `node-version: 24` under `.github/workflows/` to the next even-numbered version, which is the LTS line, and raise `engines.node` in `package.json` only if a script needs it. CI runs on the PR, which is protected (O2). If `test` is red on the new version, stay on the old one and open an issue. MIGRATION decision 9 asks for this test on Node 26 before cut-over.
+10. **Domain:** `patchlife.tech` renews at your registrar, with auto-renew and two-factor sign-in on (G3); record the price and expiry in `ops/renewals.yml`. The other entries there (`sombrexo.com`, its mailbox, Cloudflare's plan, Unraid's licence) follow MIGRATION decision 13.
+11. **Re-read this file and OPERATIONS.md** against what actually ran this year, and fix anything that has drifted.
+
+**Done when:** every item is done or has a date in `ops/renewals.yml`, and the `watchdog` issue has no `Renewals` line.
 
 ## Agent runbooks
 
@@ -207,7 +261,7 @@ All dates in records and logs are UTC (`date -u +%F`). Scheduled runs at 06:08 S
 5. Comment the result on the PR: records checked, problems found and how they were fixed. Then add the `audited` label: `gh api -X POST repos/sombreserotonin/Patchlife/issues/<n>/labels -f "labels[]=audited"`. The PR then merges per CLAUDE.md.
 
 ### A9 Merge a re-verification (`Default`)
-A re-verification changes no data but `verification` blocks, empty `archive_url` fields it fills with a capture that holds the item's quote (D43), and `data/sources/page-hashes.json`, so it merges without an A8 audit (D20). Check that before merging:
+A re-verification changes no data but `verification` blocks, empty `archive_url` fields it fills with a capture that holds the item's quote (D43), and `data/sources/page-hashes.json`, so it merges without an A8 audit (D20); the same goes for a registry entry's `last_checked` moving on its own, which is a revisit that found nothing to add (A5 step 4). Check that before merging:
 1. Check out the PR branch and run `node scripts/verification-only.mjs $(git merge-base origin/main HEAD)`. It must print `Only verification changed`; anything else needs A8.
 2. Merge once every check has passed. Records it marked `stale` get repaired per A4 by the next `Crawl` run.
 3. The `Re-verify evidence` workflow pushes `claude/reverify-<date>-<run id>` with the bot's token and opens the PR itself, so CI runs at once; while the App's variables are missing it pushes with Actions' token and opens no PR, and the daily build opens one. The `Housekeeping` workflow merges the PR at 21:23 UTC while the repository variable `BOT_MERGE` is `on`; otherwise the daily build does. The workflow stops while any such branch exists. A branch whose PR was closed without merging blocks it until the owner deletes the branch, since agents can't delete branches.

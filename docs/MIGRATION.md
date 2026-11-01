@@ -169,9 +169,9 @@ Checked with `git` and the GitHub API at 03:25 UTC:
 
 ### Stage 1: build (23 Oct to 4 Nov, Max)
 
-Run parallel sessions in separate files (D19, D26), each with one reviewer and no multi-agent reviews. P1 (#101), A1, B1 and P2 (#128) have merged, which leaves:
-- B2, then B3, then B4. B3 needs B2's profile fields;
-- B5, then A2. P3 starts once B4 and B5 have merged.
+Run parallel sessions in separate files (D19, D26), each with one reviewer and no multi-agent reviews. P1 (#101), A1, B1, P2 (#128), B5 (#133), C4 (#132), C1 (#134), C2 (#136) and A2's first part (#137) have merged, all by 27 Oct. B2 is open as #135 for your profile approval, and B3 is being built on its branch in a `Crawl` session. That leaves:
+- B3, then B4, each reviewed here; B2 merges when you add `audited`;
+- A2's second part (O9, O10 and O8's bulk actions) and P3, once B4 has merged; then C5.
 
 All of it lands by 4 Nov, because Max ends on 19 Nov (D46) and the shadow fortnight needs the days before it. Tier C starts only after Tiers A and B have merged, and only if it fits before 4 Nov; otherwise cut it.
 
@@ -181,7 +181,7 @@ All of it lands by 4 Nov, because Max ends on 19 Nov (D46) and the shadow fortni
   - `scripts/check-licences.mjs`: checks each `package-lock.json` entry's `license` against the lists in D9 and D30. All 116 entries carry one (22 Oct), so a missing licence is reported for a person to look at, with no fallback;
   - tests using an injected fetch. They cover forks, each label, red checks, files outside the allowlist, a SHA that moved, and an `audited` label added by the App;
   - `ops/renewals.yml`.
-- **P2 (protected; open as #128 since 27 Oct, after the App was created in #126):**
+- **P2 (protected; merged 27 Oct as #128, after the App was created in #126. Your steps 1 to 4 from its description are done: the dry run minted a token, a manual re-verify opened #130 as the bot with every check green, `data-gate` is required in the ruleset, and the bot merged #130 with `BOT_MERGE=on`):**
   - **A new `housekeeping.yml`:**
     - runs on `23 21 * * *` and on `workflow_dispatch`, and mints the App token;
     - checks out with `fetch-depth: 0`, because the watchdog dates stale records from git history, and passes `GH_TOKEN` and `GITHUB_REPOSITORY`;
@@ -202,7 +202,7 @@ All of it lands by 4 Nov, because Max ends on 19 Nov (D46) and the shadow fortni
   - The new commands in CLAUDE.md.
 
   While `BOT_MERGE=off`, the daily build keeps merging.
-- **A2 (unprotected; docs for someone who doesn't code every day):**
+- **A2 (unprotected; docs for someone who doesn't code every day). First part merged 27 Oct (#137): OPERATIONS, O4, O5, O11, O12, DATA-POLICY's review section and PLAN's decision 12 lines; O9, O10 and O8's bulk actions follow B4 and P3:**
   - **`docs/OPERATIONS.md`:** settings, alerts, backups, cut-over and rollback.
   - **RUNBOOKS, rewritten:**
     - O4 becomes "Recover failing housekeeping";
@@ -250,7 +250,7 @@ All of it lands by 4 Nov, because Max ends on 19 Nov (D46) and the shadow fortni
   - match the 2 TP-Link records with a lowercase "v1" in `conditions` to the page's casing.
 
   B1 merges before B2, so CI stays green.
-- **B2 (unprotected): source profiles and rules.**
+- **B2 (unprotected): source profiles and rules. Open as #135 since 27 Oct, reviewed, waiting on your `audited` label (action 3 below).**
   - **New profile fields,** in `data/schema/source.schema.json` and `seed.yaml`:
     - `regions_by_url`;
     - `at_least`, with its sentence;
@@ -289,7 +289,7 @@ All of it lands by 4 Nov, because Max ends on 19 Nov (D46) and the shadow fortni
   - **Notes** are regenerated from the profile's templates. Google's dated "currently receiving critical security updates" note then follows the Yes/No cell, which the quotes include.
   - **Changed-row proposals,** which are the deterministic version of A4.
   - **A sanity gate:** a run that finds under 90% of the known rows fails as "parser broken".
-- **B5 (unprotected):**
+- **B5 (unprotected; merged 27 Oct, #133):**
   - `scripts/page-text.mjs`: the A2 step 3 snippet;
   - `scripts/check-source.mjs`: robots.txt, HTTP status, date count and sample rows;
   - `scripts/audit-sample.mjs`: 3 records or 5%, at most 10, seeded by the PR number;
@@ -297,7 +297,7 @@ All of it lands by 4 Nov, because Max ends on 19 Nov (D46) and the shadow fortni
   - the M3 part 2 drill as an `npm test` case: a broken fixture source on a local server. It then runs on every PR.
 
   The fetching scripts need `node --use-env-proxy` in `Crawl` (D16). CLAUDE.md documents them like the existing commands.
-- **P3 (protected, after B4 and B5):**
+- **P3 (protected, after B4 and B5). First part merged 27 Oct (#140: `owner-tools.yml` and the CLAUDE.md lines for the owner's scripts); the second part, below, follows B4:**
   - **A new `data-refresh.yml`:**
     - its weekly schedule (`17 16 * * 0`) acts only when the variable `DATA_REFRESH` is `on`, which you switch on in Stage 2. So it never doubles up with the nightly `Crawl` task, which hits the same hosts at 14:17 UTC;
     - mints the App token for checkout, push and PR;
@@ -323,12 +323,12 @@ All of it lands by 4 Nov, because Max ends on 19 Nov (D46) and the shadow fortni
 - A fix the parser doesn't reproduce stops the next run. So fixes go into the profile, or its exceptions list, never only into a record.
 
 **Tier C: features (only after Tiers A and B merge)**
-- **C1:** a "report a wrong date" link on each device page, prefilled through `template=wrong-date.yml`. (The `/business` page is in Planned, D45.)
-- **C2:**
+- **C1:** a "report a wrong date" link on each device page, prefilled through `template=wrong-date.yml`. Done 27 Oct (#134). (The `/business` page is in Planned, D45.)
+- **C2 (done 27 Oct, #136):**
   - M7 Atom feeds: `/feeds/ending-soon.xml`, `/feeds/ended.xml` and one per brand, dated using the rules in `scripts/status.mjs`;
   - a `/stats/` page built from `data-report.mjs`.
 - **C3:** moved to Planned with the business side (D45): the free `/fleet/` checker and hand-made paid reports.
-- **C4:** M5: `?q=` handling in the existing `site/search.js`. No bookmarklet.
+- **C4:** M5: `?q=` handling in the existing `site/search.js`. No bookmarklet. Done 27 Oct (#132).
 - **C5: docs.**
   - SPEC sections 5 to 7, PLAN and ROADMAP cut to the new scope.
   - ARCHITECTURE lines 15 to 33 (the daily build, the `Crawl` allowlist and the agent threat model), rewritten for runners and you.
@@ -345,10 +345,10 @@ All of it lands by 4 Nov, because Max ends on 19 Nov (D46) and the shadow fortni
      - the variables `BOT_APP_ID` and `BOT_CLIENT_ID`. GitHub's current `actions/create-github-app-token` example takes the Client ID, and older ones the App ID;
      - the secret `BOT_APP_PRIVATE_KEY`;
      - the variables `BOT_MERGE=off` and `DATA_REFRESH=off`.
-2. **Merge P2 (#128) and P3** following O2, about 20 minutes each, then run the steps in each PR's description. (#101 is merged.)
+2. **Merge P3** following O2, about 20 minutes, then run the steps in its description. (P2 is merged and its steps are done, 27 Oct; #101 is merged.)
    - Between them, they add only `schedule`, `workflow_dispatch` and `pull_request` triggers. None uses `pull_request_target`.
    - Expect `protected-paths` to fail on Dependabot's PRs, because their runs get a read-only token [11]. Merge those yourself once `test` is green.
-3. **Approve the five profiles in B2,** 20 to 30 minutes each, including the `conditions` sentences and the category maps.
+3. **Approve the seven profiles in B2 (#135),** 20 to 30 minutes each, including the `conditions` sentences and the category maps; the PR's review comment lists what to read. Add the `audited` label yourself when you are satisfied (only your own label event counts), then merge it or leave it for a session.
 4. **Settings** (15 minutes):
    - CodeQL default setup (Code security > CodeQL > Default) [12];
    - Dependabot security updates on;

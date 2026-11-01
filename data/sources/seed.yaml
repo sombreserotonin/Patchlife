@@ -18,7 +18,7 @@
     - &ring-au https://ring.com/au/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
     - &ring-us https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
   note: Per-model "at least" dates in tables on the GB, AU and US pages; each page states the same purchase-channel rule (#105).
-  last_checked: "2026-10-21"
+  last_checked: "2026-10-27"
   regions_by_url:
     https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates: [UK]
     https://ring.com/au/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates: [AU]
@@ -173,7 +173,14 @@
     - { row: '^Wi-Fi 6 Router\b', category: router }
     - { row: '^Wi-Fi 7 Router\b', category: router }
     - { row: '^Wi-Fi Router\b', category: router }
-    - { row: '^xDSL Modem Router\b', category: router }
+    - { row: '^xDSL\b', category: router }
+    # The product lines of the first backlog batch (#156): gateways, mobile Wi-Fi and xDSL modems are routers, desktop
+    # APs are access points, and the schema has no category for range extenders or powerline adapters, so "other".
+    - { row: '^LTE/5G Gateway\b', category: router }
+    - { row: '^Mobile Wi-Fi\b', category: router }
+    - { row: '^Desktop AP\b', category: access-point }
+    - { row: '^Wi-Fi [4-7] Range Extender\b', category: other }
+    - { row: '^AV\d+(/AV\d+)? Powerline Adapter\b', category: other }
     - { row: '^Smart Bulb\b', category: smart-bulb }
     - { row: '^Smart Strip Light\b', category: smart-bulb }
     - { row: '^Smart Plug\b', category: smart-plug }
@@ -215,10 +222,12 @@
       - "The date is the pre-defined minimum, not a guaranteed end."
     https://www.gl-inet.com/en-us/pages/firmware-versions/?status=ended:
       - "GL.iNet's firmware versions table (columns Status, EOL Date, Supported Until; page names no region) gives EOL date {eol_date} and Supported Until {end_date}, recorded as GLOBAL (D24)."
-  # The rows name the product and its model code; the Velica series is mesh (#49) and the GL-S models are hubs.
+  # The rows name the product and its model code; the Velica series is mesh (#49) and the GL-S hubs carry a code of
+  # up to three digits (GL-S10, GL-S20, GL-S200), unlike the Convexa-S router GL-S1300 (the #135 audit).
   category_map:
     - { model: 'Velica', category: mesh-wifi }
-    - { model: '^GL-S\d', category: hub }
+    - { model: '^GL-S\d{1,3}$', category: hub }
+    - { model: '^GL-AP', category: access-point }
     - { model: 'GL-', category: router }
   min_rows:
     https://www.gl-inet.com/en-us/pages/psti-support-period: 20
@@ -296,7 +305,7 @@
     - https://support.google.com/chromecast/answer/10367042
   date_order: mdy
   note: The first URL is the Nest table the Google records cite (#21); the second is from a 2024 list; the third links the Australian statements (#36), including some for products outside cameras.
-  last_checked: "2026-10-21"
+  last_checked: "2026-10-31"
   # The Nest table names no region and is recorded as GLOBAL (D24); the UK PSTI statement covers the UK; each Australian
   # statement of compliance (one page per model, linked from the third URL) covers AU.
   regions_by_url:

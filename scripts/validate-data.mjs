@@ -99,7 +99,7 @@ export function plainScalarProblems(source) {
     if (token?.type !== "scalar") return;
     const next = token.end?.find((t) => t.type === "comment" || t.type === "newline");
     if (next?.type === "comment") {
-      problems.push(`line ${lines.linePos(token.offset).line}: plain value "${token.source}" ends at the comment "${next.source}": quote the value or reword it (D25)`);
+      problems.push(`line ${lines.linePos(token.offset).line}: plain value "${token.source}" ends at the comment "${next.source}": move the comment to its own line, or quote a text value (D25)`);
     }
   };
   for (const token of new Parser(lines.addNewLine).parse(source)) {
@@ -244,8 +244,9 @@ export function validateDevices(
     const urls = [...new Set(record.evidence.map((ev) => ev.url))];
 
     // R1: an alias is quoted, is the model with the brand in front, or is an old name the rename table maps to the model.
+    // A none_published record has no quotes, so its aliases are the names the search used and R1 leaves them alone.
     const renamed = (alias) => (profile.renames ?? []).some((r) => normalise(r.from) === normalise(alias) && normalise(r.to) === normalise(record.model));
-    for (const alias of record.aliases ?? []) {
+    for (const alias of support.rule === "none_published" ? [] : record.aliases ?? []) {
       if (!inQuote(alias) && normalise(alias) !== normalise(`${record.brand} ${record.model}`) && !renamed(alias)) {
         fail(`R1: alias "${alias}" is not quoted in any evidence item, is not the model with the brand in front, and is not a rename of the model in the profile`);
       }
