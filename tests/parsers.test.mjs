@@ -26,7 +26,7 @@ test("helpers: category lookup follows R7, dates must exist, templates must be f
   assert.equal(categoryFor(p, { id: "x-y", model: "Tapo", quote: "Wi-Fi 6 AP" }), "other");
   assert.equal(categoryFor(p, { id: "x-z", model: "EAP1", quote: "Wi-Fi 6 AP EAP1 V1 31/12/2028" }), "access-point");
   assert.equal(categoryFor(p, { id: "x-z", model: "Tapo C1", quote: "Camera Tapo C1" }), "camera");
-  assert.equal(categoryFor(p, { id: "x-z", model: "M1", quote: "Mobile Wi-Fi M1" }), null);
+  assert.equal(categoryFor(p, { id: "x-z", model: "M1", quote: "Smart Door Lock M1" }), null);
   assert.equal(isoDate(2029, 1, 7), "2029-01-07");
   assert.equal(isoDate(2029, 6, 31), null);
   assert.equal(isoDate(2028, 2, 29), "2028-02-29");
@@ -73,7 +73,7 @@ test("the TP-Link AU parser skips, with a reason, rows it cannot read without gu
   assert.deepEqual(skipped, [
     { quote: "Wi-Fi 6 Router Archer ZX10 V3 31/6/2029 or later*", reason: '"31/6/2029 or later*" is not a calendar date' },
     { quote: "Wi-Fi 6 Router Archer ZX5 V1 31/12/2028 or sooner*", reason: `"or sooner*" after the date is not the profile's at-least phrase` },
-    { quote: "Mobile Wi-Fi M9000 V1 31/12/2028 or later*", reason: 'no category_map entry for product line "Mobile Wi-Fi"' },
+    { quote: "Smart Door Lock M9000 V1 31/12/2028 or later*", reason: 'no category_map entry for product line "Smart Door Lock"' },
     { quote: "L3 Managed Switch S9900-48C 31/12/2028 or later*", reason: "no hardware version in the model cell" },
   ]);
   // Header and section rows are neither candidates nor skipped; a model listed twice gives two candidates here, which
