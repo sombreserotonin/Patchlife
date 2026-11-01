@@ -1,0 +1,29 @@
+id: tp-link-es999x-m2-v1
+brand: TP-Link
+brand_slug: tp-link
+model: ES999X-M2 (v1)
+aliases:
+  - ES999X-M2 v1
+category: network-switch
+regions: [AU]
+support:
+  rule: fixed_date
+  end_date: "2028-12-31"
+  years: null
+  anchor_date: null
+  at_least: true
+  conditions: Hardware version v1 only.
+evidence:
+  - url: https://www.tp-link.com/au/landing/au-cyber-compliance/
+    quote: "Easy Managed Switch ES999X-M2 v1 31/12/2028 or later*"
+    retrieved: "2026-10-01"
+    regime: au_smart_device_rules
+  - url: https://www.tp-link.com/au/landing/au-cyber-compliance/
+    quote: "*The non-EOL product’s defined support period may be refreshed to extend specified date."
+    retrieved: "2026-10-01"
+    regime: au_smart_device_rules
+verification:
+  status: verified
+  checked: 2026-10-01
+  text_sha256: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+notes: The statement's footnote says the date may be extended for products not yet at end of life.

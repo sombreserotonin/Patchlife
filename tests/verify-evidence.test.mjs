@@ -7,8 +7,10 @@ import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { htmlToText, normalise, pageReport, pageText, pdfToText, quoteMatches, selectRecords, verifyDevices, verifyRecord } from "../scripts/verify-evidence.mjs";
-import { validateDevices } from "../scripts/validate-data.mjs";
+import { validateDevices, validateSources } from "../scripts/validate-data.mjs";
 
+// The registry the valid fixtures follow: the alias AC-1 of acme-cam-1 comes from its rename table (rule R1).
+const SOURCES = validateSources(fileURLToPath(new URL("./fixtures/sources/valid", import.meta.url))).entries;
 const html = readFileSync(new URL("./fixtures/evidence/ring-policy.html", import.meta.url), "utf8");
 const page = htmlToText(html);
 // A one-page PDF in Helvetica 12 pt that draws each [x, y, text] in the order given.
@@ -156,7 +158,7 @@ test("verifyDevices writes verified, marks a changed quote stale and skips none_
   assert.match(read("acme-cam-1"), /status: stale\n  checked: "2026-10-02"/);
   assert.equal(beforeVerification(read("acme-router-2")), beforeVerification(before));
   assert.equal(fetched.filter((u) => u === "https://example.com/acme/psti").length, 1);
-  assert.deepEqual(validateDevices(dir, { today: TODAY }).errors, []);
+  assert.deepEqual(validateDevices(dir, { today: TODAY, sources: SOURCES }).errors, []);
 });
 
 test("verifyDevices leaves an unverified record unchanged when its quote is missing", async () => {
