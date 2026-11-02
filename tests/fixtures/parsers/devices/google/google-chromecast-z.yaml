@@ -1,0 +1,30 @@
+id: google-chromecast-z
+brand: Google
+brand_slug: google
+model: Chromecast Z
+aliases: []
+category: streaming-device
+regions: [GLOBAL]
+support:
+  rule: years_after_launch
+  end_date: "2018-07-31"
+  years: 5
+  anchor_date: "2013-07-31"
+  at_least: true
+  conditions: Covers critical issues that Google can fix with a remote software update.
+evidence:
+  - url: https://support.google.com/product-documentation/answer/10231940?hl=en
+    quote: "Chromecast Z 7/31/2013 7/31/2018 No"
+    retrieved: "2026-10-27"
+    regime: vendor_policy
+  - url: https://support.google.com/product-documentation/answer/10231940?hl=en
+    quote: "Google Nest connected home devices will receive automatic security updates for at least 5 years from the date we start selling them on the US Google Store."
+    retrieved: "2026-10-27"
+    regime: vendor_policy
+  - url: https://support.google.com/product-documentation/answer/10231940?hl=en
+    quote: "Security updates will address critical issues known to Google Nest that are able to be resolved with a remote software update."
+    retrieved: "2026-10-27"
+    regime: vendor_policy
+verification:
+  status: unverified
+notes: Google's table gives the US Google Store release date and the release date plus 5 years (minimum), in US month/day/year format. Google's page names no region; dates are anchored to the US Google Store. Google's table lists this model as not currently receiving critical security updates (checked 2026-10-27).
