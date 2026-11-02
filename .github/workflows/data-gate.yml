@@ -56,8 +56,8 @@ jobs:
         # anyone else, can't audit a PR.
         if: steps.gate.outputs.verified == 'no'
         run: |
-          actor=$(gh api "repos/$REPO/issues/$PR/events?per_page=100" --paginate --slurp \
-            --jq '[.[][] | select(.label.name == "audited")] | last | if . == null or .event != "labeled" then "" else .actor.login end')
+          actor=$(gh api "repos/$REPO/issues/$PR/events?per_page=100" --paginate --slurp |
+            jq -r '[.[][] | select(.label.name == "audited")] | last | if . == null or .event != "labeled" then "" else .actor.login end')
           if [ -n "$actor" ] && [ "$actor" = "$OWNER" ]; then
             echo "The data changes go beyond a re-verification, and $OWNER added the audited label (RUNBOOKS A8)."
           else
