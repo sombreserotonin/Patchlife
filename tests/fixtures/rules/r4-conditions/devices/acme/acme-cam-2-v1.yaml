@@ -1,0 +1,20 @@
+id: acme-cam-2-v1
+brand: Acme
+brand_slug: acme
+model: Cam 2 (V1)
+aliases: [Cam 2 V1]
+category: camera
+regions: [AU]
+support:
+  rule: fixed_date
+  end_date: "2029-06-30"
+  at_least: false
+  # Not the profile's sentence.
+  conditions: Version V1 only.
+evidence:
+  - url: https://example.com/acme/security
+    quote: Cam 2 V1 30 June 2029
+    retrieved: "2026-10-01"
+    regime: au_smart_device_rules
+verification:
+  status: unverified

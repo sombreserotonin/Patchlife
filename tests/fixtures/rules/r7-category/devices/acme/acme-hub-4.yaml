@@ -1,0 +1,18 @@
+id: acme-hub-4
+brand: Acme
+brand_slug: acme
+model: Hub 4
+# The profile's exception for this record says hub.
+category: other
+regions: [AU]
+support:
+  rule: fixed_date
+  end_date: "2029-06-30"
+  at_least: false
+evidence:
+  - url: https://example.com/acme/security
+    quote: Hub 4 30 June 2029
+    retrieved: "2026-10-01"
+    regime: au_smart_device_rules
+verification:
+  status: unverified

@@ -1,0 +1,20 @@
+# The Ring profile's at-least sentence and conditions, as seed.yaml carries them.
+- brand: Ring
+  brand_slug: ring
+  kind: per_model_dates
+  urls:
+    - https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    - https://ring.com/au/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    - https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+  last_checked: "2026-10-21"
+  regions_by_url:
+    https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates: [UK]
+    https://ring.com/au/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates: [AU]
+    https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates: [US]
+  at_least:
+    - "We'll support your device with software security updates until at least four years from when you bought it new on amazon.com where Amazon is the seller or on ring.com (or, in each case, until the date stated below if later)."
+  conditions:
+    https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates: &ring-conditions
+      - "If bought new on ring.com, or on amazon.com where Amazon is the seller, at least four years from purchase or this date, whichever is later."
+    https://ring.com/au/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates: *ring-conditions
+    https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates: *ring-conditions

@@ -1,0 +1,33 @@
+# A profile with every field, which the records under ../devices follow.
+- brand: Acme
+  brand_slug: acme
+  kind: per_model_dates
+  urls:
+    - https://example.com/acme/security
+    - https://example.com/acme/us/security
+  date_order: dmy
+  last_checked: "2026-10-21"
+  regions_by_url:
+    https://example.com/acme/security: [AU, UK]
+    https://example.com/acme/us/security: [US]
+  at_least:
+    - "or later*"
+  conditions:
+    https://example.com/acme/security:
+      - "Hardware version {version} only."
+    https://example.com/acme/us/security:
+      - "If bought new from Acme, four years from purchase or this date, whichever is later."
+  notes:
+    https://example.com/acme/security:
+      - "The statement's footnote says the date may move later."
+  category_map:
+    - { model: 'Doorbell', category: doorbell }
+    - { row: '^Camera\b', category: camera }
+  category_exceptions:
+    acme-plug-3: smart-plug
+  versioned: true
+  min_rows:
+    https://example.com/acme/security: 2
+  renames:
+    - { from: "Cam One (V2)", to: "Cam 1 (V2)", urls: [https://example.com/acme/names] }
+  parser_exceptions: [acme-plug-3]

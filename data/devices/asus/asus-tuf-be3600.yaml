@@ -16,12 +16,12 @@ evidence:
   - url: https://www.asus.com/support/faq/1051929/
     quote: "TUF-BE3600 TUF-BE6500 USB-BE92 Nano XG-C100C V3 ZenWiFi BD4 ZenWiFi BQ16 ZenWiFi BT8 ZenWiFi BT10 4 years (until 31th December 2028)"
     retrieved: "2026-10-23"
-    archive_url: null
+    archive_url: https://web.archive.org/web/20261028182857/https://www.asus.com/support/faq/1051929/
     regime: uk_psti
   - url: https://www.asus.com/support/faq/1051929/
     quote: "ASUS will offer security update support to the networking products complied with UK PSTI(Product Security and Telecommunications Infrastructure Act) until the date specified below. And extended support may be provided after the stated date."
     retrieved: "2026-10-23"
-    archive_url: null
+    archive_url: https://web.archive.org/web/20261028182857/https://www.asus.com/support/faq/1051929/
     regime: uk_psti
 verification:
   status: verified

@@ -1,0 +1,25 @@
+id: acme-cam-1-v2
+brand: Acme
+brand_slug: acme
+model: Cam 1 (V2)
+# The brand in front of the model, the row's own wording, and an old name from the profile's rename table.
+aliases: [Acme Cam 1 (V2), Cam 1 V2, Cam One (V2)]
+category: camera
+regions: [AU, UK]
+support:
+  rule: fixed_date
+  end_date: "2029-06-30"
+  at_least: true
+  conditions: Hardware version V2 only.
+evidence:
+  - url: https://example.com/acme/security
+    quote: Camera Cam 1 V2 30 June 2029 or later*
+    retrieved: "2026-10-01"
+    regime: au_smart_device_rules
+  - url: https://example.com/acme/security
+    quote: "*The date may move later for a product still on sale."
+    retrieved: "2026-10-01"
+    regime: au_smart_device_rules
+verification:
+  status: unverified
+notes: The statement's footnote says the date may move later.

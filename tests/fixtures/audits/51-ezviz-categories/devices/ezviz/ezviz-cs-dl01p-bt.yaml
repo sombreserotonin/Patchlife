@@ -1,0 +1,25 @@
+# The #51 audit catch: the page lists this lock under Smart Video Doorbell, and the record carried no conditions.
+id: ezviz-cs-dl01p-bt
+brand: EZVIZ
+brand_slug: ezviz
+model: "CS-DL01P-BT"
+category: doorbell
+regions: [EU]
+support:
+  rule: fixed_date
+  end_date: "2030-12-31"
+  years: null
+  anchor_date: null
+  at_least: false
+  conditions: null
+evidence:
+  - url: https://support.ezviz.com/faq/article/EZVIZ-EOL-Product-List
+    quote: "Smart Video Doorbell CS-DL01P-BT Europe 2030/12/31"
+    retrieved: "2026-10-21"
+    regime: vendor_policy
+  - url: https://support.ezviz.com/faq/article/EZVIZ-EOL-Product-List
+    quote: "About EZVIZ’s EOL (End-Of-Life) products: It means that EZVIZ no longer maintain any firmware updates (including security updates) for them, and may no longer respond to security vulnerability reports for such products either."
+    retrieved: "2026-10-21"
+    regime: vendor_policy
+verification:
+  status: unverified

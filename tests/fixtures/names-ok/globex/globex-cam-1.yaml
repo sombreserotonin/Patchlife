@@ -11,9 +11,9 @@ support:
   at_least: false
 evidence:
   - url: https://example.com/globex/end-of-life
-    quote: GX-1 12/31/2027
+    quote: GX-1 (AC-1) 12/31/2027
     retrieved: "2026-10-01"
     regime: vendor_policy
 verification:
   status: unverified
-notes: Another brand may use the same names, and the alias GX-1 is the only name its quote gives.
+notes: Another brand may use the same names, and its quote names it only by its aliases.

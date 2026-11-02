@@ -1,0 +1,19 @@
+id: acme-cam-4
+brand: Acme
+brand_slug: acme
+model: Cam 4
+category: camera
+regions: [US]
+support:
+  rule: fixed_date
+  end_date: "2029-06-30"
+  at_least: false
+  # The profile lists no sentence for the US page.
+  conditions: Sold in the US only.
+evidence:
+  - url: https://example.com/acme/us/security
+    quote: Cam 4 30 June 2029
+    retrieved: "2026-10-01"
+    regime: vendor_policy
+verification:
+  status: unverified

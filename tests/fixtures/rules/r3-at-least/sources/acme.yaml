@@ -1,0 +1,16 @@
+- brand: Acme
+  brand_slug: acme
+  kind: per_model_dates
+  urls: [https://example.com/acme/security]
+  last_checked: "2026-10-21"
+  at_least:
+    - "or later*"
+    - "Acme will not shorten a period it has published."
+
+# An empty list: nothing on Globex's page makes a date a minimum, so no Globex record may be at_least: true.
+- brand: Globex
+  brand_slug: globex
+  kind: eol_list
+  urls: [https://example.com/globex/end-of-life]
+  last_checked: null
+  at_least: []

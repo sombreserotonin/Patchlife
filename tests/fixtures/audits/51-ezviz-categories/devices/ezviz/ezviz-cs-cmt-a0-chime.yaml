@@ -1,0 +1,25 @@
+# The #51 audit catch: the page lists this chime under Smart Video Doorbell, EZVIZ's product page calls it a Smart
+# Chime, and the record carried no conditions although the page gives the date as expected and subject to change.
+id: ezviz-cs-cmt-a0-chime
+brand: EZVIZ
+brand_slug: ezviz
+model: "CS-CMT-A0-CHIME"
+category: doorbell
+regions: [EU]
+support:
+  rule: fixed_date
+  end_date: "2030-12-31"
+  years: null
+  anchor_date: null
+  at_least: false
+evidence:
+  - url: https://support.ezviz.com/faq/article/EZVIZ-EOL-Product-List
+    quote: "Smart Video Doorbell CS-CMT-A0-CHIME Europe 2030/12/31"
+    retrieved: "2026-10-21"
+    regime: vendor_policy
+  - url: https://support.ezviz.com/faq/article/EZVIZ-EOL-Product-List
+    quote: "About EZVIZ’s EOL (End-Of-Life) products: It means that EZVIZ no longer maintain any firmware updates (including security updates) for them, and may no longer respond to security vulnerability reports for such products either."
+    retrieved: "2026-10-21"
+    regime: vendor_policy
+verification:
+  status: unverified
