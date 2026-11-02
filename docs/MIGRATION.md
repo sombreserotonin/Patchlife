@@ -169,8 +169,7 @@ Checked with `git` and the GitHub API at 03:25 UTC:
 
 ### Stage 1: build (23 Oct to 4 Nov, Max)
 
-Run parallel sessions in separate files (D19, D26), each with one reviewer and no multi-agent reviews. P1 (#101), A1, B1, P2 (#128), B5 (#133), C4 (#132), C1 (#134), C2 (#136), A2's first part (#137), C5 (#141), P3's first part (#140), B2 and B3 (#135) and B4 (#143) have merged, the last three on 2 Nov after your `audited` label. That leaves:
-- P3's second part, open as #165 for you to merge (action 2 below). A2's second part (O9, O10 and O8's Owner tools actions) merged on 2 Nov, so the build is complete once #165 is in.
+Run parallel sessions in separate files (D19, D26), each with one reviewer and no multi-agent reviews. P1 (#101), A1, B1, P2 (#128), B5 (#133), C4 (#132), C1 (#134), C2 (#136), A2's first part (#137), C5 (#141), P3's first part (#140), B2 and B3 (#135) and B4 (#143) have merged, the last three on 2 Nov after your `audited` label. Nothing is left to build: P3's second part merged on 2 Nov (#165) and A2's second part the same day (#167).
 
 All of it lands by 4 Nov, because Max ends on 19 Nov (D46) and the shadow fortnight needs the days before it. Tier C starts only after Tiers A and B have merged, and only if it fits before 4 Nov; otherwise cut it.
 
@@ -296,7 +295,7 @@ All of it lands by 4 Nov, because Max ends on 19 Nov (D46) and the shadow fortni
   - the M3 part 2 drill as an `npm test` case: a broken fixture source on a local server. It then runs on every PR.
 
   The fetching scripts need `node --use-env-proxy` in `Crawl` (D16). CLAUDE.md documents them like the existing commands.
-- **P3 (protected, after B4 and B5). First part merged 27 Oct (#140: `owner-tools.yml` and the CLAUDE.md lines for the owner's scripts); the second part, below, is open as #165 for you to merge:**
+- **P3 (protected, after B4 and B5). First part merged 27 Oct (#140: `owner-tools.yml` and the CLAUDE.md lines for the owner's scripts); the second part, below, merged 2 Nov (#165):**
   - **A new `data-refresh.yml`:**
     - its weekly schedule (`17 16 * * 0`) acts only when the variable `DATA_REFRESH` is `on`, which you switch on in Stage 2. So it never doubles up with the nightly `Crawl` task, which hits the same hosts at 14:17 UTC;
     - mints the App token for checkout, push and PR;
@@ -344,7 +343,7 @@ All of it lands by 4 Nov, because Max ends on 19 Nov (D46) and the shadow fortni
      - the variables `BOT_APP_ID` and `BOT_CLIENT_ID`. GitHub's current `actions/create-github-app-token` example takes the Client ID, and older ones the App ID;
      - the secret `BOT_APP_PRIVATE_KEY`;
      - the variables `BOT_MERGE=off` and `DATA_REFRESH=off`.
-2. **Merge P3's second part (#165)** following O2, about 20 minutes, then run the steps in its description. (P2 and P3's first part are merged and their steps are done, 27 Oct; #101 is merged.)
+2. **Merge P3.** Done: the first part on 27 Oct (#140) and the second on 2 Nov (#165); the workflow is registered and waits for `DATA_REFRESH=on` (Stage 2). (P2 is merged and its steps are done, 27 Oct; #101 is merged.)
    - Between them, they add only `schedule`, `workflow_dispatch` and `pull_request` triggers. None uses `pull_request_target`.
    - Expect `protected-paths` to fail on Dependabot's PRs, because their runs get a read-only token [11]. Merge those yourself once `test` is green.
 3. **Approve the seven profiles in B2 (#135).** Done on 2 Nov: you added the `audited` label and the PR merged.
