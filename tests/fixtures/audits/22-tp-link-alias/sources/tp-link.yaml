@@ -1,0 +1,17 @@
+# The TP-Link profile's version fields, as seed.yaml carries them.
+- brand: TP-Link
+  brand_slug: tp-link
+  kind: per_model_dates
+  urls: [https://www.tp-link.com/au/landing/au-cyber-compliance/]
+  date_order: dmy
+  last_checked: "2026-10-21"
+  regions_by_url:
+    https://www.tp-link.com/au/landing/au-cyber-compliance/: [AU]
+  at_least:
+    - "or later*"
+  conditions:
+    https://www.tp-link.com/au/landing/au-cyber-compliance/:
+      - "Hardware version {version} only."
+  category_map:
+    - { row: '^Wired Indoor Camera\b', category: camera }
+  versioned: true

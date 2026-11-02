@@ -1,0 +1,6 @@
+- brand: Acme
+  brand_slug: acme
+  kind: unknown
+  urls: [https://example.com/acme/security]
+  note: From a 2024 list # may have moved
+  last_checked: null

@@ -1,12 +1,21 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://patchlife.invalid/schema/source.schema.json",
-  "title": "Source registry file: starting URLs per brand (leads, not evidence)",
+  "title": "Source registry file: starting URLs per brand (leads, not evidence), with an optional profile of how its pages state support",
   "type": "array",
   "minItems": 1,
   "items": { "$ref": "#/$defs/source" },
   "$defs": {
     "date": { "type": "string", "format": "date" },
+    "url": { "type": "string", "format": "uri", "pattern": "^https://" },
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "maxLength": 120 },
+    "category": { "type": "string", "pattern": "^[a-z]+(-[a-z]+)*$" },
+    "sentence": { "type": "string", "minLength": 1, "maxLength": 500 },
+    "sentencesByUrl": {
+      "type": "object",
+      "propertyNames": { "pattern": "^https://" },
+      "additionalProperties": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/sentence" } }
+    },
     "source": {
       "type": "object",
       "additionalProperties": false,
@@ -22,7 +31,7 @@
           "type": "array",
           "minItems": 1,
           "uniqueItems": true,
-          "items": { "type": "string", "format": "uri", "pattern": "^https://" }
+          "items": { "$ref": "#/$defs/url" }
         },
         "date_order": {
           "description": "How these pages write numeric dates: dmy (31/12/2027) or mdy (12/31/2027). npm run validate reads numeric dates in quotes from evidence URLs starting with one of these URLs in this order only.",
@@ -32,6 +41,81 @@
         "last_checked": {
           "description": "Date the data refresh last fetched these URLs; null means never.",
           "anyOf": [{ "$ref": "#/$defs/date" }, { "type": "null" }]
+        },
+        "regions_by_url": {
+          "description": "Profile: the region codes each page covers, by its exact URL. Rule R2 rejects a record whose regions go beyond what the pages it cites cover together; a page not listed here covers none.",
+          "type": "object",
+          "propertyNames": { "pattern": "^https://" },
+          "additionalProperties": { "type": "array", "uniqueItems": true, "items": { "enum": ["AU", "UK", "US", "EU", "GLOBAL"] } }
+        },
+        "at_least": {
+          "description": "Profile: the sentences, or shorter phrases, that make this source's dates a minimum, written as the page text reads them; rule R3 compares them after normalise(), as the verifier compares quotes. R3 rejects an at_least: true record that quotes none of them, so an empty list means no record of this source may be at_least: true.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/sentence" }
+        },
+        "conditions": {
+          "description": "Profile: the conditions sentences allowed on a record that cites each URL. {version} stands for the hardware version exactly as the cited row writes it. Rule R4 requires a record citing a listed URL to carry one of its sentences, and rejects any other wording.",
+          "$ref": "#/$defs/sentencesByUrl"
+        },
+        "notes": {
+          "description": "Profile: the sentences a parser may write in notes for a record that cites each URL, in the order it joins them; a {name} placeholder stands for a value read from the row. No rule checks notes.",
+          "$ref": "#/$defs/sentencesByUrl"
+        },
+        "category_map": {
+          "description": "Profile: an ordered list of patterns to categories. The first entry whose model pattern matches the record's model, or whose row pattern matches one of its evidence quotes, gives the category; patterns are case-insensitive regular expressions. Rule R7 rejects a record whose category differs, or that no entry matches, unless category_exceptions lists it.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["category"],
+            "minProperties": 2,
+            "maxProperties": 2,
+            "properties": {
+              "model": { "type": "string", "minLength": 1, "maxLength": 200 },
+              "row": { "type": "string", "minLength": 1, "maxLength": 200 },
+              "category": { "$ref": "#/$defs/category" }
+            }
+          }
+        },
+        "category_exceptions": {
+          "description": "Profile: record ids whose category is a hand judgement (for example from the maker's product page), with that category. Rule R7 checks these records against it instead of category_map.",
+          "type": "object",
+          "propertyNames": { "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+          "additionalProperties": { "$ref": "#/$defs/category" }
+        },
+        "versioned": {
+          "description": "Profile: true when the pages list each model by hardware version. Rule R6 then requires the model or the conditions, and every alias, to carry a version that a cited row writes, so a name can't match other versions of the model.",
+          "type": "boolean"
+        },
+        "min_rows": {
+          "description": "Profile: the fewest rows a parser must find on each page before it trusts its read (B3's sanity gate), set at 90% of the rows the records cited when the profile was written.",
+          "type": "object",
+          "propertyNames": { "pattern": "^https://" },
+          "additionalProperties": { "type": "integer", "minimum": 1 }
+        },
+        "renames": {
+          "description": "Profile: the maker's rename table, hand-kept from its pages: each old name, the new name it became, and the pages that state the change. Rule R1 accepts an alias that this table renames to the record's model; a parser maps a page's old name to the record.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["from", "to", "urls"],
+            "properties": {
+              "from": { "type": "string", "minLength": 1, "maxLength": 160 },
+              "to": { "type": "string", "minLength": 1, "maxLength": 160 },
+              "urls": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/url" } }
+            }
+          }
+        },
+        "parser_exceptions": {
+          "description": "Profile: record ids a parser must not write to, because a field carries a judgement no rule derives (a D33 split, a D39 conflict, a category or note from another page). A parser reports a changed row for them instead of proposing the record.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
         }
       }
     }

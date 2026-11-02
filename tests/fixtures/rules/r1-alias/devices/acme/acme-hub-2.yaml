@@ -1,0 +1,20 @@
+id: acme-hub-2
+brand: Acme
+brand_slug: acme
+model: Hub 2
+# A none_published record has no quotes, so its aliases are the names the search used: R1 leaves them alone.
+aliases: [AH-2]
+category: hub
+regions: [AU]
+support:
+  rule: none_published
+  end_date: null
+  years: null
+  anchor_date: null
+  at_least: false
+evidence:
+  - url: https://example.com/acme/security
+    retrieved: "2026-10-01"
+    regime: au_smart_device_rules
+verification:
+  status: unverified

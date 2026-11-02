@@ -7,10 +7,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { repointSource } from "../scripts/repoint-source.mjs";
-import { validateDevices } from "../scripts/validate-data.mjs";
+import { validateDevices, validateSources } from "../scripts/validate-data.mjs";
 import { htmlToText, normalise } from "../scripts/verify-evidence.mjs";
 
 const VALID = fileURLToPath(new URL("./fixtures/valid", import.meta.url));
+// The registry the valid fixtures follow: the alias AC-1 of acme-cam-1 comes from its rename table (rule R1).
+const SOURCES = validateSources(fileURLToPath(new URL("./fixtures/sources/valid", import.meta.url))).entries;
 const SCRIPT = fileURLToPath(new URL("../scripts/repoint-source.mjs", import.meta.url));
 const TODAY = "2026-10-27";
 // acme-plug-3 cites the old page twice and acme-router-2 once, next to the end-of-life page.
@@ -83,7 +85,7 @@ test("moves each citing item, keeps its quote, clears its archive link and re-ve
   assert.ok(router.includes(`  - url: ${NEW}\n    quote: The defined support period will end 3 years after the product's end-of-life date.\n`));
   assert.ok(router.includes(`  - url: ${EOL}\n    quote: Router 2 End of Life 31 March 2025\n    retrieved: "2026-10-01"\n    archive_url: ${capture(EOL)}\n`));
   assert.deepEqual(Object.keys(JSON.parse(readFileSync(hashFile, "utf8"))), [EOL, NEW]);
-  assert.deepEqual(validateDevices(dir, { today: TODAY }).errors, []);
+  assert.deepEqual(validateDevices(dir, { today: TODAY, sources: SOURCES }).errors, []);
   // Records citing other pages are untouched.
   for (const id of ["acme-cam-1", "acme-hub-4", "acme-leap-5"]) assert.equal(read(id), original(id));
 });

@@ -1,0 +1,28 @@
+# The #24 audit catch: conditions widened Ring's channel to any Amazon store. Ring's page says "on amazon.com where
+# Amazon is the seller", which the profile's sentence carries.
+id: ring-video-doorbell-3
+brand: Ring
+brand_slug: ring
+model: Video Doorbell 3
+aliases:
+  - Ring Video Doorbell 3
+category: doorbell
+regions: [UK]
+support:
+  rule: fixed_date
+  end_date: "2027-12-31"
+  years: null
+  anchor_date: null
+  at_least: true
+  conditions: "If bought new on ring.com, or from Amazon as the seller, at least four years from purchase or this date, whichever is later."
+evidence:
+  - url: https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: Ring Video Doorbell 3 31 December 2027
+    retrieved: "2026-10-21"
+    regime: vendor_policy
+  - url: https://ring.com/gb/en/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "We'll support your device with software security updates until at least four years from when you bought it new on amazon.com where Amazon is the seller or on ring.com (or, in each case, until the date stated below if later)."
+    retrieved: "2026-10-21"
+    regime: vendor_policy
+verification:
+  status: unverified
