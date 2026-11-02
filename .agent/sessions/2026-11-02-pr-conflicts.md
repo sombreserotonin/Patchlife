@@ -19,3 +19,7 @@ Owner's queue, in order: merge #154, #159, #161; add `audited` to #135, #149, #1
 - Merged in order: #149, #153, #156 (clean against `main`), then #135 after bringing it up to date (its profile lines sit under the `last_checked` dates the data PRs bump), then #143 (B4) retargeted to `main` by GitHub when #135's branch was deleted; add/add conflicts in B4's seven files resolved to B4's versions after checking #135's code had not changed since 449e80e. P3's second part opened as #165.
 - Three mistakes caught before merge, now D57: `git checkout --ours` on the registry dropped #153's lines (restored in 3813d40); a fetch naming the deleted branch failed as a whole, so a merge used a stale `origin/main`, and the push went out with 26 failing tests because the test run was piped (fixed in c3b0232 before any merge).
 - Left for the owner: #165, #161, the Owner tools dry runs, #152, MIGRATION action 4, Stage 2 on 5 Nov. Left to write: A2's second part.
+
+## A2's second part
+
+Wrote RUNBOOKS O8 (Owner tools `withdraw` and `repoint`, by-hand fallback), O9 (the weekly candidate PR review) and O10 (correction and add-model issues) from the merged workflows and scripts, and updated O5, OPERATIONS, ARCHITECTURE, MIGRATION and TASKS. With #165 merged, Stage 1's build is complete.

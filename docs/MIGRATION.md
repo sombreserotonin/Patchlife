@@ -170,8 +170,7 @@ Checked with `git` and the GitHub API at 03:25 UTC:
 ### Stage 1: build (23 Oct to 4 Nov, Max)
 
 Run parallel sessions in separate files (D19, D26), each with one reviewer and no multi-agent reviews. P1 (#101), A1, B1, P2 (#128), B5 (#133), C4 (#132), C1 (#134), C2 (#136), A2's first part (#137), C5 (#141), P3's first part (#140), B2 and B3 (#135) and B4 (#143) have merged, the last three on 2 Nov after your `audited` label. That leaves:
-- P3's second part, open as #165 for you to merge (action 2 below);
-- A2's second part (O9, O10 and O8's bulk actions), being written.
+- P3's second part, open as #165 for you to merge (action 2 below). A2's second part (O9, O10 and O8's Owner tools actions) merged on 2 Nov, so the build is complete once #165 is in.
 
 All of it lands by 4 Nov, because Max ends on 19 Nov (D46) and the shadow fortnight needs the days before it. Tier C starts only after Tiers A and B have merged, and only if it fits before 4 Nov; otherwise cut it.
 
@@ -202,7 +201,7 @@ All of it lands by 4 Nov, because Max ends on 19 Nov (D46) and the shadow fortni
   - The new commands in CLAUDE.md.
 
   While `BOT_MERGE=off`, the daily build keeps merging.
-- **A2 (unprotected; docs for someone who doesn't code every day). First part merged 27 Oct (#137): OPERATIONS, O4, O5, O11, O12, DATA-POLICY's review section and PLAN's decision 12 lines; O9, O10 and O8's bulk actions follow B4 and P3:**
+- **A2 (unprotected; docs for someone who doesn't code every day). First part merged 27 Oct (#137): OPERATIONS, O4, O5, O11, O12, DATA-POLICY's review section and PLAN's decision 12 lines. Second part merged 2 Nov: O9, O10 and O8's Owner tools actions:**
   - **`docs/OPERATIONS.md`:** settings, alerts, backups, cut-over and rollback.
   - **RUNBOOKS, rewritten:**
     - O4 becomes "Recover failing housekeeping";
