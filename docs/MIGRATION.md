@@ -498,7 +498,7 @@ Do this on Monday morning (Sydney time), after the Sunday UTC runs: the data ref
 | Step | Minutes (*estimate*) |
 |---|---|
 | Read the #27 summary, and the `watchdog` issue if it is open. Confirm the summary is under 8 days old: apart from the dead-man's switch, this is the only check on the watchdog itself | 5 |
-| The candidate data PR (O9): open the flagged rows and the sample through their highlight links. Check the date order, the model, "or later" against `at_least`, and the region. To fix a category, edit `category_map` or `category_exceptions` in `seed.yaml` on the PR branch, then dispatch `data-refresh.yml` with `refresh_open_pr: true`. Add `audited` last (any later push removes it), then squash-merge | 0 to 20 |
+| The candidate data PR (O9): open the flagged rows and the sample through their highlight links. Check the date order, the model, "or later" against `at_least`, and the region. To fix a category, edit `category_map` or `category_exceptions` in `seed.yaml` on the PR branch and set the record's `category` to match (O9 step 4). Add `audited` last (any later push removes it), then squash-merge | 0 to 20 |
 | Spot-check the summary's 5 random records | 8 to 10 |
 | Merge `needs-human-merge` PRs and clear `needs-human` items | 0 to 10 |
 | Correction and add-model issues (O10) | 0 to 15 |
