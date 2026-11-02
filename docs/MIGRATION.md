@@ -169,9 +169,9 @@ Checked with `git` and the GitHub API at 03:25 UTC:
 
 ### Stage 1: build (23 Oct to 4 Nov, Max)
 
-Run parallel sessions in separate files (D19, D26), each with one reviewer and no multi-agent reviews. P1 (#101), A1, B1, P2 (#128), B5 (#133), C4 (#132), C1 (#134), C2 (#136) and A2's first part (#137) have merged, all by 27 Oct. B2 is open as #135 for your profile approval, and B3 is being built on its branch in a `Crawl` session. That leaves:
-- B3, then B4, each reviewed here; B2 merges when you add `audited`;
-- A2's second part (O9, O10 and O8's bulk actions) and P3, once B4 has merged; then C5.
+Run parallel sessions in separate files (D19, D26), each with one reviewer and no multi-agent reviews. P1 (#101), A1, B1, P2 (#128), B5 (#133), C4 (#132), C1 (#134), C2 (#136), A2's first part (#137), C5 (#141), P3's first part (#140), B2 and B3 (#135) and B4 (#143) have merged, the last three on 2 Nov after your `audited` label. That leaves:
+- P3's second part, open as #165 for you to merge (action 2 below);
+- A2's second part (O9, O10 and O8's bulk actions), being written.
 
 All of it lands by 4 Nov, because Max ends on 19 Nov (D46) and the shadow fortnight needs the days before it. Tier C starts only after Tiers A and B have merged, and only if it fits before 4 Nov; otherwise cut it.
 
@@ -250,7 +250,7 @@ All of it lands by 4 Nov, because Max ends on 19 Nov (D46) and the shadow fortni
   - match the 2 TP-Link records with a lowercase "v1" in `conditions` to the page's casing.
 
   B1 merges before B2, so CI stays green.
-- **B2 (unprotected): source profiles and rules. Open as #135 since 27 Oct, reviewed, waiting on your `audited` label (action 3 below).**
+- **B2 (unprotected): source profiles and rules. Merged 2 Nov (#135, with B3) after your `audited` label.**
   - **New profile fields,** in `data/schema/source.schema.json` and `seed.yaml`:
     - `regions_by_url`;
     - `at_least`, with its sentence;
@@ -271,7 +271,7 @@ All of it lands by 4 Nov, because Max ends on 19 Nov (D46) and the shadow fortni
     - R7: the category comes from the map or is a listed exception;
     - R8: no unquoted value under `data/` contains ` #` or `: `. Today D25 relies on the model remembering this.
   - **Fixtures:** each rule gets one. Each past audit catch (#21, #22, #24 and #51) also gets one, and those must fail.
-- **B3 (unprotected, after B2):**
+- **B3 (unprotected, after B2). Merged 2 Nov with B2 (#135):**
   - `scripts/table-rows.mjs` (decision 4), with a fixture for fused footnote markers;
   - `scripts/parsers/tp-link-au.mjs` and `ezviz-eol.mjs`, which cover 533 of the 695 records;
   - `scripts/candidates.mjs [--check] [--limit n] [brand ...]`:
@@ -280,7 +280,7 @@ All of it lands by 4 Nov, because Max ends on 19 Nov (D46) and the shadow fortni
   - synthetic fixtures with made-up models in `tests/fixtures/parsers/`:
     - copies of makers' pages would break the "never whole pages" promise in CRAWLER.md and on the methodology page;
     - `--check` runs against the live pages instead.
-- **B4 (unprotected):**
+- **B4 (unprotected). Merged 2 Nov (#143):**
   - **The Ring parser:** merges the US, GB and AU pages, takes renames from the profile's table (Ring's renames come from a prose article, not a table), and handles D33 splits.
   - **The Google parser:**
     - reads the release date, the end date and the Yes/No cell from the row, for example "Nest Learning Thermostat (4th gen) 8/20/2024 8/20/2029 Yes";
@@ -297,7 +297,7 @@ All of it lands by 4 Nov, because Max ends on 19 Nov (D46) and the shadow fortni
   - the M3 part 2 drill as an `npm test` case: a broken fixture source on a local server. It then runs on every PR.
 
   The fetching scripts need `node --use-env-proxy` in `Crawl` (D16). CLAUDE.md documents them like the existing commands.
-- **P3 (protected, after B4 and B5). First part merged 27 Oct (#140: `owner-tools.yml` and the CLAUDE.md lines for the owner's scripts); the second part, below, follows B4:**
+- **P3 (protected, after B4 and B5). First part merged 27 Oct (#140: `owner-tools.yml` and the CLAUDE.md lines for the owner's scripts); the second part, below, is open as #165 for you to merge:**
   - **A new `data-refresh.yml`:**
     - its weekly schedule (`17 16 * * 0`) acts only when the variable `DATA_REFRESH` is `on`, which you switch on in Stage 2. So it never doubles up with the nightly `Crawl` task, which hits the same hosts at 14:17 UTC;
     - mints the App token for checkout, push and PR;
@@ -345,10 +345,10 @@ All of it lands by 4 Nov, because Max ends on 19 Nov (D46) and the shadow fortni
      - the variables `BOT_APP_ID` and `BOT_CLIENT_ID`. GitHub's current `actions/create-github-app-token` example takes the Client ID, and older ones the App ID;
      - the secret `BOT_APP_PRIVATE_KEY`;
      - the variables `BOT_MERGE=off` and `DATA_REFRESH=off`.
-2. **Merge P3** following O2, about 20 minutes, then run the steps in its description. (P2 is merged and its steps are done, 27 Oct; #101 is merged.)
+2. **Merge P3's second part (#165)** following O2, about 20 minutes, then run the steps in its description. (P2 and P3's first part are merged and their steps are done, 27 Oct; #101 is merged.)
    - Between them, they add only `schedule`, `workflow_dispatch` and `pull_request` triggers. None uses `pull_request_target`.
    - Expect `protected-paths` to fail on Dependabot's PRs, because their runs get a read-only token [11]. Merge those yourself once `test` is green.
-3. **Approve the seven profiles in B2 (#135),** 20 to 30 minutes each, including the `conditions` sentences and the category maps; the PR's review comment lists what to read. Add the `audited` label yourself when you are satisfied (only your own label event counts), then merge it or leave it for a session.
+3. **Approve the seven profiles in B2 (#135).** Done on 2 Nov: you added the `audited` label and the PR merged.
 4. **Settings** (15 minutes):
    - CodeQL default setup (Code security > CodeQL > Default) [12];
    - Dependabot security updates on;
