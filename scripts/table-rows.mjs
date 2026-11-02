@@ -12,7 +12,8 @@ const SUP = /<sup\b[^>]*>([\s\S]*?)<\/sup\s*>/gi;
 
 const collapse = (text) => text.replace(/\s+/g, " ").trim();
 
-// One cell: its text with whitespace collapsed, its <sup> contents in order, and how many columns it spans.
+// One cell: its text with whitespace collapsed, its <sup> contents in order, how many columns it spans, and its raw
+// inner HTML for a parser that needs the markup inside the cell (ASUS lists one model per <p>).
 export function readCell(attrs, inner) {
   const markers = [];
   const rest = inner.replace(SUP, (match, sup) => {
@@ -21,7 +22,7 @@ export function readCell(attrs, inner) {
     return " ";
   });
   const span = Number(attrs.match(/\bcolspan\s*=\s*["']?(\d+)/i)?.[1] ?? 1);
-  return { text: collapse(htmlToText(rest)), markers, span: span > 0 ? span : 1 };
+  return { text: collapse(htmlToText(rest)), markers, span: span > 0 ? span : 1, html: inner };
 }
 
 // Every <tr> in the page, in document order: { cells, quote }, where quote joins the non-empty cell texts with single

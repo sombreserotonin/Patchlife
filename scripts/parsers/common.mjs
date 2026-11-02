@@ -26,6 +26,16 @@ export function isoDate(year, month, day) {
   return `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
+const MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+
+// YYYY-MM-DD from a day, a month name and a year as a page writes them ("11", "June", "2027"; the day may carry an
+// ordinal, as in "31st"), else null when the month or the date is not real.
+export function monthDate(day, month, year) {
+  const index = MONTHS.indexOf(month.toLowerCase());
+  if (index < 0) return null;
+  return isoDate(Number(year), index + 1, Number(String(day).replace(/(st|nd|rd|th)$/i, "")));
+}
+
 // A support block as the records write it: the field order matters because records are written field by field.
 export function fixedDate(endDate, { atLeast, conditions }) {
   return { rule: "fixed_date", end_date: endDate, years: null, anchor_date: null, at_least: atLeast, conditions };
