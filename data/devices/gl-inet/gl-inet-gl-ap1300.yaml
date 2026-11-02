@@ -1,0 +1,25 @@
+id: gl-inet-gl-ap1300
+brand: GL.iNet
+brand_slug: gl-inet
+model: "GL-AP1300"
+aliases: []
+category: access-point
+regions: [GLOBAL]
+support:
+  rule: fixed_date
+  end_date: "2027-06-10"
+  years: null
+  anchor_date: null
+  at_least: false
+  conditions: "Status Maintenance: the model has reached end of life and GL.iNet lists a Supported Until date."
+evidence:
+  - url: https://www.gl-inet.com/en-us/pages/firmware-versions/?status=ended
+    quote: "GL-AP1300 4.3.18 Native OpenWrt 21.02 Maintenance June 10, 2025 June 10, 2027"
+    retrieved: "2026-10-28"
+    archive_url: null
+    regime: vendor_policy
+verification:
+  status: verified
+  checked: "2026-10-28"
+  text_sha256: 36b5be03f4ad5a6c1ec7482e2c7a7905c561109727fb4f7a91589e60f5597abd
+notes: "GL.iNet's firmware versions table (columns Status, EOL Date, Supported Until; page names no region) gives EOL date June 10, 2025 and Supported Until June 10, 2027, recorded as GLOBAL (D24)."
