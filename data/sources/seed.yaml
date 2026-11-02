@@ -95,7 +95,7 @@
   brand_slug: netgear
   kind: unknown
   urls: [https://kb.netgear.com/000066102/UK-PSTI-Declaration-of-Conformity]
-  note: From a 2024 list.
+  note: "From a 2024 list. The page lists models and links per-model declarations (PDFs on www.downloads.netgear.com, allowed in #117) that give no dates: \"Support is ended when product is End of Service, listed at https://www.netgear.com/about/eos/\". That page needs www.netgear.com on the allowlist (#152)."
   last_checked: null
 
 - brand: Samsung
@@ -109,8 +109,8 @@
   brand_slug: grandstream
   kind: lead_only
   urls: [https://cie-group.com/compliances-bsi/]
-  note: A distributor page says support ends 1 year after end of life. Lead only; find Grandstream's own statement.
-  last_checked: null
+  note: "A distributor page says support ends 1 year after end of life. Lead only; find Grandstream's own statement. Unusable on 29 Oct 2026: cie-group.com is a distributor, not a primary source, and is not on the allowlist."
+  last_checked: "2026-10-29"
 
 - brand: EZVIZ
   brand_slug: ezviz
@@ -123,12 +123,12 @@
   brand_slug: aqara
   kind: unknown
   urls: [https://www.aqara.com/en/security-certifications/]
-  note: PDF only; hosts not allowlisted.
-  last_checked: null
+  note: "Unusable on 29 Oct 2026: the page gives only a general statement (security updates for at least 2 years from the launch day of certain models) and a per-model table of compliance document dates, with the documents as PDFs. No support end dates on the page."
+  last_checked: "2026-10-29"
 
 - brand: Reolink
   brand_slug: reolink
   kind: unknown
   urls: [https://reolink.com/product-compliance-psti/]
-  note: PDF only; hosts not allowlisted.
-  last_checked: null
+  note: "Unusable on 29 Oct 2026: robots.txt allows the page, but its dates are only inside scripts, so JavaScript adds them and the verifier can't see them."
+  last_checked: "2026-10-29"
