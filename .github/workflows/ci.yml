@@ -24,7 +24,8 @@ jobs:
       - run: npm test
 
   protected-paths:
-    # Labels PRs that change workflows, agent config or dependencies so only a human merges them.
+    # Labels PRs that change workflows, agent config, dependencies, the scripts the bot and the gate run, the source
+    # registry (its profiles are binding, MIGRATION D49) or the schemas, so only a human merges them.
     if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -38,7 +39,7 @@ jobs:
       - name: Label protected-path changes
         run: |
           files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename')
-          if printf '%s\n' "$files" | grep -qE '^(\.github/|\.claude/|\.agent/prompts/|CLAUDE\.md$|package(-lock)?\.json$)'; then
+          if printf '%s\n' "$files" | grep -qE '^(\.github/|\.claude/|\.agent/prompts/|CLAUDE\.md$|package(-lock)?\.json$|scripts/(merge-bot|watchdog|verification-only|validate-data)\.mjs$|data/sources/seed\.yaml$|data/schema/)'; then
             gh api -X POST "repos/$REPO/issues/$PR/labels" -f "labels[]=needs-human-merge" > /dev/null
             echo "::warning::Protected paths changed. A human must merge this PR."
           else

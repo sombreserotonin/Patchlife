@@ -1,0 +1,199 @@
+name: Data refresh
+
+# The weekly candidate PR with no model (docs/MIGRATION.md P3, decisions 4 and 5): each brand's parser reads its
+# profiled page, candidates.mjs proposes changed rows first and then new rows (at most `limit`), the written records
+# are verified, and the result is pushed to claude/data-auto-<date>-<run id> as patchlife-bot with a PR for the owner
+# to review (RUNBOOKS O9). The schedule acts only while the repository variable DATA_REFRESH is `on`, which the owner
+# sets in Stage 2, so it never doubles up with the nightly Crawl task. While the last candidate PR is open the run
+# skips, unless dispatched with refresh_open_pr, which re-runs the parsers on that PR's branch and pushes a new commit.
+# A parser-gate mismatch or a page under its min_rows fails the run: that is the "parser broken" alarm.
+on:
+  schedule:
+    - cron: '17 16 * * 0'
+  workflow_dispatch:
+    inputs:
+      brands:
+        description: Brands to parse, separated by spaces (empty means every brand with a parser)
+        default: ''
+      limit:
+        description: At most this many rows written, changed rows first
+        default: '60'
+      refresh_open_pr:
+        description: Re-run the parsers on the open candidate PR's branch and push a new commit to it
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# One group for every workflow that fetches makers' pages (decision 14), so two never run at once.
+concurrency:
+  group: crawl
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  refresh:
+    # The schedule is a no-op until the owner switches DATA_REFRESH on; a dispatch always runs.
+    if: github.event_name == 'workflow_dispatch' || vars.DATA_REFRESH == 'on'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      # The inputs reach the shell through env, never inline; on a schedule they are empty and the defaults apply.
+      BRANDS: ${{ inputs.brands }}
+      LIMIT: ${{ inputs.limit || '60' }}
+      REFRESH_OPEN_PR: ${{ inputs.refresh_open_pr == true && 'yes' || '' }}
+      REPO: ${{ github.repository }}
+    steps:
+      - id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.BOT_CLIENT_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+      - uses: actions/checkout@v7
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+      - id: open-pr
+        name: Find the open candidate PR
+        # One candidate PR at a time, so the owner is never asked to review two. The step's `branch` output is empty
+        # when a new branch is to be made, or the open PR's branch when it is being refreshed.
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          if ! [[ "$LIMIT" =~ ^[0-9]{1,5}$ ]]; then echo "::error::limit must be a whole number, not \"$LIMIT\""; exit 1; fi
+          for brand in $BRANDS; do
+            if ! [[ "$brand" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then echo "::error::\"$brand\" is not a brand slug"; exit 1; fi
+          done
+          open=$(gh api "repos/$REPO/pulls?state=open&per_page=100" --paginate --jq '.[] | select(.head.ref | startswith("claude/data-auto-")) | "\(.number) \(.head.ref)"' | head -n 1)
+          if [ -n "$open" ] && [ -z "$REFRESH_OPEN_PR" ]; then
+            echo "Skipped: candidate PR #${open%% *} (${open#* }) is still open. Review it (RUNBOOKS O9), or dispatch this workflow with refresh_open_pr to update it." | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "skip=yes" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ -z "$open" ] && [ -n "$REFRESH_OPEN_PR" ]; then
+            echo "::error::refresh_open_pr was set, but no candidate PR is open"
+            exit 1
+          fi
+          if [ -n "$open" ]; then
+            git fetch origin "${open#* }"
+            git switch "${open#* }"
+            echo "number=${open%% *}" >> "$GITHUB_OUTPUT"
+            echo "branch=${open#* }" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.open-pr.outputs.skip != 'yes'
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - if: steps.open-pr.outputs.skip != 'yes'
+        run: npm ci
+      - name: Run the parsers
+        if: steps.open-pr.outputs.skip != 'yes'
+        # Exit 1 is the parser gate or the min_rows gate: nothing was written, and the run goes red as the alarm.
+        run: |
+          set +e
+          node scripts/candidates.mjs --limit "$LIMIT" --report "$RUNNER_TEMP/report.json" $BRANDS 2>&1 | tee "$RUNNER_TEMP/candidates.txt"
+          status=${PIPESTATUS[0]}
+          set -e
+          sed 's/^/    /' "$RUNNER_TEMP/candidates.txt" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$status" -ne 0 ]; then
+            echo "::error::candidates.mjs exited $status: the parser gate or the min_rows gate failed, or a page could not be read. Nothing was written."
+            exit 1
+          fi
+      - name: Verify the written records
+        if: steps.open-pr.outputs.skip != 'yes'
+        # Exit 1 means a written record failed or is stale, which the PR shows. page-hashes.json is restored so this PR
+        # never conflicts with the nightly re-verification, which owns that file.
+        run: |
+          ids=$(jq -r '.written[].id' "$RUNNER_TEMP/report.json" | tr '\n' ' ')
+          if [ -z "${ids// }" ]; then
+            echo "Nothing to propose: no changed row and no new row within the limit." | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "nothing=yes" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          set +e
+          npm run verify:evidence -- $ids 2>&1 | tee "$RUNNER_TEMP/verify.txt"
+          status=${PIPESTATUS[0]}
+          set -e
+          sed 's/^/    /' "$RUNNER_TEMP/verify.txt" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$status" -gt 1 ] || ! grep -Eq '^[0-9]+ record\(s\) checked, [0-9]+ problem\(s\)$' "$RUNNER_TEMP/verify.txt"; then
+            echo "::error::The verifier did not finish (exit $status)"
+            exit 1
+          fi
+          git checkout -- data/sources/page-hashes.json
+      - name: Validate and test
+        if: steps.open-pr.outputs.skip != 'yes' && env.nothing != 'yes'
+        run: |
+          npm run validate
+          npm test
+      - name: Push and open the PR
+        if: steps.open-pr.outputs.skip != 'yes' && env.nothing != 'yes'
+        # A new branch and PR, or a new commit on the open PR's branch (never a force push). The body holds the change
+        # table and the flags from the report, then the highlight links of the spot-check sample and the dates on the
+        # parsed pages that no record quotes yet, both capped so the body stays within GitHub's limit.
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+          OPEN_NUMBER: ${{ steps.open-pr.outputs.number }}
+          OPEN_BRANCH: ${{ steps.open-pr.outputs.branch }}
+        run: |
+          if [ -z "$(git status --porcelain -- data)" ]; then
+            echo "Nothing to push: the written records did not change the tree." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          name="${APP_SLUG}[bot]"
+          email="$(gh api "users/$name" --jq .id)+${name}@users.noreply.github.com"
+          date=$(date -u +%F)
+          report="$RUNNER_TEMP/report.json"
+          written=$(jq -r '.written | length' "$report")
+          {
+            echo "Weekly data refresh of $date (docs/MIGRATION.md P3): $written record(s) proposed by \`scripts/candidates.mjs\`, changed rows first. Review it with RUNBOOKS O9, add \`audited\`, then squash and merge; or dispatch the workflow with \`refresh_open_pr\` after fixing a profile."
+            echo
+            echo "| Record | Change | Before | After |"
+            echo "| --- | --- | --- | --- |"
+            jq -r '.written[] | "| \(.id) | \(.kind) | \(if .before then "\(.before.end_date) \(if .before.at_least then "at least" else "" end) \(.before.conditions // "")" else "" end) | \(if .after then "\(.after.end_date) \(if .after.at_least then "at least" else "" end) \(.after.conditions // "")" else "new row" end) |"' "$report"
+            echo
+            flags=$(jq -r '.flags[]?' "$report")
+            if [ -n "$flags" ]; then echo "**Flags for a person:**"; printf '%s\n' "$flags" | sed 's/^/- /'; echo; fi
+            echo "Per page:"
+            echo '```'
+            grep -vE '^  (new|skipped): ' "$RUNNER_TEMP/candidates.txt"
+            echo '```'
+            echo
+            echo "Verifier:"
+            echo '```'
+            tail -n 40 "$RUNNER_TEMP/verify.txt"
+            echo '```'
+          } > "$RUNNER_TEMP/body.md"
+          if [ -n "$OPEN_BRANCH" ]; then
+            branch="$OPEN_BRANCH"
+            number="$OPEN_NUMBER"
+          else
+            branch="claude/data-auto-$date-$GITHUB_RUN_ID"
+            git switch -c "$branch"
+          fi
+          git add data
+          git -c user.name="$name" -c user.email="$email" commit -q -m "data: weekly refresh $date ($written records)" -m "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          git push origin "$branch"
+          if [ -z "$number" ]; then
+            number=$(gh api -X POST "repos/$REPO/pulls" -f title="data: weekly refresh $date" -f head="$branch" -f base=main -F body=@"$RUNNER_TEMP/body.md" --jq .number)
+          fi
+          # The spot-check sample is seeded by the PR number, so it is added once the number exists.
+          {
+            echo
+            echo "**Spot check (RUNBOOKS O5 step 2), \`node scripts/audit-sample.mjs $number\`:**"
+            echo '```'
+            node scripts/audit-sample.mjs "$number" $(jq -r '.written[].id' "$report") | head -n 40
+            echo '```'
+            echo
+            echo "**Dates on the parsed pages that no record quotes yet** (\`scripts/unquoted-dates.mjs\`, first 60 lines):"
+            echo '```'
+            node scripts/unquoted-dates.mjs $(jq -r '[.pages[].url] | unique | .[]' "$report") 2>&1 | head -n 60
+            echo '```'
+            echo
+            echo "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          } >> "$RUNNER_TEMP/body.md"
+          gh api -X PATCH "repos/$REPO/pulls/$number" -F body=@"$RUNNER_TEMP/body.md" > /dev/null
+          echo "Pushed $branch and updated PR #$number: $GITHUB_SERVER_URL/$REPO/pull/$number" | tee -a "$GITHUB_STEP_SUMMARY"
