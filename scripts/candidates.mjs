@@ -1,7 +1,7 @@
 // Runs each brand's parser on its profiled pages and matches the candidate records to the existing ones by their row
 // quotes (MIGRATION B3 and B4), never by generated id, so it can't create a duplicate. The parser gate: every record
 // whose quotes are still on their pages must be reproduced field for field, or nothing is written. With --check it
-// writes nothing and reports per page. Without it, a record whose row has changed (its quote gone, the model's row
+// writes nothing and reports per page. Without it, a record whose row has changed (its quote gone or withdrawn (O8), the model's row
 // now giving another date or wording, or only the templated notes moved on) is rewritten from the parser's row as a
 // proposal, then the rows no record
 // covers are written as new unverified records, one brand at a time, up to --limit (MIGRATION decision 5). Records in
@@ -77,7 +77,8 @@ const names = (record) => [record.model, ...(record.aliases ?? [])].map(normalis
 // texts gives each cited URL's normalised page text, for the quote checks.
 export function matchBrand({ urls, brand_slug, profile, candidates, skipped, flags = [], rows, records, texts }) {
   const exceptions = new Set(profile.parser_exceptions ?? []);
-  const onPage = (item) => texts.get(item.url)?.includes(normalise(item.quote)) ?? false;
+  // An item with no quote (a record withdrawn by O8, or none_published) pins no row, so its record counts as changed.
+  const onPage = (item) => item.quote != null && (texts.get(item.url)?.includes(normalise(item.quote)) ?? false);
   const reports = Object.fromEntries(urls.map((url) => [url, { url, brand_slug, rows: rows[url], minRows: profile.min_rows?.[url], cited: 0, reproduced: [], exceptions: [], differ: [], notReproduced: [], changed: [], idDiffers: [], ambiguous: [], unquotable: [], newRows: [], skipped: skipped.filter((s) => s.url === url) }]));
   const pagesOf = (items) => [...new Set(items.map((item) => item.url))].filter((url) => url in reports);
   const report = (items, list, entry) => pagesOf(items).forEach((url) => reports[url][list].push(entry));
@@ -120,10 +121,11 @@ export function matchBrand({ urls, brand_slug, profile, candidates, skipped, fla
     if (gone.length) {
       // The record's row has changed: the parser's row for the model, if there is one, replaces it (B4).
       const [candidate] = naming(record).filter((c) => !matched.has(c));
-      report(gone, "changed", { id: record.id, quote: gone[0].quote, ...(candidate ? { parser: candidate.evidence[0].quote } : {}) });
-      if (!candidate) out.push(`changed: ${record.id}: its quote ${JSON.stringify(gone[0].quote)} is no longer on ${gone[0].url} and no row names the model now`);
+      const withdrawn = gone[0].quote == null;
+      report(gone, "changed", { id: record.id, ...(withdrawn ? { withdrawn: true } : { quote: gone[0].quote }), ...(candidate ? { parser: candidate.evidence[0].quote } : {}) });
+      if (!candidate) out.push(`changed: ${record.id}: ${withdrawn ? "it has no quote (withdrawn)" : `its quote ${JSON.stringify(gone[0].quote)} is no longer on ${gone[0].url}`} and no row names the model now`);
       else if (exceptions.has(record.id)) out.push(`changed: ${record.id} is a parser exception, so its changed row ${JSON.stringify(candidate.evidence[0].quote)} is not written`);
-      else proposals.push({ record, candidate, quote: gone[0].quote });
+      else proposals.push({ record, candidate, quote: withdrawn ? null : gone[0].quote });
       if (candidate) matched.add(candidate);
       continue;
     }
@@ -286,9 +288,9 @@ export function format(report) {
   ];
   for (const { id, differences } of report.differ) for (const d of differences) lines.push(`  differs: ${id}: ${d.field}: record ${show(d.record)}, parser ${show(d.parser)}`);
   for (const { id, quote } of report.notReproduced) lines.push(`  not reproduced: ${id}: ${show(quote)}`);
-  for (const { id, quote, parser, notes } of report.changed) {
+  for (const { id, quote, parser, notes, withdrawn } of report.changed) {
     if (notes) lines.push(`  changed: ${id}: only the notes differ for ${show(quote)}`);
-    else lines.push(`  changed: ${id}: ${parser === true ? `a second row names the record ${show(quote)}` : `quote gone ${show(quote)}${parser ? `, the page now has ${show(parser)}` : ", no row names the model now"}`}`);
+    else lines.push(`  changed: ${id}: ${parser === true ? `a second row names the record ${show(quote)}` : `${withdrawn ? "no quote (withdrawn)" : `quote gone ${show(quote)}`}${parser ? `, the page now has ${show(parser)}` : ", no row names the model now"}`}`);
   }
   for (const { id, parser } of report.idDiffers) lines.push(`  id differs: ${id}: parser gives ${parser}`);
   for (const { id, quotes } of report.ambiguous) lines.push(`  ambiguous: ${id}: ${quotes.map(show).join(" and ")}`);

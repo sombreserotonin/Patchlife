@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import YAML from "yaml";
 import { format, gateDifferences, mismatches, recordYaml, reportJson, rewritten, runCandidates } from "../scripts/candidates.mjs";
 import { validateDevices, validateSources } from "../scripts/validate-data.mjs";
+import { withdrawRecord } from "../scripts/withdraw-record.mjs";
 import * as asus from "../scripts/parsers/asus.mjs";
 import * as ezviz from "../scripts/parsers/ezviz-eol.mjs";
 import * as glInet from "../scripts/parsers/gl-inet.mjs";
@@ -103,6 +104,29 @@ test("a record whose row changed is rewritten from the parser's row (B4): the ro
   assert.equal(after.evidence[0].retrieved, TODAY);
   assert.ok(after.evidence.every((item) => !("archive_url" in item)));
   for (const key of ["id", "brand", "brand_slug", "model", "aliases", "category", "regions"]) assert.deepEqual(after[key], was[key]);
+  assert.deepEqual(validateDevices(dir, { today: TODAY, sources: SOURCES }).errors, []);
+});
+
+test("a record withdrawn by O8 (no quote) counts as a changed row: the parser's row replaces it and nothing throws", async () => {
+  const { dir, get, read } = setup();
+  withdrawRecord(dir, "tp-link-tapo-z100-v5", "a test of the owner's withdraw action", { today: TODAY });
+  const before = YAML.parse(read("tp-link", "tp-link-tapo-z100-v5"));
+  assert.equal(before.support.rule, "none_published");
+  assert.ok(before.evidence.every((item) => !("quote" in item)));
+  const { reports, written, flags } = await run(dir, { get, brands: ["tp-link"], limit: 10 });
+  const [tp] = reports;
+  assert.deepEqual(tp.changed, [{ id: "tp-link-tapo-z100-v5", withdrawn: true, parser: "Wired Indoor Camera Tapo Z100 V5 31/12/2028 or later*" }]);
+  assert.equal(mismatches(tp), 0);
+  assert.ok(flags.every((flag) => !flag.includes("z100")), flags.join("\n"));
+  assert.ok(format(tp).includes('  changed: tp-link-tapo-z100-v5: no quote (withdrawn), the page now has "Wired Indoor Camera Tapo Z100 V5 31/12/2028 or later*"'));
+  assert.deepEqual(written.map((w) => [w.id, w.kind]).slice(0, 1), [["tp-link-tapo-z100-v5", "changed"]]);
+  assert.equal(written[0].before.end_date, null);
+  assert.equal(written[0].before.quote, null);
+  assert.equal(written[0].after.end_date, "2028-12-31");
+  const after = YAML.parse(read("tp-link", "tp-link-tapo-z100-v5"));
+  assert.equal(after.support.end_date, "2028-12-31");
+  assert.deepEqual(after.verification, { status: "unverified" });
+  assert.ok(!(after.notes ?? "").includes("Withdrawn"));
   assert.deepEqual(validateDevices(dir, { today: TODAY, sources: SOURCES }).errors, []);
 });
 
