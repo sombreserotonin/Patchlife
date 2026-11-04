@@ -420,7 +420,7 @@
   kind: eol_list
   urls: [https://support.ezviz.com/faq/article/EZVIZ-EOL-Product-List, https://www.ezviz.com/inter/trust-center/security/upgrade-policy]
   note: Per-model day of firmware update cessation for Europe; the page says EOL means no security updates. The upgrade policy links the list.
-  last_checked: "2026-10-21"
+  last_checked: "2026-11-04"
   # Every row's targeted area is Europe, recorded as EU; the upgrade policy names no region and gives no dates.
   regions_by_url:
     https://support.ezviz.com/faq/article/EZVIZ-EOL-Product-List: [EU]
