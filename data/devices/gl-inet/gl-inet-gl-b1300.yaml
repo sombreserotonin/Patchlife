@@ -16,7 +16,7 @@ evidence:
   - url: https://www.gl-inet.com/en-us/pages/firmware-versions/?status=ended
     quote: "GL-B1300 4.3.25 Native OpenWrt 21.02.2 Maintenance June 10, 2025 June 10, 2027"
     retrieved: "2026-10-28"
-    archive_url: null
+    archive_url: https://web.archive.org/web/20261106193958/https://www.gl-inet.com/en-us/pages/firmware-versions/?status=ended
     regime: vendor_policy
 verification:
   status: verified
