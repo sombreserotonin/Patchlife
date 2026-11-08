@@ -268,7 +268,7 @@
   urls: [https://www.asus.com/support/faq/1051929/]
   date_order: dmy
   note: UK PSTI list of networking products with a security update end date per group of models (54 router and mesh records). Adapters, cards, repeaters and models whose group row is over 300 characters from their name to the date are skipped.
-  last_checked: "2026-10-23"
+  last_checked: "2026-11-08"
   regions_by_url:
     https://www.asus.com/support/faq/1051929/: [UK]
   at_least:
