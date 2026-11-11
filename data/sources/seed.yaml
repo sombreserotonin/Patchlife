@@ -201,7 +201,7 @@
     - https://www.gl-inet.com/en-us/pages/psti-support-period
     - https://www.gl-inet.com/en-us/pages/firmware-versions/?status=ended
   note: "Support period runs 2 years from a product's end-of-life date. The second URL is the per-model table the GL.iNet records cite (24 models, \"June 11, 2027 or later\"). The third URL is the End of Life table the PSTI statement links, with EOL and Supported Until dates (Beryl GL-MT1300 cites it; Velica GL-B2200 has a record per page, D39)."
-  last_checked: "2026-10-28"
+  last_checked: "2026-11-11"
   # The PSTI pages name no region and are recorded as UK, the regime they are published under; the firmware versions
   # table names no region either and is recorded as GLOBAL (D24).
   regions_by_url:
