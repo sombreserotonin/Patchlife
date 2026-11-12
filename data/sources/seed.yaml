@@ -134,7 +134,7 @@
     - https://www.tp-link.com/uk/support/faq/3562/
   date_order: dmy
   note: The AU page gives a date per model and hardware version; the Tapo records (#22) cite it. The UK pages give 3 years after a product's end-of-life date; the UK per-model periods are only in a PDF.
-  last_checked: "2026-10-30"
+  last_checked: "2026-11-12"
   regions_by_url:
     https://www.tp-link.com/au/landing/au-cyber-compliance/: [AU]
     https://www.tp-link.com/uk/support/psti/: [UK]
