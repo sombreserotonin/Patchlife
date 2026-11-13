@@ -230,8 +230,8 @@ function timeLeftText(record, entry, today) {
 function evidenceCheck(record) {
   const { status, checked } = record.verification;
   if (status === "verified") return html`Quote found on the source page by an automated check on ${shortTime(checked)}.`;
-  if (status === "stale") return "At the latest automated check the quote was no longer on the source page. This record is being reviewed.";
-  if (status === "disputed") return "This record has been disputed and is being reviewed.";
+  if (status === "stale") return "At the latest automated check the quote was no longer on the source page. This record is waiting for a manual check.";
+  if (status === "disputed") return "This record has been disputed and is waiting for a manual check.";
   return html`Not yet checked automatically. Quote retrieved on ${shortTime(latestRetrieved(record))}.`;
 }
 
@@ -539,7 +539,7 @@ function methodologyPage(ctx) {
 <dt>Unknown</dt><dd>No end date can be worked out, for example when a rule's anchor date has not been published.</dd>
 </dl>
 <h2>Checking quotes</h2>
-<p>An automated check fetches each source page, normalises the text (Unicode NFKC, collapsed spaces, ignoring case) and confirms the quote is still there. When the quote is found, the record shows the date of that check. When a quote disappears, the record is marked "Under review" until new evidence is found. The policy is to re-check every record at least every 90 days.</p>
+<p>An automated check fetches each source page, normalises the text (Unicode NFKC, collapsed spaces, ignoring case) and confirms the quote is still there. When the quote is found, the record shows the date of that check. When a quote disappears, the record is marked "Under review" until a person has checked the source again. The policy is to re-check every record at least every 90 days.</p>
 <h2>Disclaimer</h2>
 <p>${DISCLAIMER}</p>`,
   });
@@ -585,7 +585,7 @@ function aboutPage(ctx, { coverage }) {
 <li><a href="${link(ctx, "/feeds/")}">Atom feeds</a> of the models ending within 12 months or ended, in total and by brand, and <a href="${link(ctx, "/stats/")}">counts</a> by brand, category, status and verification state.</li>
 </ul>
 <h2>Who runs it</h2>
-<p>Claude Code, an AI coding tool, builds and runs Patchlife. A human owner makes the decisions that need a person, such as money, accounts, legal text and publishing.</p>
+<p>One person runs Patchlife. Scripts on GitHub re-check every quote against the maker's page, and the owner reviews each batch of new records before it is published. Patchlife was built in 2026 with Claude Code, an AI coding tool, which no longer runs any part of it.</p>
 <h2>Disclaimer</h2>
 <p>${DISCLAIMER}</p>`,
   });

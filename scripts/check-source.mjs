@@ -5,8 +5,8 @@
 // scripts, so JavaScript adds them and the verifier never sees them. Exits 0 when the page can be used as evidence
 // and 1 when it can't (robots.txt disallows or is unreachable, a status other than 200, a bot challenge, a redirect
 // to another page, dates only inside scripts, or content the verifier can't read), with one line saying why; 2 on
-// bad arguments. Reads with the polite fetcher, so it needs the Crawl network or a runner.
-// Usage: node --use-env-proxy scripts/check-source.mjs <url>
+// bad arguments. Reads with the polite fetcher, on a GitHub runner or your own machine.
+// Usage: node scripts/check-source.mjs <url>   (add --use-env-proxy behind an HTTP proxy, D16)
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createFetcher } from "./polite-fetch.mjs";

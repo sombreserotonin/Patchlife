@@ -1,5 +1,7 @@
 # Plan
 
+> **Status, 13 November 2026.** This is the plan as written on 21 October 2026, kept as the record of the owner's decisions and the Measures. M1 to M3, M5 and M7 are done, and no AI session runs Patchlife any more ([`MIGRATION.md`](MIGRATION.md), D59): how it runs now is in [`OPERATIONS.md`](OPERATIONS.md). Still current: "Decisions" (P1 is overtaken: there is no nightly `Crawl` task), M4 to M6 as shelved plans (D45), "Legal checklist", "Risks" and "Measures". History only: "Where we are", "How the work runs", "Running it unattended" and the "Action plan", which describe the weeks when AI sessions did the work. `ROADMAP.md` and `TASKS.md` are frozen in [`.agent/`](../.agent/).
+
 _As at Wednesday 21 October 2026. Dates are Sydney dates unless they say UTC. Review this at every milestone close and at least monthly. Milestone exit checks are in [`ROADMAP.md`](../.agent/progress/ROADMAP.md), the next tasks are in [`TASKS.md`](../.agent/progress/TASKS.md), and the procedures are in [`RUNBOOKS.md`](RUNBOOKS.md)._
 
 ## Summary

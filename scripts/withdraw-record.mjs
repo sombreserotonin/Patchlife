@@ -1,4 +1,4 @@
-// Pulls a wrong date now, without a session (RUNBOOKS O8; docs/MIGRATION.md P3's withdraw action). The record becomes
+// Pulls a wrong date now (RUNBOOKS O8; docs/MIGRATION.md P3's withdraw action). The record becomes
 // none_published with no quotes and an unverified verification block, and its notes start with "Withdrawn pending
 // review (<date>): <reason>.", so the site shows no date for it until a proper fix with new evidence (A3). Nothing is
 // fetched. The record keeps its aliases, regions and the pages it cited, once each, as the pages checked (DATA-POLICY,

@@ -1,8 +1,8 @@
 // Fills evidence items' archive_url with a Wayback Machine capture of the cited page (SPEC 3, D29, D43). For each
 // cited page with a quoted item that has no link, it asks Save Page Now for a capture, reads the capture's raw copy
 // and links every such item whose quote the copy holds. An item whose quote isn't there keeps null and is tried again
-// next run. It is best effort, so it exits 0 whatever the archive answers. It runs on GitHub's runners, which reach
-// archive.org; the Crawl network doesn't. A runner's anonymous save took 48 seconds on 22 Oct 2026.
+// next run. It is best effort, so it exits 0 whatever the archive answers. It runs on GitHub's runners, in the
+// nightly re-verify workflow. A runner's anonymous save took 48 seconds on 22 Oct 2026.
 // Usage: node scripts/archive-evidence.mjs [--limit <n>] [url ...]   (no urls: every page with an unlinked item)
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";

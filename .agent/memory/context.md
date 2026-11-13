@@ -1,5 +1,7 @@
 # Context (current state)
 
+> **Frozen on 13 November 2026.** History only: no AI session runs this project and nothing reads this file ([`.agent/README.md`](../README.md)). Open work is in [GitHub issues](https://github.com/sombreserotonin/Patchlife/issues).
+
 - 2026-10-21: Repo created from the starter kit. Nothing deployed.
 - M0, M1 and M2 done (21 Oct 2026; #54). M3 (unattended data) is active; its tasks are in TASKS.md. The site is live at https://patchlife.tech from the root, indexed, with a sitemap (#67), behind Cloudflare's proxy with Cloudflare Web Analytics (#68, D41).md`; the procedures are `docs/RUNBOOKS.md`; the cost pivot is `docs/COSTS.md`.
 - Data on `main` (24 Oct): 790 verified records from seven brands, all audited (RUNBOOKS A8). M4's record-count conditions (150 or more, 40 small-office) are met.
@@ -32,3 +34,4 @@
 - 8 Nov (Sunday): the first `Data refresh` schedule (16:17 UTC) had produced no run by 19:46, not even a skipped one; Monday's check reads it. The nightly task's #183 (ASUS, `last_checked` only) waits on the owner like #173 and #181. Day 4 without the Stage 2 switch.
 - 9 Nov: `Data refresh` run #1 (8 Nov, 20:28 UTC) skipped: `DATA_REFRESH` is still `off`; day 5 without the Stage 2 switch. Housekeeping posted the Sunday summary on #27 at 01:00. Four revisit PRs (#173, #181, #183, #185) wait on the owner; once #174 merges, a `main` merge pushed to each drops their label so they can merge under the standing approval.
 - 12 Nov: the nightly task opened #190, 36 new TP-Link AU camera and switch records (the first new-record PR since #156), which needs an A8 audit from a `Crawl` session and the owner's `audited` label before 18 Nov; day 8 without the Stage 2 switch. Housekeeping #18 red only at the watchdog step (#178, #152 at 13 days).
+- 13 Nov (cut-over, the last entry): no AI session runs the project. What runs is in `docs/OPERATIONS.md`; the rules are `CONTRIBUTING.md` and `docs/DECISIONS.md`; open work is in GitHub issues (#194, #199, #99). The lines above describe the weeks when sessions ran it and are out of date wherever they differ.

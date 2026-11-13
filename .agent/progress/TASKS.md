@@ -1,5 +1,16 @@
 # Tasks
 
+> **Frozen on 13 November 2026.** History only: no AI session runs this project and nothing reads this file ([`.agent/README.md`](../README.md)). Open work is in [GitHub issues](https://github.com/sombreserotonin/Patchlife/issues).
+
+## Final state (13 November 2026)
+On 13 Nov the owner asked for the project to be wrapped up within a day, with no human approval for the work. What became of each open item below:
+- **Migration (D44).** Finished: Stage 1 ended on 2 Nov, and Stages 2 to 4 were closed out together on 13 Nov (D59; the banner at the top of `docs/MIGRATION.md` lists what differs from the plan). The owner's remaining steps are in `docs/OPERATIONS.md`, "What is left for you".
+- **M3.** Its exit checks were met on 30 Oct (the entry under Waiting). Closed with the cut-over (ROADMAP).
+- **Coverage.** 849 records on `main`. #196, the first weekly candidate PR, holds 382 new TP-Link records and waits for the owner's `audited` label. Leads not taken up: #199. Makers with no records: #194.
+- **The business side (D45).** Still planned: #99.
+
+The sections below are as they stood on 12 Nov and are not kept up.
+
 ## Active: M3 Unattended data (target December 2026)
 M1 and M2 are done (2026-10-21). The plan is `docs/PLAN.md` (M3) and the cost pivot is `docs/COSTS.md` (stages 1 and 2 fall in M3).
 

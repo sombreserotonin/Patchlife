@@ -1,5 +1,7 @@
 # Kickoff prompt
 
+> **Frozen on 13 November 2026.** History only: this is the prompt that started the project on 21 October 2026. Do not paste it into a session: no AI session runs this project ([`.agent/README.md`](README.md)), and the rules for any tool are in [`CONTRIBUTING.md`](../CONTRIBUTING.md).
+
 Paste everything below the line into a new Claude Code session on this repo.
 
 ---

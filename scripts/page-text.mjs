@@ -2,7 +2,7 @@
 // the page text from verify-evidence.mjs with whitespace collapsed and folded at spaces to 300 characters, as
 // `fold -s -w 300` folds it, so quotes are copied from this output and never from a browser or a connector (D17).
 // With --grep, only the folded lines holding the text (in any case) are printed, numbered as `grep -n` numbers the
-// full output, where the URL line is line 1. Reads with the polite fetcher, so it needs the Crawl network or a runner.
+// full output, where the URL line is line 1. Reads with the polite fetcher, on a GitHub runner or your own machine.
 // Exits 1 when the page can't be read or --grep matches nothing, 2 on bad arguments.
 // Usage: node --use-env-proxy scripts/page-text.mjs [--grep <text>] <url>
 import { resolve } from "node:path";

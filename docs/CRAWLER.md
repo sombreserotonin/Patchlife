@@ -8,6 +8,9 @@ User agent: `PatchlifeBot/0.1 (+https://github.com/sombreserotonin/Patchlife/blo
 - Only pages listed in `data/sources/` or cited by a device record: statements of compliance, security support pages and end-of-life lists.
 - It keeps a short quote and a hash of the page text, never the whole page.
 
+## Where it runs
+Requests come from GitHub's hosted runners (GitHub Actions) and, now and then, from the owner's own computer. Every request carries the user agent above. Nothing else fetches pages for Patchlife: no AI service, browser extension or third-party scraper.
+
 ## How it behaves
 - Honours `robots.txt`.
 - At most one request per second per host, and backs off on 429 and 503 responses.
