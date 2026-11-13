@@ -8,6 +8,7 @@ import * as asus from "../scripts/parsers/asus.mjs";
 import * as ezviz from "../scripts/parsers/ezviz-eol.mjs";
 import * as glInet from "../scripts/parsers/gl-inet.mjs";
 import * as google from "../scripts/parsers/google.mjs";
+import * as grandstream from "../scripts/parsers/grandstream.mjs";
 import * as kyocera from "../scripts/parsers/kyocera.mjs";
 import * as ring from "../scripts/parsers/ring.mjs";
 import * as tpLink from "../scripts/parsers/tp-link-au.mjs";
@@ -87,6 +88,49 @@ test("the TP-Link AU parser skips, with a reason, rows it cannot read without gu
   // Header and section rows are neither candidates nor skipped; a model listed twice gives two candidates here, which
   // candidates.mjs collapses when the rows are identical and reports when they differ.
   assert.equal(candidates.length, 10);
+});
+
+test("the Grandstream parser reads a section's rows by its name, splits a name cell at its paragraphs and takes both ways the page writes a date", () => {
+  const { candidates, skipped } = grandstream.parse({ html: PAGES[grandstream.PAGE], profile: profile("grandstream"), today: TODAY });
+  const rest = "Compliant Compliant Download Download Pending Pending Pending";
+  assert.deepEqual(candidates.find((c) => c.id === "grandstream-gwn7691-lite"), {
+    id: "grandstream-gwn7691-lite",
+    brand: "Grandstream",
+    brand_slug: "grandstream",
+    model: "GWN7691 Lite",
+    aliases: [],
+    category: "access-point",
+    regions: ["GLOBAL"],
+    support: { rule: "fixed_date", end_date: "2031-11-23", years: null, anchor_date: null, at_least: true, conditions: null },
+    evidence: [{ url: grandstream.PAGE, quote: `GWN7691 Lite ${rest} 2031/11/23 or later`, retrieved: TODAY, regime: "vendor_policy" }],
+    verification: { status: "unverified" },
+    notes: 'Grandstream\'s compliance page gives this date in its "Defined Support Period" column.',
+  });
+  // id, category, end date, whether the date is a minimum.
+  assert.deepEqual(candidates.map((c) => [c.id, c.category, c.support.end_date, c.support.at_least]), [
+    ["grandstream-gwn7691-lite", "access-point", "2031-11-23", true],
+    ["grandstream-gwn7692", "access-point", "2028-12-31", true],
+    ["grandstream-gwn7695", "access-point", "2026-07-31", false],
+    ["grandstream-gwn7091", "router", "2032-01-31", true],
+    ["grandstream-gwn7891", "network-switch", "2028-08-17", true],
+    ["grandstream-gwn7892", "network-switch", "2028-08-17", true],
+    ["grandstream-gwn7893-pl-pro", "network-switch", "2029-03-31", true],
+  ]);
+  // Two models in one name cell: each one's quote runs from its own name to the end of the row.
+  assert.equal(candidates[4].evidence[0].quote, `GWN7891 GWN7892 ${rest} 2028-08-17 or Later`);
+  assert.equal(candidates[5].evidence[0].quote, `GWN7892 ${rest} 2028-08-17 or Later`);
+  assert.equal(candidates[6].model, "GWN7893 PL Pro");
+  // The table with no period column is not read at all; every other row that isn't recorded says why.
+  assert.deepEqual(skipped.map((s) => [s.quote.split(" ")[0], s.reason]), [
+    ["GWN7693", '"Pending" in the support period cell is not a date'],
+    ["GWN7694", '"2027-11-31 or Later" is not a calendar date'],
+    ["GWN7896", 'the profile gives "GWN7896" the category network-switch, but its section is "Access Points"'],
+    ["GWN7697", `"or sooner" after the date is not the profile's at-least phrase`],
+    ["GWN7092", '"GWN7092 GWN7093" may name several models on one line'],
+    ["XYZ1234", 'the profile gives "XYZ1234" no category, but its section is "Managed Switches"'],
+    ["UCM9991", 'no category for the section "IP PBXs"'],
+    ["HA999", '"NA" in the support period cell is not a date'],
+  ]);
 });
 
 test("the EZVIZ EOL parser reproduces the four-item records with the product line in the note", () => {

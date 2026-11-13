@@ -8,6 +8,7 @@ import * as glInet from "../../../scripts/parsers/gl-inet.mjs";
 import * as google from "../../../scripts/parsers/google.mjs";
 import * as asus from "../../../scripts/parsers/asus.mjs";
 import * as ezviz from "../../../scripts/parsers/ezviz-eol.mjs";
+import * as grandstream from "../../../scripts/parsers/grandstream.mjs";
 import * as kyocera from "../../../scripts/parsers/kyocera.mjs";
 import * as tpLink from "../../../scripts/parsers/tp-link-au.mjs";
 
@@ -45,6 +46,7 @@ export const PAGES = {
   [glInet.ENDED]: fixture("gl-inet-ended.html"),
   [kyocera.PAGE]: fixture("kyocera.html"),
   [asus.PAGE]: fixture("asus.html"),
+  [grandstream.PAGE]: fixture("grandstream.html"),
 };
 
 const MIN_ROWS = { "tp-link": 5, ezviz: 5 };

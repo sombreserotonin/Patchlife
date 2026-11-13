@@ -321,6 +321,30 @@ test("the report file holds today, one entry per page with the counts, the recor
   assert.doesNotThrow(() => JSON.parse(JSON.stringify(json)));
 });
 
+test("a source with no records yet: every Grandstream row that reads is written as a new record, and the records validate", async () => {
+  const { dir, get, files } = setup();
+  const before = files();
+  const { reports, written, flags } = await run(dir, { get, brands: ["grandstream"] });
+  assert.deepEqual(flags, []);
+  assert.deepEqual(counts(reports[0]), { rows: 15, cited: 0, reproduced: 0, newRows: 7, skipped: 8, mismatches: 0 });
+  assert.deepEqual(written.map((w) => [w.id, w.kind]), [
+    ["grandstream-gwn7691-lite", "new"],
+    ["grandstream-gwn7692", "new"],
+    ["grandstream-gwn7695", "new"],
+    ["grandstream-gwn7091", "new"],
+    ["grandstream-gwn7891", "new"],
+    ["grandstream-gwn7892", "new"],
+    ["grandstream-gwn7893-pl-pro", "new"],
+  ]);
+  assert.equal(files().length, before.length + 7);
+  // The written records pass every rule, among them the date in the quote, the at-least phrase and the registry's sites.
+  assert.deepEqual(validateDevices(dir, { today: TODAY, sources: SOURCES }).errors, []);
+  // A second run finds each of them by its quote and writes nothing.
+  const again = await run(dir, { get, brands: ["grandstream"] });
+  assert.deepEqual(counts(again.reports[0]), { rows: 15, cited: 7, reproduced: 7, newRows: 0, skipped: 8, mismatches: 0 });
+  assert.deepEqual(again.written, []);
+});
+
 test("gateDifferences compares the seven gate fields, rewritten keeps the record's identity, and recordYaml writes the hand-written style", () => {
   const record = { model: "A (V1)", category: "router", regions: ["AU"], support: { end_date: "2028-12-31", at_least: true, conditions: "c" }, notes: "n" };
   assert.deepEqual(gateDifferences(record, { ...record, regions: ["UK"], support: { ...record.support, at_least: false } }), [
