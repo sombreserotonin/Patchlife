@@ -64,7 +64,9 @@ jobs:
           for brand in $BRANDS; do
             if ! [[ "$brand" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then echo "::error::\"$brand\" is not a brand slug"; exit 1; fi
           done
-          open=$(gh api "repos/$REPO/pulls?state=open&per_page=100" --paginate --jq '.[] | select(.head.ref | startswith("claude/data-auto-")) | "\(.number) \(.head.ref)"' | head -n 1)
+          # Only a branch in this repository counts. Anyone can open a PR from a fork's branch of the same name, and
+          # that must neither stop the weekly run nor be fetched and pushed to.
+          open=$(gh api "repos/$REPO/pulls?state=open&per_page=100" --paginate --jq '.[] | select((.head.ref | startswith("claude/data-auto-")) and .head.repo.full_name == env.REPO) | "\(.number) \(.head.ref)"' | head -n 1)
           if [ -n "$open" ] && [ -z "$REFRESH_OPEN_PR" ]; then
             echo "Skipped: candidate PR #${open%% *} (${open#* }) is still open. Review it (RUNBOOKS O9), or dispatch this workflow with refresh_open_pr to update it." | tee -a "$GITHUB_STEP_SUMMARY"
             echo "skip=yes" >> "$GITHUB_OUTPUT"

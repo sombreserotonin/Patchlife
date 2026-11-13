@@ -6,7 +6,7 @@
 // `audited` label (D48, RUNBOOKS A9).
 // Usage: node scripts/verification-only.mjs [ref]   (ref defaults to HEAD; run it from inside the repository)
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { lstatSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isDeepStrictEqual } from "node:util";
@@ -43,13 +43,28 @@ export function verificationOnlyProblems(ref = "HEAD", cwd = process.cwd()) {
   const root = execFileSync("git", ["rev-parse", "--show-toplevel"], { cwd, encoding: "utf8" }).trim();
   // Run from the top, so untracked paths come back relative to it, as diff paths do.
   const git = (...args) => execFileSync("git", args, { cwd: root, encoding: "utf8" });
-  const lines = (text) => text.split("\n").filter(Boolean);
-  const changed = [...lines(git("diff", "--name-only", "--no-renames", ref)), ...lines(git("ls-files", "--others", "--exclude-standard"))];
+  // -z gives each path whole and unquoted. Without it git prints a path that holds a non-ASCII byte, a quote or a
+  // backslash inside double quotes, and such a path would not look like data.
+  const paths = (text) => text.split("\0").filter(Boolean);
+  const changed = [...paths(git("diff", "--name-only", "--no-renames", "-z", ref)), ...paths(git("ls-files", "--others", "--exclude-standard", "-z"))];
+  // False for a symbolic link, which would be read through to a file outside data/ whose later changes are never seen
+  // here. A missing path counts as regular, so it is reported below as deleted.
+  const regular = (file) => {
+    try {
+      return lstatSync(file).isFile();
+    } catch {
+      return true;
+    }
+  };
   const problems = [];
   for (const path of [...new Set(changed)].sort()) {
     if (path === PAGE_HASHES || !path.startsWith("data/")) continue;
     if (!DEVICE.test(path) && !REGISTRY.test(path)) {
       problems.push(`${path}: data other than a device record, a registry file or the page hash file`);
+      continue;
+    }
+    if (!regular(join(root, path))) {
+      problems.push(`${path}: not a regular file`);
       continue;
     }
     let before;

@@ -1,7 +1,7 @@
 // Validates every device record and source registry file against its JSON Schema plus integrity rules the schema can't express.
 // Usage: node scripts/validate-data.mjs [devicesDir] [sourcesDir]
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
-import { basename, dirname, join, relative, resolve } from "node:path";
+import { existsSync, lstatSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import Ajv2020 from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
@@ -182,6 +182,17 @@ export function validateDevices(
   for (const file of files) {
     const rel = relative(devicesDir, file);
     const fail = (message) => errors.push({ file: rel, message });
+
+    // The data gate (scripts/verification-only.mjs) judges <brand_slug>/<id>.yaml files and nothing else, so a record
+    // anywhere else, or one read through a link from outside the folder, would reach the site unjudged.
+    if (rel.split(sep).length !== 2) {
+      fail("a record's path must be <brand_slug>/<id>.yaml, directly under the devices folder");
+      continue;
+    }
+    if (lstatSync(file).isSymbolicLink() || lstatSync(dirname(file)).isSymbolicLink()) {
+      fail("a record and its folder must be a regular file and folder, not symbolic links");
+      continue;
+    }
 
     const text = readFileSync(file, "utf8");
     let record;

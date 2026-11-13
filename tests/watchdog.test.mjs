@@ -234,11 +234,13 @@ test("data health: an open needs-human issue or PR created over 7 days ago", () 
 });
 
 test("candidate PR: a claude/data-auto- PR open for over 14 days", () => {
-  const pr = (number, head, [days, minutes]) => ({ number, head, created_at: ago(24 * days, minutes), labels: [] });
+  const pr = (number, head, [days, minutes], own = true) => ({ number, head, own, created_at: ago(24 * days, minutes), labels: [] });
   assert.deepEqual(
     messages({ pulls: [pr(50, "claude/data-auto-2026-11-01", [14, 0]), pr(51, "claude/data-auto-2026-10-31", [14, 1]), pr(52, "claude/data-other", [30, 0])] }),
     ["Candidate PR: #51 (claude/data-auto-2026-10-31) has been open 14 days, so the weekly data refresh keeps skipping."],
   );
+  // A fork's branch of the same name is not the candidate PR: the weekly refresh does not skip for it.
+  assert.deepEqual(messages({ pulls: [pr(53, "claude/data-auto-x", [20, 0], false)] }), []);
 });
 
 test("the site must answer 200 with a Status as at date under 2 days old", () => {
@@ -306,8 +308,10 @@ test("gatherState reads every check's data from the API, the site, git and the r
       { number: 103, pull_request: { url: "x" }, created_at: ago(1), labels: [{ name: "needs-human-merge" }] },
     ],
     [`GET ${R}/pulls?state=open&per_page=100&page=1`]: [
-      { number: 103, head: { ref: "claude/p2" }, created_at: ago(1), labels: [{ name: "needs-human-merge" }] },
-      { number: 104, head: { ref: "claude/data-auto-2026-10-25" }, created_at: ago(24 * 20), labels: [] },
+      { number: 103, head: { ref: "claude/p2", repo: { full_name: "o/r" } }, created_at: ago(1), labels: [{ name: "needs-human-merge" }] },
+      { number: 104, head: { ref: "claude/data-auto-2026-10-25", repo: { full_name: "o/r" } }, created_at: ago(24 * 20), labels: [] },
+      { number: 105, head: { ref: "claude/data-auto-x", repo: { full_name: "someone/r" } }, created_at: ago(24 * 20), labels: [] },
+      { number: 106, head: { ref: "claude/data-auto-y", repo: null }, created_at: ago(24 * 20), labels: [] },
     ],
   });
   const fetched = [];
@@ -368,6 +372,13 @@ test("gatherState reads every check's data from the API, the site, git and the r
   ]);
   assert.deepEqual(state.site, { url: "https://patchlife.tech/", status: 200, date: "2026-11-12" });
   assert.equal(state.renewals, renewals);
+  // A PR from a fork, or from a fork since deleted, is not this repository's own.
+  assert.deepEqual(state.pulls.map((pr) => [pr.number, pr.head, pr.own]), [
+    [103, "claude/p2", true],
+    [104, "claude/data-auto-2026-10-25", true],
+    [105, "claude/data-auto-x", false],
+    [106, "claude/data-auto-y", false],
+  ]);
 
   assert.deepEqual(
     checkState(state, NOW).map(({ check, message }) => `${check}: ${message}`),
