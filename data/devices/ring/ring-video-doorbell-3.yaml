@@ -46,6 +46,6 @@ evidence:
     regime: vendor_policy
 verification:
   status: verified
-  checked: "2026-10-22"
-  text_sha256: 6d854d6f2f7b260020a4f6c5c55f5e19ce68dec932f428cde0674cecaff0422c
+  checked: "2026-11-13"
+  text_sha256: 9ba4593377d664742e2216700238cae20c8f545de1fef50f41790316b6270c1d
 notes: Seed record.
