@@ -185,6 +185,27 @@
     - { row: '^Smart Strip Light\b', category: smart-bulb }
     - { row: '^Smart Plug\b', category: smart-plug }
     - { row: '^Smart Switch\b', category: smart-switch }
+    # The product lines of the second backlog batch (#196): network adapters are "other", as range extenders are.
+    - { row: '^Wi-Fi 5 Mesh System\b', category: mesh-wifi }
+    - { row: '^Wi-Fi 6 Mesh System\b', category: mesh-wifi }
+    - { row: '^Wi-Fi 7 Mesh System\b', category: mesh-wifi }
+    - { row: '^Whole-Home Wi-Fi System\b', category: mesh-wifi }
+    - { row: '^Business Gateway\b', category: router }
+    - { row: '^IP Camera\b', category: camera }
+    - { row: '^Network Video Recorder\b', category: nvr }
+    - { row: '^Industrial Switch\b', category: network-switch }
+    - { row: '^L3 Managed Switch\b', category: network-switch }
+    - { row: '^Smart/L2\+ Managed Switch\b', category: network-switch }
+    - { row: '^Unmanaged 10/100M Switch\b', category: network-switch }
+    - { row: '^Unmanaged 16/24/48P Giga-Switch\b', category: network-switch }
+    - { row: '^Unmanaged 5/8P Giga-Switch\b', category: network-switch }
+    - { row: '^Unmanaged MultiGiga-Switch\b', category: network-switch }
+    - { row: '^Unmanaged/Easy Smart PoE Switch\b', category: network-switch }
+    - { row: '^Wi-Fi 5 USB Adapter\b', category: other }
+    - { row: '^Wi-Fi 6 USB Adapter\b', category: other }
+    - { row: '^Wi-Fi 7 USB Adapter\b', category: other }
+    - { row: '^PCI-E Adapter\b', category: other }
+    - { row: '^USB to Ethernet Adapter\b', category: other }
   versioned: true
   min_rows:
     https://www.tp-link.com/au/landing/au-cyber-compliance/: 199
