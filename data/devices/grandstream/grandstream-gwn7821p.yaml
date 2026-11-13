@@ -1,0 +1,24 @@
+id: grandstream-gwn7821p
+brand: Grandstream
+brand_slug: grandstream
+model: GWN7821P
+aliases: []
+category: network-switch
+regions: [GLOBAL]
+support:
+  rule: fixed_date
+  end_date: "2029-09-20"
+  years: null
+  anchor_date: null
+  at_least: true
+  conditions: null
+evidence:
+  - url: https://www.grandstream.com/compliance
+    quote: "GWN7821P Compliant Compliant Download Download Download Download Download 2029-09-20 or Later"
+    retrieved: "2026-11-13"
+    regime: vendor_policy
+verification:
+  status: verified
+  checked: "2026-11-13"
+  text_sha256: df218b969973b5c5ed3c12189b87aea33a945bad618786e693a15504f75b5e71
+notes: Grandstream's compliance page gives this date in its "Defined Support Period" column.
