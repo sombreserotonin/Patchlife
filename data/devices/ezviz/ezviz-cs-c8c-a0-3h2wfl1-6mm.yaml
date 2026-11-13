@@ -34,6 +34,6 @@ evidence:
     regime: vendor_policy
 verification:
   status: verified
-  checked: "2026-10-21"
-  text_sha256: 682dd0e0ef2a21877659e79a8f7a865d73ac1cd4728de168f1aff43933b801f5
+  checked: "2026-11-13"
+  text_sha256: db7b76a7d4dd9cb2d0973a712deca078a336e2419face48d1db77bf67078d9b8
 notes: "EZVIZ lists this as the expected day of firmware update cessation for the targeted area Europe, and says its EOL means no firmware updates, including security updates. The page gives the model number only; product line on the page: Smart Home Camera."
