@@ -1,4 +1,4 @@
-// Prints a page as the verifier sees it (RUNBOOKS A2 step 3): the final URL and content type on the first line, then
+// Prints a page as the verifier sees it (RUNBOOKS O11 step 3): the final URL and content type on the first line, then
 // the page text from verify-evidence.mjs with whitespace collapsed and folded at spaces to 300 characters, as
 // `fold -s -w 300` folds it, so quotes are copied from this output and never from a browser or a connector (D17).
 // With --grep, only the folded lines holding the text (in any case) are printed, numbered as `grep -n` numbers the

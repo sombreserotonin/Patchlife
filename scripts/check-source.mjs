@@ -1,4 +1,4 @@
-// The RUNBOOKS A2 step 2 triage of a source page in one command: whether robots.txt lets PatchlifeBot read it, the
+// The RUNBOOKS O11 step 2 triage of a source page in one command: whether robots.txt lets PatchlifeBot read it, the
 // HTTP status and content type, whether any date is in the raw response (even inside scripts), how many dates the
 // page text holds (the text the verifier matches quotes against, with dates found as unquoted-dates.mjs finds them)
 // and up to 5 rows around dates, spread over the page. Dates in the raw response but not in the page text sit inside
