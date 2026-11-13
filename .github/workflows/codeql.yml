@@ -1,0 +1,39 @@
+name: CodeQL
+
+# Code scanning for the scripts, the site's JavaScript and the workflow files. It stands in for GitHub's "default
+# setup", which is a repository setting: don't switch that on as well, because GitHub refuses to run both. Alerts are
+# at https://github.com/sombreserotonin/Patchlife/security/code-scanning (RUNBOOKS O12). Data and prose are not code,
+# so a change to them alone starts no run; the weekly run scans with the newest queries.
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['data/**', 'docs/**', '**/*.md']
+  pull_request:
+    paths-ignore: ['data/**', 'docs/**', '**/*.md']
+  schedule:
+    - cron: '37 3 * * 2'
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [actions, javascript-typescript]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+      - uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          category: /language:${{ matrix.language }}
