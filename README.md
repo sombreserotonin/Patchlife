@@ -34,7 +34,7 @@ Patchlife collects those statements in one place, with a quote and a link for ev
 
 ## Status
 As of 13 November 2026:
-- **Live:** https://patchlife.tech, with 1,231 verified records from seven makers (Ring, Google Nest, TP-Link, EZVIZ, GL.iNet, Kyocera and ASUS), each quoting the maker's own page.
+- **Live:** https://patchlife.tech, with 1,322 verified records from eight makers (Ring, Google Nest, TP-Link, EZVIZ, GL.iNet, Kyocera, ASUS and Grandstream), each quoting the maker's own page.
 - **Unattended:** every quote is re-checked on a schedule, new and changed rows arrive as one pull request a week, and a watchdog reports problems, all on GitHub Actions with no AI and no subscription ([`docs/OPERATIONS.md`](docs/OPERATIONS.md)).
 - **Maintenance mode:** new makers are added by hand ([`docs/RUNBOOKS.md`](docs/RUNBOOKS.md), O11), and the business side is shelved (D45).
 
