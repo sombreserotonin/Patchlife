@@ -12,7 +12,8 @@ const BOT = "patchlife-bot[bot]";
 const SHA = "a".repeat(40);
 
 // A check run from GitHub Actions that passed on SHA; fields replace any part of it.
-const run = (name, fields = {}) => ({ id: 1, name, head_sha: SHA, status: "completed", conclusion: "success", started_at: "2026-12-21T13:00:00Z", app: { slug: "github-actions" }, ...fields });
+// Its check suite, 7, belongs to a workflow run of this repository.
+const run = (name, fields = {}) => ({ id: 1, name, head_sha: SHA, status: "completed", conclusion: "success", started_at: "2026-12-21T13:00:00Z", app: { slug: "github-actions" }, check_suite: { id: 7 }, ...fields });
 const passingRuns = (sha) => ["test", "data-gate", "build"].map((name, n) => run(name, { id: n + 1, head_sha: sha }));
 const refused = (reason) => ({ merge: false, reason });
 
@@ -20,9 +21,10 @@ const refused = (reason) => ({ merge: false, reason });
 function passing(type = "reverify") {
   const measures = type === "measures";
   return {
-    pr: { number: 12, draft: false, user: { login: BOT }, labels: [{ name: "claude" }], head: { ref: measures ? "claude/measures-2026-11" : "claude/reverify-2026-12-21-123", sha: SHA, repo: { full_name: REPO } } },
+    pr: { number: 12, draft: false, user: { login: BOT }, labels: [{ name: "claude" }], base: { ref: "main" }, head: { ref: measures ? "claude/measures-2026-11" : "claude/reverify-2026-12-21-123", sha: SHA, repo: { full_name: REPO } } },
     files: measures ? [{ filename: "docs/MEASURES.md", status: "modified" }] : [{ filename: "data/devices/acme/acme-cam-1.yaml", status: "modified" }, { filename: "data/sources/page-hashes.json", status: "modified" }],
     checkRuns: [...passingRuns(SHA), run("lighthouse", { id: 4, conclusion: "failure" })],
+    ownSuites: new Set([7]),
     repo: REPO,
     botLogin: BOT,
   };
@@ -158,6 +160,7 @@ test("the first rule a PR breaks is the reason given", () => {
     [(i) => (i.pr.head.repo = null), "head branch is not in this repository"],
     [(i) => (i.pr.user = null), "not opened by patchlife-bot[bot]"],
     [(i) => (i.pr.draft = true), "draft"],
+    [(i) => (i.pr.base = { ref: "release" }), "base branch is not main"],
     [(i) => (i.pr.head.ref = "main"), "branch main is not a re-verify or measures branch"],
     [(i) => i.pr.labels.push({ name: "needs-human" }), "label needs-human"],
     [(i) => (i.checkRuns = []), "check test missing"],
@@ -169,9 +172,25 @@ test("the first rule a PR breaks is the reason given", () => {
   }
 });
 
-// A fake api for mergeBot: the open PRs, each PR's files and each SHA's check runs, paged 100 at a time as GitHub
+test("only a PR into main merges", () => {
+  for (const base of [{ ref: "claude/other" }, { ref: "Main" }, {}, null]) {
+    assert.deepEqual(decide((i) => (i.pr.base = base)), refused("base branch is not main"), JSON.stringify(base));
+  }
+});
+
+test("a check run counts only when its suite belongs to a workflow run of this repository", () => {
+  // A fork's PR on the same commit starts runs of the same names on that SHA. Theirs neither pass a check nor fail it.
+  const theirs = (name, fields) => run(name, { id: 900, check_suite: { id: 99 }, started_at: "2026-12-21T16:00:00Z", ...fields });
+  assert.deepEqual(decide((i) => i.checkRuns.push(theirs("data-gate", { conclusion: "failure" }))), { merge: true, reason: "reverify" });
+  assert.deepEqual(decide((i) => (i.checkRuns = [...i.checkRuns.filter((r) => r.name !== "build"), theirs("build")])), refused("check build missing"));
+  // With no list of this repository's suites, or a run that names no suite, nothing counts.
+  assert.deepEqual(decide((i) => delete i.ownSuites), refused("check test missing"));
+  assert.deepEqual(decide((i) => i.checkRuns.forEach((r) => delete r.check_suite)), refused("check test missing"));
+});
+
+// A fake api for mergeBot: the open PRs, each PR's files, each SHA's check runs and each check suite's workflow run, paged 100 at a time as GitHub
 // does. responses maps "<METHOD> <path>" to a reply, or to an Error to throw, in place of the default. Calls are recorded.
-function fakeGitHub({ prs = [], files = {}, runs = {}, responses = {} }) {
+function fakeGitHub({ prs = [], files = {}, runs = {}, suites = {}, responses = {} }) {
   const calls = [];
   const page = (list, path) => {
     const n = Number(new URLSearchParams(path.split("?")[1]).get("page"));
@@ -190,6 +209,10 @@ function fakeGitHub({ prs = [], files = {}, runs = {}, responses = {} }) {
     if (method === "GET" && (m = path.match(/^\/repos\/[^/]+\/[^/]+\/commits\/(\w+)\/check-runs\?per_page=100&filter=all&page=\d+$/))) {
       return { total_count: (runs[m[1]] ?? []).length, check_runs: page(runs[m[1]] ?? [], path) };
     }
+    // A suite's workflow run is this repository's unless suites names another head repository for it.
+    if (method === "GET" && (m = path.match(/^\/repos\/[^/]+\/[^/]+\/actions\/runs\?check_suite_id=(\d+)&per_page=100&page=\d+$/))) {
+      return { total_count: 1, workflow_runs: page([{ id: 1, check_suite_id: Number(m[1]), head_repository: suites[m[1]] === null ? null : { full_name: suites[m[1]] ?? REPO } }], path) };
+    }
     if (method === "PUT" && /^\/repos\/[^/]+\/[^/]+\/pulls\/\d+\/merge$/.test(path)) return { sha: "c".repeat(40), merged: true, message: "Pull Request successfully merged" };
     if (method === "DELETE" && path.startsWith(`/repos/${REPO}/git/refs/heads/`)) return null;
     throw Object.assign(new Error(`${key}: HTTP 404 Not Found`), { status: 404 });
@@ -199,13 +222,14 @@ function fakeGitHub({ prs = [], files = {}, runs = {}, responses = {} }) {
 
 const SHA12 = "1".repeat(40);
 const SHA13 = "2".repeat(40);
-const botPr = (number, ref, sha) => ({ number, draft: false, user: { login: BOT }, labels: [], head: { ref, sha, repo: { full_name: REPO } } });
+const botPr = (number, ref, sha) => ({ number, draft: false, user: { login: BOT }, labels: [], base: { ref: "main" }, head: { ref, sha, repo: { full_name: REPO } } });
 // A passing re-verify PR, #12, and the owner's own PR, #13.
 const TWO_PRS = {
   prs: [botPr(12, "claude/reverify-2026-12-21-123", SHA12), { ...botPr(13, "claude/a1-merge-bot", SHA13), user: { login: "sombreserotonin" } }],
   files: { 12: [{ filename: "data/devices/acme/acme-cam-1.yaml", status: "modified" }], 13: [{ filename: "scripts/merge-bot.mjs", status: "added" }] },
   runs: { [SHA12]: passingRuns(SHA12), [SHA13]: passingRuns(SHA13) },
 };
+const SUITE_7 = `GET /repos/${REPO}/actions/runs?check_suite_id=7&per_page=100&page=1`;
 const MERGE_12 = `PUT /repos/${REPO}/pulls/12/merge {"merge_method":"squash","sha":"${SHA12}"}`;
 const DELETE_12 = `DELETE /repos/${REPO}/git/refs/heads/claude/reverify-2026-12-21-123`;
 const httpError = (key, status, message) => Object.assign(new Error(`${key}: HTTP ${status} ${message}`), { status });
@@ -223,11 +247,35 @@ test("mergeBot squash-merges a passing PR at its head SHA, then deletes its bran
     `GET /repos/${REPO}/pulls?state=open&per_page=100&page=1`,
     `GET /repos/${REPO}/pulls/12/files?per_page=100&page=1`,
     `GET /repos/${REPO}/commits/${SHA12}/check-runs?per_page=100&filter=all&page=1`,
+    SUITE_7,
     MERGE_12,
     DELETE_12,
-    `GET /repos/${REPO}/pulls/13/files?per_page=100&page=1`,
-    `GET /repos/${REPO}/commits/${SHA13}/check-runs?per_page=100&filter=all&page=1`,
   ]);
+});
+
+test("a PR that breaks a rule of its own costs no further request, so a flood of forks' PRs can't use up the run", async () => {
+  const fork = { ...botPr(20, "claude/reverify-2026-12-21-1", SHA13), head: { ref: "claude/reverify-2026-12-21-1", sha: SHA13, repo: { full_name: "someone/Patchlife" } } };
+  const held = { ...botPr(21, "claude/reverify-2026-12-21-2", SHA13), labels: [{ name: "needs-human-merge" }] };
+  const { api, calls } = fakeGitHub({ prs: [fork, held, { ...botPr(22, "claude/reverify-2026-12-21-3", SHA13), base: { ref: "claude/other" } }] });
+  assert.deepEqual(await mergeBot({ api, repo: REPO, botLogin: BOT }), [
+    { number: 20, action: "skipped", reason: "head branch is not in this repository" },
+    { number: 21, action: "skipped", reason: "label needs-human-merge" },
+    { number: 22, action: "skipped", reason: "base branch is not main" },
+  ]);
+  assert.deepEqual(calls, [`GET /repos/${REPO}/pulls?state=open&per_page=100&page=1`]);
+});
+
+test("mergeBot asks which repository each check suite's workflow run came from, and a fork's suite doesn't count", async () => {
+  // A newer failed data-gate from a fork's PR on the same commit: ignored, so the PR merges on this repository's runs.
+  const forked = run("data-gate", { id: 50, head_sha: SHA12, check_suite: { id: 99 }, started_at: "2026-12-21T16:00:00Z", conclusion: "failure" });
+  const base = { prs: [TWO_PRS.prs[0]], files: TWO_PRS.files, runs: { [SHA12]: [...passingRuns(SHA12), forked] } };
+  const { api, calls } = fakeGitHub({ ...base, suites: { 99: "someone/Patchlife" } });
+  assert.deepEqual(await mergeBot({ api, repo: REPO, botLogin: BOT, dryRun: true }), [{ number: 12, action: "would merge", reason: "reverify" }]);
+  assert.ok(calls.includes(SUITE_7) && calls.includes(`GET /repos/${REPO}/actions/runs?check_suite_id=99&per_page=100&page=1`));
+  // The same run from this repository holds the PR, and so does a suite whose run names no head repository.
+  assert.deepEqual(await mergeBot({ api: fakeGitHub(base).api, repo: REPO, botLogin: BOT }), [{ number: 12, action: "skipped", reason: "check data-gate not passed" }]);
+  const unknown = fakeGitHub({ prs: base.prs, files: base.files, runs: { [SHA12]: passingRuns(SHA12) }, suites: { 7: null } });
+  assert.deepEqual(await mergeBot({ api: unknown.api, repo: REPO, botLogin: BOT }), [{ number: 12, action: "skipped", reason: "check test missing" }]);
 });
 
 test("a dry run reports what would merge and changes nothing", async () => {
@@ -247,7 +295,7 @@ test("an API error stops the run: a head that moved after the check makes GitHub
   assert.deepEqual(heard, []);
   assert.equal(calls.at(-1), MERGE_12);
   // A failure reading PRs, files or check runs stops it too, before anything merges.
-  for (const key of [`GET /repos/${REPO}/pulls?state=open&per_page=100&page=1`, `GET /repos/${REPO}/pulls/12/files?per_page=100&page=1`, `GET /repos/${REPO}/commits/${SHA12}/check-runs?per_page=100&filter=all&page=1`]) {
+  for (const key of [`GET /repos/${REPO}/pulls?state=open&per_page=100&page=1`, `GET /repos/${REPO}/pulls/12/files?per_page=100&page=1`, `GET /repos/${REPO}/commits/${SHA12}/check-runs?per_page=100&filter=all&page=1`, SUITE_7]) {
     const broken = httpError(key, 502, "Bad Gateway");
     const failing = fakeGitHub({ ...TWO_PRS, responses: { [key]: broken } });
     await assert.rejects(mergeBot({ api: failing.api, repo: REPO, botLogin: BOT }), (err) => err === broken);
@@ -365,6 +413,7 @@ test("the CLI prints one line per PR, and exits 1 when a GitHub call fails, afte
     [`GET ${api}/commits/${SHA12}/check-runs?per_page=100&filter=all&page=1`]: [200, { total_count: 3, check_runs: passingRuns(SHA12) }],
     [`GET ${api}/pulls/13/files?per_page=100&page=1`]: [200, [{ filename: "docs/MEASURES.md", status: "modified" }]],
     [`GET ${api}/commits/${SHA13}/check-runs?per_page=100&filter=all&page=1`]: [200, { total_count: 2, check_runs: passingRuns(SHA13).slice(0, 2) }],
+    [`GET ${api}/actions/runs?check_suite_id=7&per_page=100&page=1`]: [200, { total_count: 1, workflow_runs: [{ id: 1, check_suite_id: 7, head_repository: { full_name: REPO } }] }],
     [`PUT ${api}/pulls/12/merge`]: [200, { merged: true }],
     [`DELETE ${api}/git/refs/heads/claude/reverify-2026-12-21-123`]: [204],
   };
@@ -392,6 +441,7 @@ test("the CLI escapes control characters, so a file name can't start a line the 
     [`GET ${api}/pulls?state=open&per_page=100&page=1`]: [200, [botPr(14, "claude/reverify-2026-12-21-7", SHA12)]],
     [`GET ${api}/pulls/14/files?per_page=100&page=1`]: [200, [{ filename: "data/x\n::error::injected", status: "modified" }]],
     [`GET ${api}/commits/${SHA12}/check-runs?per_page=100&filter=all&page=1`]: [200, { total_count: 3, check_runs: passingRuns(SHA12) }],
+    [`GET ${api}/actions/runs?check_suite_id=7&per_page=100&page=1`]: [200, { total_count: 1, workflow_runs: [{ id: 1, check_suite_id: 7, head_repository: { full_name: REPO } }] }],
   });
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.stdout, "#14: skipped (data/x\\x0a::error::injected (modified) not allowed in a reverify PR)\n");

@@ -37,11 +37,11 @@ jobs:
         # A fork's PR gets a read-only token, so there the label stays; the audit step below allows for that.
         if: github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'audited') && github.event.pull_request.head.repo.full_name == github.repository
         run: gh api -X DELETE "repos/$REPO/issues/$PR/labels/audited" > /dev/null
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # The PR's merge commit: HEAD^1 is the base branch, so the diff against it is what the PR changes.
           fetch-depth: 2
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           # No npm cache here: its key would come from the PR's lockfile.
           node-version: 26

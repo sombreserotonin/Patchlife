@@ -13,6 +13,7 @@
     "aliases": {
       "type": "array",
       "uniqueItems": true,
+      "maxItems": 20,
       "items": { "type": "string", "minLength": 1, "maxLength": 160 }
     },
     "category": {
@@ -29,7 +30,7 @@
       "items": { "enum": ["AU", "UK", "US", "EU", "GLOBAL"] }
     },
     "support": { "$ref": "#/$defs/support" },
-    "evidence": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/evidence" } },
+    "evidence": { "type": "array", "minItems": 1, "maxItems": 20, "items": { "$ref": "#/$defs/evidence" } },
     "verification": { "$ref": "#/$defs/verification" },
     "notes": { "type": ["string", "null"], "maxLength": 500 }
   },
@@ -105,10 +106,10 @@
       "additionalProperties": false,
       "required": ["url", "retrieved", "regime"],
       "properties": {
-        "url": { "type": "string", "format": "uri", "pattern": "^https://" },
+        "url": { "type": "string", "format": "uri", "pattern": "^https://", "maxLength": 500 },
         "quote": { "type": "string", "minLength": 3, "maxLength": 300 },
         "retrieved": { "$ref": "#/$defs/date" },
-        "archive_url": { "anyOf": [{ "type": "string", "format": "uri", "pattern": "^https://" }, { "type": "null" }] },
+        "archive_url": { "anyOf": [{ "type": "string", "format": "uri", "pattern": "^https://", "maxLength": 600 }, { "type": "null" }] },
         "regime": { "enum": ["au_smart_device_rules", "uk_psti", "us_cyber_trust_mark", "vendor_policy"] }
       }
     },
