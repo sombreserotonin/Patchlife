@@ -2,88 +2,156 @@ name: Data gate
 
 # RUNBOOKS A9 as a required check (docs/MIGRATION.md decision 3). A PR may change data/ only in what a
 # re-verification changes: verification blocks, empty archive links filled with a capture of the item's own page, and
-# page-hashes.json. Anything more needs the `audited` label added by the repository owner (RUNBOOKS A8). The PR is
-# judged by a clean copy of the base branch, with the base's scripts and the base's dependencies, so no code and no
-# dependency a PR brings runs in this job. Every push removes `audited`, so each new push needs a fresh review; a
-# fork's push can't remove it, so on a fork's PR only the run that the owner's own label starts passes. What this job
-# can't stop: a PR that changes this workflow file is judged by its own copy of it, so the owner reads every PR that
-# touches .github/ (a protected path). The job must be named data-gate: scripts/merge-bot.mjs requires a check run of
-# that name on the head commit.
+# page-hashes.json. Anything more needs the `audited` label added by the repository owner (RUNBOOKS A8).
+#
+# It runs on pull_request_target, so the copy of this file on the base branch is the one that runs, with the base
+# branch's scripts and dependencies: a PR can change neither this gate nor the label job below. That event's token can
+# write even on a fork's PR, so nothing here may run a file the PR brings: the PR's commit is fetched and checked out
+# beside the trusted copy, and only read.
+#
+# The owner's label is written down as a commit status named `audited`, on the commit that was the PR's head when the
+# label was added, with the base branch it was judged against. Only that status passes the audit, so a label can't
+# carry over to a later commit or to another base. Every push removes the label as well.
+#
+# The job must be named data-gate: scripts/merge-bot.mjs and the ruleset require a check run of that name on the head
+# commit.
 on:
+  pull_request_target:
+    # edited: a PR pointed at another base branch is judged again against it.
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+  # Kept for one more merge: the PR that removes this trigger is the first one judged by the copy on the base branch.
   pull_request:
-    # edited: a PR pointed at another base branch is judged again against that base.
     types: [opened, synchronize, reopened, edited, labeled, unlabeled]
 
 permissions:
   contents: read
-  issues: read
-  pull-requests: write
 
+# Every event's run is kept and they go in order, so the run that records an audit is never dropped for a later one.
 concurrency:
-  group: data-gate-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  group: data-gate-${{ github.event_name }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+  queue: max
 
 jobs:
   data-gate:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+      statuses: write
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       REPO: ${{ github.repository }}
       PR: ${{ github.event.pull_request.number }}
       OWNER: ${{ github.repository_owner }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      BASE_REF: ${{ github.base_ref }}
+      ACTION: ${{ github.event.action }}
+      LABEL: ${{ github.event.label.name }}
+      SENDER: ${{ github.event.sender.login }}
+      # Whether this run's token can write: always on pull_request_target, and on pull_request only for a branch of
+      # this repository.
+      CAN_WRITE: ${{ github.event_name == 'pull_request_target' || github.event.pull_request.head.repo.full_name == github.repository }}
     steps:
       - name: Remove the audited label after a push
-        # A fork's PR gets a read-only token, so there the label stays; the audit step below allows for that.
-        if: github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'audited') && github.event.pull_request.head.repo.full_name == github.repository
-        run: gh api -X DELETE "repos/$REPO/issues/$PR/labels/audited" > /dev/null
+        # The label is for people: it shows that the PR was reviewed as it stands. The audit itself is the commit
+        # status below, which a push leaves behind on the old commit.
+        if: github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'audited')
+        run: |
+          if [ "$CAN_WRITE" = true ]; then
+            gh api -X DELETE "repos/$REPO/issues/$PR/labels/audited" > /dev/null || echo "The audited label was already gone."
+          fi
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # The PR's merge commit: HEAD^1 is the base branch, so the diff against it is what the PR changes.
-          fetch-depth: 2
+          # The base branch, never the PR: this copy's scripts are the ones that run. Whole history, so the commit the
+          # PR branched from is found.
+          ref: ${{ github.base_ref }}
+          fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          # No npm cache here: its key would come from the PR's lockfile.
+          # No npm cache here, so nothing another run stored is restored into this job.
           node-version: 26
       - name: Check the data changes with the base branch's scripts
         id: gate
-        # The base branch is checked out on its own, beside the PR, and its dependencies are installed there without
-        # lifecycle scripts. Its copy of the script then reads the PR's tree from this folder. Nothing is installed
-        # or run from the PR's own files: a file a PR adds under scripts/ or node_modules/ is never loaded.
+        env:
+          # A PR can mark files for Git LFS. Nothing is downloaded for them.
+          GIT_LFS_SKIP_SMUDGE: 1
         run: |
-          git worktree add --detach "$RUNNER_TEMP/base" HEAD^1
-          (cd "$RUNNER_TEMP/base" && npm ci --ignore-scripts)
-          if node "$RUNNER_TEMP/base/scripts/verification-only.mjs" HEAD^1; then
+          [[ "$HEAD_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::The event names no head commit"; exit 1; }
+          npm ci --ignore-scripts
+          # The PR's commit is fetched by its id and checked out beside this copy: read, never run. What the PR changes
+          # is the difference between that commit and the commit it branched from.
+          git fetch --no-tags origin "$HEAD_SHA"
+          base=$(git merge-base HEAD "$HEAD_SHA")
+          git worktree add --detach "$RUNNER_TEMP/pr" "$HEAD_SHA"
+          cd "$RUNNER_TEMP/pr"
+          set +e
+          node "$GITHUB_WORKSPACE/scripts/verification-only.mjs" "$base" > "$RUNNER_TEMP/gate.txt" 2>&1
+          status=$?
+          set -e
+          # The file names in this output come from the PR, so control characters are dropped and no line may start a
+          # workflow command.
+          tr -d '\000-\011\013-\037\177' < "$RUNNER_TEMP/gate.txt" | sed -E 's/^([[:space:]]*)::/\1: :/; s/^([[:space:]]*)##\[/\1# #[/'
+          if [ "$status" -eq 0 ]; then
             echo "verified=yes" >> "$GITHUB_OUTPUT"
           else
             echo "verified=no" >> "$GITHUB_OUTPUT"
           fi
       - name: Accept an audit by the repository owner
-        # Only the owner's label counts: the App, or anyone else, can't audit a PR. For a branch in this repository
-        # the last labeled or unlabeled event for `audited` decides, because the first step removes the label on
-        # every push. A fork's push can't remove it, so there an earlier label says nothing about the latest commits:
-        # only the run that the owner's own label starts passes, and any later push or edit turns the check red until
-        # the owner removes the label and adds it again.
+        # Only the owner's label counts: the App, or anyone else, can't audit a PR, and their label records nothing.
+        # The owner's label is recorded for this commit and this base branch, and removing the label takes it back.
+        # Only this job has the permission to write a status, and only one it wrote is read.
         if: steps.gate.outputs.verified == 'no'
-        env:
-          FORK: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
-          ACTION: ${{ github.event.action }}
-          LABEL: ${{ github.event.label.name }}
-          SENDER: ${{ github.event.sender.login }}
         run: |
-          if [ "$FORK" = true ]; then
-            if [ "$ACTION" = labeled ] && [ "$LABEL" = audited ] && [ "$SENDER" = "$OWNER" ]; then
-              echo "The data changes go beyond a re-verification, and $OWNER added the audited label to these commits of a fork's PR (RUNBOOKS A8)."
-              exit 0
+          record() { gh api -X POST "repos/$REPO/statuses/$HEAD_SHA" -f context=audited -f state="$1" -f description="$2" > /dev/null; }
+          if [ "$LABEL" = audited ] && [ "$CAN_WRITE" = true ]; then
+            if [ "$ACTION" = labeled ] && [ "$SENDER" = "$OWNER" ]; then
+              record success "$BASE_REF"
+            elif [ "$ACTION" = unlabeled ]; then
+              record failure "the audited label was removed"
             fi
-            echo "::error::The data changes go beyond a re-verification (RUNBOOKS A9). On a PR from a fork this check passes only on the run that $OWNER's own audited label starts: read the latest commits, then remove the label and add it again (RUNBOOKS A8)."
+          fi
+          latest=$(gh api "repos/$REPO/commits/$HEAD_SHA/statuses?per_page=100" --jq '[.[] | select(.context == "audited")][0] | if . == null then "" else "\(.state) \(.creator.login) \(.description)" end')
+          if [ "$latest" = "success github-actions[bot] $BASE_REF" ]; then
+            echo "The data changes go beyond a re-verification, and $OWNER added the audited label on this commit (RUNBOOKS A8)."
+          else
+            echo "::error::The data changes go beyond a re-verification (RUNBOOKS A9), and $OWNER has not added the audited label on this commit (RUNBOOKS A8)."
             exit 1
           fi
-          actor=$(gh api "repos/$REPO/issues/$PR/events?per_page=100" --paginate --slurp |
-            jq -r '[.[][] | select(.label.name == "audited")] | last | if . == null or .event != "labeled" then "" else .actor.login end')
-          if [ -n "$actor" ] && [ "$actor" = "$OWNER" ]; then
-            echo "The data changes go beyond a re-verification, and $OWNER added the audited label (RUNBOOKS A8)."
+
+  protected-paths:
+    # Labels PRs that change workflows, the rules and decisions files, dependencies, the scripts the bot and the gate
+    # run, the source registry (its profiles are binding, D49) or the schemas, so only the owner merges them. It runs
+    # here, from the base branch's copy, so a PR can't drop its own label, and it reads the PR's list of files, never
+    # the files.
+    if: contains(fromJSON('["opened", "synchronize", "reopened"]'), github.event.action) && (github.event_name == 'pull_request_target' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+      PR: ${{ github.event.pull_request.number }}
+    steps:
+      - name: Label protected-path changes
+        run: |
+          files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename')
+          protected=$(printf '%s\n' "$files" | grep -E '^(\.github/|\.claude/|\.agent/prompts/|CLAUDE\.md$|CONTRIBUTING\.md$|docs/DECISIONS\.md$|package(-lock)?\.json$|scripts/(merge-bot|watchdog|verification-only|validate-data)\.mjs$|data/sources/seed\.yaml$|data/schema/)' || true)
+          # A registry change that moves only `last_checked` dates is a revisit, not a profile change (the same
+          # exemption as the gate's, #146), so the nightly revisit PRs don't wait on a human. A missing patch counts
+          # as a change: GitHub leaves the patch out of a large diff, and the `+` keeps that line through the grep.
+          if [ "$protected" = "data/sources/seed.yaml" ]; then
+            other=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[] | select(.filename == "data/sources/seed.yaml") | .patch // "+no patch"' | grep -E '^[-+]' | grep -vE '^[-+]  last_checked: ' || true)
+            [ -z "$other" ] && protected=""
+          fi
+          # GitHub lists at most 3000 files of a PR, so a larger one may hold protected files this job never sees.
+          if [ "$(printf '%s\n' "$files" | grep -c .)" -ge 3000 ]; then protected="3000 files or more"; fi
+          if [ -n "$protected" ]; then
+            gh api -X POST "repos/$REPO/issues/$PR/labels" -f "labels[]=needs-human-merge" > /dev/null
+            echo "::warning::Protected paths changed. A human must merge this PR."
           else
-            echo "::error::The data changes go beyond a re-verification (RUNBOOKS A9), and the PR has no audited label added by $OWNER (RUNBOOKS A8)."
-            exit 1
+            gh api -X DELETE "repos/$REPO/issues/$PR/labels/needs-human-merge" > /dev/null 2>&1 || true
           fi
