@@ -1,17 +1,9 @@
-# Scheduled task: daily build
+# Scheduled task: daily build (retired)
 
-You are running unattended in the `Default` cloud environment, which cannot reach manufacturer sites (D17): you do code, test and docs work only. Follow CLAUDE.md, including its read order. Nobody will answer questions: make the safe choice and explain it in the PR. Dates are UTC (`date -u +%F`).
+This scheduled task was retired on 13 November 2026 (docs/MIGRATION.md, Stage 3). Patchlife runs on GitHub Actions with no AI session: the nightly `Housekeeping` workflow merges the routine pull requests and runs the watchdog (docs/OPERATIONS.md).
 
-1. Re-verification (RUNBOOKS A9): the `Re-verify evidence` workflow pushes `claude/reverify-<date>-<run id>` branches and opens a PR for each with the bot's token (it opens none only while the App's variables are missing), and it stops while any such branch exists. The `Housekeeping` workflow (21:23 UTC) merges those PRs itself while the repository variable `BOT_MERGE` is `on`. For each branch, look up its PRs (`gh api "repos/sombreserotonin/Patchlife/pulls?state=all&head=sombreserotonin:<branch>"`):
-   - No PR: open one with `gh api`, titled with the branch's commit subject, its body the commit message plus `RUNBOOKS A9`. Check out the branch and run `node scripts/verification-only.mjs $(git merge-base origin/main HEAD)`. If it prints `Only verification changed`, poll the PR's check runs for up to 15 minutes and merge it once every check has passed, so tonight's run starts from the merged dates. Otherwise label it `needs-human` with a comment.
-   - An open PR: handle it in housekeeping below.
-   - Only closed, unmerged PRs: agents can't delete branches, so end with `WAITING:` asking the owner to delete it.
-   If the newest successful run of `reverify.yml` (`gh api "repos/sombreserotonin/Patchlife/actions/workflows/reverify.yml/runs?status=success&per_page=1"`) finished more than 48 hours ago, say so in the final status line.
-2. Housekeeping: merge open `claude/` PRs from this repo, never a fork (`head.repo.full_name` equals the repo), that have passed every check and have no `needs-human-merge` label, oldest first. A PR that changes `data/devices/` merges only if it has the `audited` label (docs/RUNBOOKS.md A8), or if it is a re-verification that passes RUNBOOKS A9's check. Then repair at most one failing or conflicted agent PR that is not labelled `needs-human` (RUNBOOKS A7). After two failed repairs of the same PR, label it `needs-human`, comment why, and stop touching it.
-3. Run `git fetch origin main` and work from the updated `main`, so you see what housekeeping merged. Pick the first unchecked task of the active milestone in TASKS.md that no human gate blocks, that is not marked waiting, that does not need the `Crawl` environment, and that has no open PR yet. If none qualifies, do not close the milestone: a milestone closes only when its exit checks in ROADMAP.md have run and passed. End with a WAITING line naming the blockers.
-4. Do that one task end to end on a new `claude/` branch: tests first where possible, then the change, then `npm run validate` and `npm test`. If it needs a protected path, split it per RUNBOOKS A6.
-5. Do the end-of-task updates on the same branch.
-6. Open a PR with `gh api`, wait for CI (poll the check runs for up to 15 minutes), then merge it if every check passed and it has no `needs-human-merge` label.
-7. End with one status line: `OK: <task>, merged #N`, `WAITING: <what, and who it waits on>`, `BLOCKED: <reason>` or `STUCK: #N failed twice`. Also post that line as a comment on the heartbeat issue #27 (`gh api -X POST repos/sombreserotonin/Patchlife/issues/27/comments -f body=...`).
+Do exactly this, and nothing else:
+1. Disable the scheduled task that started this session: call the `update_trigger` tool with this task's trigger id and `enabled: false`. The id is in the message that fired this run; `list_triggers` also shows it under the name `Patchlife daily build`.
+2. End the run with the line `RETIRED: task disabled`.
 
-Stop after one task.
+Make no commit, branch, pull request, issue or comment, and run no command in the repository.

@@ -378,7 +378,7 @@ All of it lands by 4 Nov, because Max ends on 19 Nov (D46) and the shadow fortni
 
 ### Stage 2: shadow fortnight (5 to 18 Nov, or earlier if Stage 1's exit check passes)
 
-- Set `BOT_MERGE=on` and `DATA_REFRESH=on`.
+- Set `BOT_MERGE=on` and `DATA_REFRESH=on`. (13 Nov: the weekly refresh no longer reads `DATA_REFRESH`; its schedule always acts, and pausing it means disabling the workflow. A session can't set a repository variable, and you asked for the wrap-up without your steps.)
 - At claude.ai/code/routines, **pause, don't delete,** `Patchlife daily build` and `Patchlife nightly data`. Paused tasks keep their settings [25].
 - **Exercise the re-verify path.** Nothing is due until 21 Dec, so dispatch `reverify.yml` with `due=0 limit=40` on at least 5 days:
   - dispatch between 21:30 and 12:30 UTC (08:30 to 23:30 Sydney);
