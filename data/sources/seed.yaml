@@ -326,8 +326,8 @@
     - https://support.google.com/product-documentation/answer/14869041?hl=en
     - https://support.google.com/chromecast/answer/10367042
   date_order: mdy
-  note: The first URL is the Nest table the Google records cite (#21); the second is from a 2024 list; the third links the Australian statements (#36), including some for products outside cameras.
-  last_checked: "2026-10-31"
+  note: "The first URL is the Nest table the Google records cite (#21); the second is from a 2024 list; the third links the Australian statements (#36), including some for products outside cameras. Read on 13 Nov 2026: nine statements are listed below; the tenth the third URL links, for Nest x Yale Lock (answer 16904890), redirects to the help centre's home page and is left out."
+  last_checked: "2026-11-13"
   # The Nest table names no region and is recorded as GLOBAL (D24); the UK PSTI statement covers the UK; each Australian
   # statement of compliance (one page per model, linked from the third URL) covers AU.
   regions_by_url:
@@ -340,6 +340,9 @@
     https://support.google.com/product-documentation/answer/16888621?hl=en: [AU]
     https://support.google.com/product-documentation/answer/16889039?hl=en: [AU]
     https://support.google.com/product-documentation/answer/16890804?hl=en: [AU]
+    https://support.google.com/product-documentation/answer/16878914?hl=en: [AU]
+    https://support.google.com/product-documentation/answer/16893054?hl=en: [AU]
+    https://support.google.com/product-documentation/answer/16882802?hl=en: [AU]
   # The Nest table's sentence; the UK and Australian statements both start their period sentence the same way.
   at_least:
     - "Google Nest connected home devices will receive automatic security updates for at least 5 years from the date we start selling them on the US Google Store."
@@ -365,6 +368,9 @@
     https://support.google.com/product-documentation/answer/16888621?hl=en: *google-au-note
     https://support.google.com/product-documentation/answer/16889039?hl=en: *google-au-note
     https://support.google.com/product-documentation/answer/16890804?hl=en: *google-au-note
+    https://support.google.com/product-documentation/answer/16878914?hl=en: *google-au-note
+    https://support.google.com/product-documentation/answer/16893054?hl=en: *google-au-note
+    https://support.google.com/product-documentation/answer/16882802?hl=en: *google-au-note
   # The Nest table's rows name only the product, so the category comes from the name.
   category_map:
     - { model: 'Chromecast|TV Streamer', category: streaming-device }
@@ -387,6 +393,9 @@
     - { from: "Nest Hello (A0077)", to: "Nest Hello", urls: [https://support.google.com/product-documentation/answer/14869041?hl=en] }
     - { from: "Google Nest Cam Outdoor (wired, 2nd generation) (G7LYP)", to: "Nest Cam Outdoor (wired, 2nd gen)", urls: [https://support.google.com/product-documentation/answer/16888345?hl=en] }
     - { from: "Google Nest Cam Indoor (wired, 3rd generation)(G1NRR)", to: "Nest Cam Indoor (wired, 3rd gen)", urls: [https://support.google.com/product-documentation/answer/16889039?hl=en] }
+    - { from: "Google TV Streamer (4K) (GRS6B)", to: "Google TV Streamer (4K) and Voice Remote", urls: [https://support.google.com/product-documentation/answer/16878914?hl=en] }
+    - { from: "Nest Mini (H2C)", to: "Nest Mini", urls: [https://support.google.com/product-documentation/answer/14869041?hl=en, https://support.google.com/product-documentation/answer/16893054?hl=en] }
+    - { from: "Google Nest Wifi Pro (G6ZUC)", to: "Google Nest Wifi Pro", urls: [https://support.google.com/product-documentation/answer/14869041?hl=en, https://support.google.com/product-documentation/answer/16882802?hl=en] }
   # For the regulatory page (chromecast/answer/10367042) the rows are its links to Australian statements (10 on 27 Oct 2026).
   min_rows:
     https://support.google.com/product-documentation/answer/10231940?hl=en: 35
@@ -398,6 +407,9 @@
     https://support.google.com/product-documentation/answer/16888621?hl=en: 1
     https://support.google.com/product-documentation/answer/16889039?hl=en: 1
     https://support.google.com/product-documentation/answer/16890804?hl=en: 1
+    https://support.google.com/product-documentation/answer/16878914?hl=en: 1
+    https://support.google.com/product-documentation/answer/16893054?hl=en: 1
+    https://support.google.com/product-documentation/answer/16882802?hl=en: 1
   # The wired doorbell's note tells it from Nest Hello and the 3rd gen (#21).
   parser_exceptions:
     - google-nest-doorbell-wired
