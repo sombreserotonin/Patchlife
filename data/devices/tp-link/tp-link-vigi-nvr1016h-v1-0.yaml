@@ -1,0 +1,24 @@
+id: tp-link-vigi-nvr1016h-v1-0
+brand: TP-Link
+brand_slug: tp-link
+model: VIGI NVR1016H (V1.0)
+aliases:
+  - VIGI NVR1016H V1.0
+category: nvr
+regions: [AU]
+support:
+  rule: fixed_date
+  end_date: "2027-12-16"
+  years: null
+  anchor_date: null
+  at_least: false
+  conditions: Hardware version V1.0 only.
+evidence:
+  - url: https://www.tp-link.com/au/landing/au-cyber-compliance/
+    quote: "Network Video Recorder VIGI NVR1016H V1.0 16/12/2027"
+    retrieved: "2026-11-13"
+    regime: au_smart_device_rules
+verification:
+  status: verified
+  checked: "2026-11-13"
+  text_sha256: a4337c7ad21ccddaf8a6d352a81901ef82a2c49bba82f7a707198d5ac2d69799

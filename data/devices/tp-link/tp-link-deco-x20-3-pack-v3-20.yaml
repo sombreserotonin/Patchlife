@@ -1,0 +1,24 @@
+id: tp-link-deco-x20-3-pack-v3-20
+brand: TP-Link
+brand_slug: tp-link
+model: Deco X20(3-pack) (V3.20)
+aliases:
+  - Deco X20(3-pack) V3.20
+category: mesh-wifi
+regions: [AU]
+support:
+  rule: fixed_date
+  end_date: "2028-12-31"
+  years: null
+  anchor_date: null
+  at_least: false
+  conditions: Hardware version V3.20 only.
+evidence:
+  - url: https://www.tp-link.com/au/landing/au-cyber-compliance/
+    quote: "Wi-Fi 6 Mesh System Deco X20(3-pack) V3.20 31/12/2028"
+    retrieved: "2026-11-13"
+    regime: au_smart_device_rules
+verification:
+  status: verified
+  checked: "2026-11-13"
+  text_sha256: a4337c7ad21ccddaf8a6d352a81901ef82a2c49bba82f7a707198d5ac2d69799
