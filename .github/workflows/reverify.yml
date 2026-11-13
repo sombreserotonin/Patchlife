@@ -73,7 +73,9 @@ jobs:
             exit 1
           fi
           set +e
-          npm run verify:evidence -- --due "$DUE" --limit "$LIMIT" 2>&1 | tee "$RUNNER_TEMP/verify.txt"
+          # The log's copy is cleaned, as in data-gate.yml: text from a maker's page must not read as a workflow
+          # command. The file, and the summary made from it, keep the text as it was.
+          npm run verify:evidence -- --due "$DUE" --limit "$LIMIT" 2>&1 | tee "$RUNNER_TEMP/verify.txt" | sed -uE 's/::/: :/g; s/##\[/# #[/g'
           status=${PIPESTATUS[0]}
           set -e
           sed 's/^/    /' "$RUNNER_TEMP/verify.txt" >> "$GITHUB_STEP_SUMMARY"
@@ -88,7 +90,7 @@ jobs:
         continue-on-error: true
         run: |
           set -o pipefail
-          node scripts/archive-evidence.mjs --limit 5 2>&1 | tee "$RUNNER_TEMP/archive.txt"
+          node scripts/archive-evidence.mjs --limit 5 2>&1 | tee "$RUNNER_TEMP/archive.txt" | sed -uE 's/::/: :/g; s/##\[/# #[/g'
           sed 's/^/    /' "$RUNNER_TEMP/archive.txt" >> "$GITHUB_STEP_SUMMARY"
       - run: npm run validate
       - run: npm test

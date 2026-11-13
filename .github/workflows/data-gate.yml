@@ -82,9 +82,10 @@ jobs:
           node "$GITHUB_WORKSPACE/scripts/verification-only.mjs" "$base" > "$RUNNER_TEMP/gate.txt" 2>&1
           status=$?
           set -e
-          # The file names in this output come from the PR, so control characters are dropped and no line may start a
-          # workflow command.
-          tr -d '\000-\011\013-\037\177' < "$RUNNER_TEMP/gate.txt" | sed -E 's/^([[:space:]]*)::/\1: :/; s/^([[:space:]]*)##\[/\1# #[/'
+          # The file names in this output come from the PR, so control characters are dropped and nothing in it can
+          # read as a workflow command. The runner takes `##[name]` anywhere in a line and `::name::` after any kind
+          # of space, a no-break space included (tried on a runner, 13 Nov 2026), so every `::` and `##[` is broken up.
+          tr -d '\000-\011\013-\037\177' < "$RUNNER_TEMP/gate.txt" | sed -E 's/::/: :/g; s/##\[/# #[/g'
           if [ "$status" -eq 0 ]; then
             echo "verified=yes" >> "$GITHUB_OUTPUT"
           else

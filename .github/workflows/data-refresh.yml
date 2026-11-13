@@ -94,7 +94,9 @@ jobs:
         # Exit 1 is the parser gate or the min_rows gate: nothing was written, and the run goes red as the alarm.
         run: |
           set +e
-          node scripts/candidates.mjs --limit "$LIMIT" --report "$RUNNER_TEMP/report.json" $BRANDS 2>&1 | tee "$RUNNER_TEMP/candidates.txt"
+          # The log's copy is cleaned, here and in the next step, as in data-gate.yml: text from a maker's page must
+          # not read as a workflow command. The file, and the summary made from it, keep the text as it was.
+          node scripts/candidates.mjs --limit "$LIMIT" --report "$RUNNER_TEMP/report.json" $BRANDS 2>&1 | tee "$RUNNER_TEMP/candidates.txt" | sed -uE 's/::/: :/g; s/##\[/# #[/g'
           status=${PIPESTATUS[0]}
           set -e
           sed 's/^/    /' "$RUNNER_TEMP/candidates.txt" >> "$GITHUB_STEP_SUMMARY"
@@ -114,7 +116,7 @@ jobs:
             exit 0
           fi
           set +e
-          npm run verify:evidence -- $ids 2>&1 | tee "$RUNNER_TEMP/verify.txt"
+          npm run verify:evidence -- $ids 2>&1 | tee "$RUNNER_TEMP/verify.txt" | sed -uE 's/::/: :/g; s/##\[/# #[/g'
           status=${PIPESTATUS[0]}
           set -e
           sed 's/^/    /' "$RUNNER_TEMP/verify.txt" >> "$GITHUB_STEP_SUMMARY"

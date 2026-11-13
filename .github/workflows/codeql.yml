@@ -37,3 +37,17 @@ jobs:
       - uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
           category: /language:${{ matrix.language }}
+          output: sarif-results
+      - name: List what the scan found
+        # The alerts themselves are in the Security tab. This puts each finding's rule and place in the run's summary
+        # and log as well, where they can be read without opening it. The text comes from the scanned files, so
+        # nothing in it may read as a workflow command (as in data-gate.yml).
+        env:
+          LANGUAGE: ${{ matrix.language }}
+        run: |
+          found=$(jq -r '.runs[].results[]? | "\(.ruleId) \(.locations[0].physicalLocation.artifactLocation.uri // "?"):\(.locations[0].physicalLocation.region.startLine // "?") \(.message.text | gsub("\\s+"; " ") | .[0:160])"' sarif-results/*.sarif | sort | tr -d '\000-\011\013-\037\177' | sed -E 's/::/: :/g; s/##\[/# #[/g')
+          {
+            echo "## CodeQL: $LANGUAGE"
+            echo
+            if [ -n "$found" ]; then echo '```'; printf '%s\n' "$found"; echo '```'; else echo "No findings."; fi
+          } | tee -a "$GITHUB_STEP_SUMMARY"
