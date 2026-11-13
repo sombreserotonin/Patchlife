@@ -18,6 +18,7 @@ evidence:
     quote: "IP Camera VIGI C230I(4mm) V1.0 31/12/2027"
     retrieved: "2026-11-13"
     regime: au_smart_device_rules
+    archive_url: https://web.archive.org/web/20261102215447/https://www.tp-link.com/au/landing/au-cyber-compliance/
 verification:
   status: verified
   checked: "2026-11-13"
