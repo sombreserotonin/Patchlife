@@ -42,13 +42,13 @@ jobs:
       - id: app-token
         # Skipped while the App's variables are missing, when the run pushes with Actions' token and opens no PR.
         if: vars.BOT_CLIENT_ID != ''
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           client-id: ${{ vars.BOT_CLIENT_ID }}
           private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
           permission-contents: write
           permission-pull-requests: write
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           token: ${{ steps.app-token.outputs.token || github.token }}
       - name: Stop while an earlier re-verification is unmerged
@@ -59,7 +59,7 @@ jobs:
             echo "::error::Unmerged re-verification branch: merge it, or delete it if its PR was closed (RUNBOOKS A9). $open"
             exit 1
           fi
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 26
           cache: npm

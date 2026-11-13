@@ -15,6 +15,7 @@ const API = "https://api.github.com";
 // lighthouse job doesn't count, so one slow runner can't stall re-verification.
 const CHECKS = ["test", "data-gate", "build"];
 const HOLD_LABELS = ["needs-human", "needs-human-merge"];
+const BASE = "main";
 const PAGE_HASHES = "data/sources/page-hashes.json";
 const DEVICE = /^data\/devices\/[^/]+\/[^/]+\.yaml$/;
 // GitHub lists at most 3000 files of a PR, so a PR with that many may hold files the bot never sees.
@@ -32,24 +33,37 @@ function newer(a, b) {
   return a.id > b.id;
 }
 
-// Returns { merge: true, reason: <type> } when every rule holds, otherwise { merge: false, reason } with the first rule
-// the PR breaks. files are the PR's files; checkRuns are the check runs on its head SHA.
-export function mergeDecision({ pr, files, checkRuns, repo, botLogin }) {
-  const refuse = (reason) => ({ merge: false, reason });
+// The rules that need nothing but the PR itself, in order: { kind } with the PR's type when all hold, otherwise
+// { reason } with the first one it breaks. mergeBot asks these before it reads a PR's files or checks.
+function ownRules({ pr, repo, botLogin }) {
   // Without both, undefined === undefined would pass the first two rules.
-  if (!repo || !botLogin) return refuse("no repository or bot login given");
+  if (!repo || !botLogin) return { reason: "no repository or bot login given" };
   // A fork's head repo has another name, and a deleted one is null.
-  if (pr.head?.repo?.full_name !== repo) return refuse("head branch is not in this repository");
-  if (pr.user?.login !== botLogin) return refuse(`not opened by ${botLogin}`);
-  if (pr.draft !== false) return refuse("draft");
+  if (pr.head?.repo?.full_name !== repo) return { reason: "head branch is not in this repository" };
+  if (pr.user?.login !== botLogin) return { reason: `not opened by ${botLogin}` };
+  if (pr.draft !== false) return { reason: "draft" };
+  // The checks were judged against the base the PR had when they ran, and the App opens its PRs into main only.
+  if (pr.base?.ref !== BASE) return { reason: `base branch is not ${BASE}` };
   const kind = TYPES.find(({ branch }) => branch.test(pr.head.ref));
-  if (!kind) return refuse(`branch ${pr.head.ref} is not a re-verify or measures branch`);
-  if (!Array.isArray(pr.labels)) return refuse("no label list");
+  if (!kind) return { reason: `branch ${pr.head.ref} is not a re-verify or measures branch` };
+  if (!Array.isArray(pr.labels)) return { reason: "no label list" };
   const hold = pr.labels.find(({ name }) => HOLD_LABELS.includes(name?.toLowerCase()));
-  if (hold) return refuse(`label ${hold.name}`);
+  if (hold) return { reason: `label ${hold.name}` };
+  return { kind };
+}
+
+// Returns { merge: true, reason: <type> } when every rule holds, otherwise { merge: false, reason } with the first rule
+// the PR breaks. files are the PR's files; checkRuns are the check runs on its head SHA; ownSuites is the set of check
+// suite ids whose workflow run belongs to this repository.
+export function mergeDecision({ pr, files, checkRuns, ownSuites, repo, botLogin }) {
+  const refuse = (reason) => ({ merge: false, reason });
+  const { kind, reason } = ownRules({ pr, repo, botLogin });
+  if (!kind) return refuse(reason);
   for (const name of CHECKS) {
-    // Only GitHub Actions' runs on this SHA count, so another app can't pass a check by naming its run "test".
-    const runs = checkRuns.filter((run) => run.name === name && run.head_sha === pr.head.sha && run.app?.slug === "github-actions");
+    // Only GitHub Actions' runs on this SHA count, so another app can't pass a check by naming its run "test". And
+    // only runs of this repository's own workflow runs: a fork's PR on the same commit starts runs of the same names
+    // on this SHA, which must neither pass a check nor fail it.
+    const runs = checkRuns.filter((run) => run.name === name && run.head_sha === pr.head.sha && run.app?.slug === "github-actions" && ownSuites?.has(run.check_suite?.id) === true);
     if (!runs.length) return refuse(`check ${name} missing`);
     const latest = runs.reduce((a, b) => (newer(b, a) ? b : a));
     if (latest.status !== "completed" || latest.conclusion !== "success") return refuse(`check ${name} not passed`);
@@ -80,10 +94,16 @@ async function getAll(api, path, pick = (body) => body) {
 export async function mergeBot({ api, repo, botLogin, dryRun = false, onResult = () => {} }) {
   const results = [];
   for (const pr of await getAll(api, `/repos/${repo}/pulls?state=open&per_page=100`)) {
-    const files = await getAll(api, `/repos/${repo}/pulls/${pr.number}/files?per_page=100`);
-    // filter=all, so a newer run GitHub would otherwise hide, such as one still in progress, decides.
-    const checkRuns = await getAll(api, `/repos/${repo}/commits/${pr.head.sha}/check-runs?per_page=100&filter=all`, (body) => body?.check_runs);
-    const { merge, reason } = mergeDecision({ pr, files, checkRuns, repo, botLogin });
+    // A PR that breaks a rule of its own is skipped before anything more is read, so PRs from forks, however many
+    // and however large, cost one line each.
+    let { reason } = ownRules({ pr, repo, botLogin });
+    let merge = false;
+    if (!reason) {
+      const files = await getAll(api, `/repos/${repo}/pulls/${pr.number}/files?per_page=100`);
+      // filter=all, so a newer run GitHub would otherwise hide, such as one still in progress, decides.
+      const checkRuns = await getAll(api, `/repos/${repo}/commits/${pr.head.sha}/check-runs?per_page=100&filter=all`, (body) => body?.check_runs);
+      ({ merge, reason } = mergeDecision({ pr, files, checkRuns, ownSuites: await ownSuites(api, repo, checkRuns), repo, botLogin }));
+    }
     if (merge && !dryRun) {
       const merged = await api("PUT", `/repos/${repo}/pulls/${pr.number}/merge`, { merge_method: "squash", sha: pr.head.sha });
       if (merged?.merged !== true) throw new Error(`#${pr.number}: GitHub did not confirm the merge, so ${pr.head.ref} stays`);
@@ -94,6 +114,18 @@ export async function mergeBot({ api, repo, botLogin, dryRun = false, onResult =
     if (merge && !dryRun) await deleteBranch(api, repo, pr.head.ref);
   }
   return results;
+}
+
+// The ids of the check suites, among those holding a required check, whose workflow runs all came from a branch of
+// this repository. A fork's PR on the same commit starts its own runs, and each run's head repository tells them apart.
+async function ownSuites(api, repo, checkRuns) {
+  const own = new Set();
+  const ids = new Set(checkRuns.filter((run) => CHECKS.includes(run.name) && Number.isInteger(run.check_suite?.id)).map((run) => run.check_suite.id));
+  for (const id of ids) {
+    const runs = await getAll(api, `/repos/${repo}/actions/runs?check_suite_id=${id}&per_page=100`, (body) => body?.workflow_runs);
+    if (runs.length && runs.every((run) => run.head_repository?.full_name === repo)) own.add(id);
+  }
+  return own;
 }
 
 // Each part of the name is escaped, so "#" or "%2e%2e" in a branch name can't make the path name another ref. GitHub

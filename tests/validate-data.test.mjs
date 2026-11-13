@@ -1,10 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, renameSync, rmSync, symlinkSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import YAML from "yaml";
 import { addYears, ambiguousDates, mentionsDate, mentionsYears, plainScalarProblems, validateDevices, validateSources, versionsIn, writesToken } from "../scripts/validate-data.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -85,7 +86,34 @@ const rejected = [
   ["control-character", /^\/notes holds the character U\+0001, a control or bidirectional-override character$/],
   ["bidi-override", /^\/notes holds the character U\+202E, a control or bidirectional-override character$/],
   ["url-credentials", /^evidence URL https:\/\/example\.com@example\.net\/acme\/security carries a user name or password before its host, so its link would look like another site's$/],
+  ["evidence-off-site", /^evidence URL https:\/\/example\.com\.evil\.example\/acme\/security is not on a site the source registry lists for acme \(https:\/\/example\.com\)$/],
 ];
+
+test("an evidence URL must be on a site its brand's registry entries name, and a brand needs an entry", () => {
+  const offSite = (errors) => errors.filter((e) => /is not on a site the source registry lists/.test(e.message));
+  // Without Acme's entry each of the seven Acme source links is refused; with no registry at all there is nothing to
+  // check against.
+  const noAcme = offSite(run("valid", SOURCES.filter((entry) => entry.brand_slug !== "acme")).errors);
+  assert.equal(noAcme.length, 7, messages(noAcme));
+  assert.ok(noAcme.every((e) => e.message.endsWith("for acme (it has no entry)")), messages(noAcme));
+  assert.deepEqual(offSite(run("valid", []).errors), []);
+});
+
+test("a record can't grow without limit: 20 aliases, 20 evidence items and 500 characters of URL at most", (t) => {
+  const { devices } = scratchDevices(t);
+  const file = join(devices, "acme", "acme-cam-1.yaml");
+  const original = readFileSync(file, "utf8");
+  const schemaErrors = (change) => {
+    const record = YAML.parse(original);
+    change(record);
+    writeFileSync(file, YAML.stringify(record));
+    return validateDevices(devices, { today: TODAY, sources: SOURCES }).errors.map((e) => e.message).filter((m) => m.startsWith("schema:"));
+  };
+  assert.deepEqual(schemaErrors((r) => (r.aliases = Array.from({ length: 21 }, (_, n) => `AC-${n}`))), ["schema: /aliases must NOT have more than 20 items"]);
+  assert.deepEqual(schemaErrors((r) => (r.evidence = Array.from({ length: 21 }, () => r.evidence[0]))), ["schema: /evidence must NOT have more than 20 items"]);
+  assert.deepEqual(schemaErrors((r) => (r.evidence[0].url += `?x=${"a".repeat(500)}`)), ["schema: /evidence/0/url must NOT have more than 500 characters"]);
+  assert.deepEqual(schemaErrors(() => {}), []);
+});
 
 test("a month-only end date passes when a quote states that month and no day in it (D38)", () => {
   const { files, errors } = run("month-only");

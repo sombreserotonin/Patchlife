@@ -166,6 +166,16 @@ export function validateDevices(
   const orders = sources.flatMap((entry) => (entry.date_order ? entry.urls.map((url) => [url, entry.date_order]) : []));
   const orderFor = (url) => orders.find(([prefix]) => url.startsWith(prefix))?.[1];
   const profiles = new Map(sources.map((entry) => [entry.brand_slug, entry]));
+  // The sites each brand's registry entries name, from their pages and the pages their renames cite. A source link
+  // anywhere else would send a reader to a site the registry never listed, however much its address looks the part.
+  const sites = new Map();
+  for (const entry of sources) {
+    const origins = sites.get(entry.brand_slug) ?? new Set();
+    for (const url of [...(entry.urls ?? []), ...(entry.renames ?? []).flatMap((rename) => rename.urls ?? [])]) {
+      if (URL.canParse(url)) origins.add(new URL(url).origin);
+    }
+    sites.set(entry.brand_slug, origins);
+  }
   // A category_map pattern that doesn't compile matches nothing here; validateSources reports it.
   const regexes = new Map();
   const regexFor = (pattern) => {
@@ -273,6 +283,10 @@ export function validateDevices(
       if (ev.retrieved > today) fail(`evidence retrieved date ${ev.retrieved} is in the future`);
       if (ev.archive_url && !isCaptureOf(ev.archive_url, ev.url)) fail(`archive_url ${ev.archive_url} is not a Wayback capture of ${ev.url}`);
       if (hasCredentials(ev.url)) fail(`evidence URL ${ev.url} carries a user name or password before its host, so its link would look like another site's`);
+      // With a registry to check against, every source link is on a site the brand's entries name.
+      if (sources.length && !sites.get(record.brand_slug)?.has(new URL(ev.url).origin)) {
+        fail(`evidence URL ${ev.url} is not on a site the source registry lists for ${record.brand_slug} (${[...(sites.get(record.brand_slug) ?? [])].join(", ") || "it has no entry"})`);
+      }
     }
     const checked = record.verification.checked;
     if (checked && checked > today) fail(`verification.checked ${checked} is in the future`);
