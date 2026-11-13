@@ -18,6 +18,6 @@
 - name: Unraid licence updates
   due: null
   note: Some licences include a year of updates, then an optional yearly fee (unverified, MIGRATION decision 13).
-- name: Node 24 end of life
-  due: "2028-04-30"
-  note: Move to Node 26 before this; its end of life is 30 Apr 2029 (MIGRATION decision 9).
+- name: Node 26 end of life
+  due: "2029-04-30"
+  note: The workflows moved from Node 24 to Node 26 on 13 Nov 2026 (MIGRATION decision 9). Move to the next even-numbered version before this (RUNBOOKS O12 step 9).
