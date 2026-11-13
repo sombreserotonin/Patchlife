@@ -4,9 +4,9 @@ name: Re-verify evidence
 # record whose last check is more than 60 days old, at most 1000 a night (decision 13), archives up to 5 cited pages
 # that have items with no archive link (D43), and pushes the results to claude/reverify-<date>-<run id> when the data
 # changes are verification only (RUNBOOKS A9). With the App's token (#126) the push gets CI and the run opens the PR,
-# which the Housekeeping workflow or the daily build merges; without it the run pushes with Actions' token and the
-# daily build opens the PR. The run fails when the verifier itself breaks. Records it couldn't check are a warning,
-# which the watchdog counts and the nightly Crawl task re-checks.
+# which the Housekeeping workflow merges; without it the run pushes with Actions' token and opens no PR, so the owner
+# opens one from the branch. The run fails when the verifier itself breaks. Records it couldn't check are a warning,
+# which the watchdog counts.
 # Every evidence host answered a runner on 21 Oct 2026 (Probe hosts run 39695382968).
 on:
   schedule:
@@ -61,7 +61,7 @@ jobs:
           fi
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26
           cache: npm
       - run: npm ci
       - name: Re-verify the oldest due records
@@ -121,7 +121,7 @@ jobs:
           git push origin "$branch"
           echo "Pushed $branch" | tee -a "$GITHUB_STEP_SUMMARY"
           if [ -z "$GH_TOKEN" ]; then
-            echo "No App token: the daily build opens the PR (RUNBOOKS A9)." | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "No App token: no PR was opened. Open one from this branch (RUNBOOKS A9)." | tee -a "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           body="$(git log -1 --format=%b)"$'\n\n'"RUNBOOKS A9"
@@ -130,7 +130,7 @@ jobs:
       - name: Flag records that could not be checked
         # An error (a redirect, robots.txt, HTTP 403 or 5xx, a timeout) changes no file, so the same records would come
         # first again every night. The annotation title is read by scripts/watchdog.mjs, which reports ids that recur
-        # on 3 nights, and by the nightly Crawl task, which re-checks them (data-refresh step 2).
+        # on 3 nights.
         run: |
           ids=$(sed -nE 's/^([a-z0-9]+(-[a-z0-9]+)*): error \(.*/\1/p' "$RUNNER_TEMP/verify.txt" | tr '\n' ' ')
           if [ -n "$ids" ]; then

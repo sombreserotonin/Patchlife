@@ -1,5 +1,7 @@
 # Roadmap
 
+> **Frozen on 13 November 2026.** History only: no AI session runs this project and nothing reads this file ([`.agent/README.md`](../README.md)). Open work is in [GitHub issues](https://github.com/sombreserotonin/Patchlife/issues).
+
 A milestone ends only when every exit check has been run and has passed. Human gates (H numbers) are in TASKS.md. Targets, sequencing, decisions (P numbers) and the 14-day action plan are in `docs/PLAN.md`.
 
 ## M0 Foundation
@@ -42,6 +44,8 @@ Status: done 2026-10-21, on the exit checks above, after M1 closed.
 Exit: three consecutive nightly runs each end in a correct PR or a correct no-op; a deliberately broken fixture source is detected and flagged.
 
 Progress: the broken-source half passed on 22 Oct 2026 (drill of the `reverify.yml` steps, TASKS.md); the three nightly runs start that night.
+
+Status: done. The three clean nights were 28, 29 and 30 Oct 2026 (TASKS.md), which met the exit checks. Closed on 13 Nov 2026 with the cut-over, on the owner's instruction to wrap the project up without their approval (D59); no owner sign-off of M3 itself was recorded.
 
 ## M5 Search links (D46: no browser extension)
 - `?q=` search in the existing `site/search.js`, so a link such as `https://patchlife.tech/?q=<model>` opens the matching records. No store extension, bookmarklet or store accounts, so H10 isn't needed.

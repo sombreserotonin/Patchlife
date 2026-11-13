@@ -3,8 +3,8 @@
 // (docs/MIGRATION.md B5). A capture of the old page is not a capture of the new one, so each moved item's archive_url
 // is cleared for the nightly run to capture again (D43); the verification block is left to the verifier, which marks
 // a verified record stale when its quote is not on the new page. --dry-run lists the records that cite the old URL
-// and changes nothing. The re-verification reads the new page with the polite fetcher, so it needs the Crawl network
-// or a runner. Exits 1 when no record cites the old URL or a moved record did not verify, listing them; 2 on bad
+// and changes nothing. The re-verification reads the new page with the polite fetcher, so it needs a network that
+// reaches the maker's site: a GitHub runner or your own machine. Exits 1 when no record cites the old URL or a moved record did not verify, listing them; 2 on bad
 // arguments.
 // Usage: node --use-env-proxy scripts/repoint-source.mjs <old url> <new url> [--dry-run]
 import { readFileSync, writeFileSync } from "node:fs";

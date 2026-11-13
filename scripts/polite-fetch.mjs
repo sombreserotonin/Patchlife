@@ -1,5 +1,5 @@
 // Fetches pages the way docs/CRAWLER.md promises: robots.txt honoured, at most one request per second per host,
-// back-off on 429 and 503. Run under `node --use-env-proxy` so cloud sessions route fetch through their proxy.
+// back-off on 429 and 503. Run under `node --use-env-proxy` where the network needs an HTTP proxy (D16).
 export const USER_AGENT = "PatchlifeBot/0.1 (+https://github.com/sombreserotonin/Patchlife/blob/main/docs/CRAWLER.md)";
 const TOKEN = "patchlifebot";
 const MIN_GAP_MS = 1000;

@@ -95,7 +95,9 @@ class Html {
 }
 
 const ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
-export const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (c) => ESCAPES[c]);
+// The characters XML 1.0 forbids are dropped first, so one that reaches a record can't make an Atom feed unparseable.
+const XML_FORBIDDEN = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g;
+export const escapeHtml = (value) => String(value).replace(XML_FORBIDDEN, "").replace(/[&<>"']/g, (c) => ESCAPES[c]);
 
 function renderValue(value) {
   if (value instanceof Html) return value.text;
@@ -118,11 +120,12 @@ function jsonLd(value) {
   return new Html(`<script type="application/ld+json">${json}</script>`);
 }
 
-// The URL when it parses as https, otherwise null. Only these become hrefs.
+// The URL when it parses as https and carries no user name or password, otherwise null. Only these become hrefs: in
+// https://ring.com@example.net/ the host is example.net, so such a link would look like another site's.
 export function httpsUrl(value) {
   try {
     const url = new URL(String(value));
-    return url.protocol === "https:" ? url.href : null;
+    return url.protocol === "https:" && !url.username && !url.password ? url.href : null;
   } catch {
     return null;
   }
@@ -230,8 +233,8 @@ function timeLeftText(record, entry, today) {
 function evidenceCheck(record) {
   const { status, checked } = record.verification;
   if (status === "verified") return html`Quote found on the source page by an automated check on ${shortTime(checked)}.`;
-  if (status === "stale") return "At the latest automated check the quote was no longer on the source page. This record is being reviewed.";
-  if (status === "disputed") return "This record has been disputed and is being reviewed.";
+  if (status === "stale") return "At the latest automated check the quote was no longer on the source page. This record is waiting for a manual check.";
+  if (status === "disputed") return "This record has been disputed and is waiting for a manual check.";
   return html`Not yet checked automatically. Quote retrieved on ${shortTime(latestRetrieved(record))}.`;
 }
 
@@ -314,6 +317,7 @@ function start() {
 }
 input.addEventListener("focus", start);
 input.addEventListener("input", start);
+// The input has no name, so even without this script a submitted form sends nothing that was typed.
 form.addEventListener("submit", (event) => event.preventDefault());
 // A link such as /?q=Tapo%20C200 opens with its search done (M5, D46). What is typed is never written back into the
 // URL, so it stays out of the address bar, the history and any analytics beacon that reports URL changes.
@@ -487,7 +491,7 @@ function homePage(ctx, { items, brands, categories, coverage }) {
 <p>Patchlife looks up when smart devices stop getting security updates, and quotes the manufacturer's own words as evidence. So far it covers ${plural(items.length, "device")}: ${coverage}.</p>
 <form id="search" role="search" data-base="${ctx.base}">
 <label for="q">Search by brand, model or model number</label>
-<input id="q" name="q" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search">
+<input id="q" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search">
 </form>
 <noscript><p>Search needs JavaScript. You can browse by brand or category below.</p></noscript>
 ${disclaimerNote(ctx)}
@@ -539,7 +543,7 @@ function methodologyPage(ctx) {
 <dt>Unknown</dt><dd>No end date can be worked out, for example when a rule's anchor date has not been published.</dd>
 </dl>
 <h2>Checking quotes</h2>
-<p>An automated check fetches each source page, normalises the text (Unicode NFKC, collapsed spaces, ignoring case) and confirms the quote is still there. When the quote is found, the record shows the date of that check. When a quote disappears, the record is marked "Under review" until new evidence is found. The policy is to re-check every record at least every 90 days.</p>
+<p>An automated check fetches each source page, normalises the text (Unicode NFKC, collapsed spaces, ignoring case) and confirms the quote is still there. When the quote is found, the record shows the date of that check. When a quote disappears, the record is marked "Under review" until a person has checked the source again. The policy is to re-check every record at least every 90 days.</p>
 <h2>Disclaimer</h2>
 <p>${DISCLAIMER}</p>`,
   });
@@ -585,7 +589,7 @@ function aboutPage(ctx, { coverage }) {
 <li><a href="${link(ctx, "/feeds/")}">Atom feeds</a> of the models ending within 12 months or ended, in total and by brand, and <a href="${link(ctx, "/stats/")}">counts</a> by brand, category, status and verification state.</li>
 </ul>
 <h2>Who runs it</h2>
-<p>Claude Code, an AI coding tool, builds and runs Patchlife. A human owner makes the decisions that need a person, such as money, accounts, legal text and publishing.</p>
+<p>One person runs Patchlife. Scripts on GitHub re-check every quote against the maker's page, and the owner reviews each batch of new records before it is published. Patchlife was built in 2026 with Claude Code, an AI coding tool, which no longer runs any part of it.</p>
 <h2>Disclaimer</h2>
 <p>${DISCLAIMER}</p>`,
   });

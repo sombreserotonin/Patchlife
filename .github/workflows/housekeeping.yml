@@ -3,7 +3,7 @@ name: Housekeeping
 # The nightly run with no model (docs/MIGRATION.md A1 and P2; decisions 2, 7 and 8). The merge bot merges the routine
 # PRs the App opened, the watchdog checks the workflows, the site and the records, and on the 1st of the month the
 # run opens the measures PR. Every write uses patchlife-bot's token (#126), so the PRs it opens get CI. The merge bot
-# runs only while the repository variable BOT_MERGE is `on`, the kill switch; the daily build keeps merging meanwhile.
+# runs only while the repository variable BOT_MERGE is `on`, the kill switch; while it is off the owner merges.
 on:
   schedule:
     - cron: '23 21 * * *'
@@ -42,7 +42,7 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26
           cache: npm
       - run: npm ci
       - id: day

@@ -12,14 +12,14 @@ Each answer reads like this (a fictional example):
 
 > Security updates until at least 30 June 2029, as published by Acme (checked 2 Oct 2026).
 
-Claude Code builds and runs the project end to end. A human owner handles the gates that need a person: money, accounts, secrets, legal text, publishing, and merging changes to protected files.
+One person runs Patchlife. Scripts on GitHub Actions re-check every quote against the maker's page and propose new rows, and the owner reviews each batch before it is published. Patchlife was built in 2026 with Claude Code, an AI coding tool, which no longer runs any part of it.
 
 ## Contents
 - [Why](#why)
 - [Status](#status)
 - [How it works](#how-it-works)
 - [Getting started](#getting-started)
-- [How the project runs itself](#how-the-project-runs-itself)
+- [How the project runs](#how-the-project-runs)
 - [Corrections and contributions](#corrections-and-contributions)
 - [Repository layout](#repository-layout)
 - [Documentation](#documentation)
@@ -33,23 +33,23 @@ Claude Code builds and runs the project end to end. A human owner handles the ga
 Patchlife collects those statements in one place, with a quote and a link for every date. The full case is in [`docs/BRIEF.md`](docs/BRIEF.md).
 
 ## Status
-As of 21 October 2026:
-- **Done:** M0, the foundation; M1, the evidence engine and the first records (338 audited, verified records from Ring, Google Nest, TP-Link, EZVIZ and GL.iNet); M2, the site.
-- **In progress:** M3, unattended data: the nightly data task, re-verification, PDF sources, and 40 or more small-office records.
-- **Site:** a preview is live at https://sombreserotonin.github.io/Patchlife/ (not indexed by search engines). It moves to patchlife.tech after the owner's legal read.
+As of 13 November 2026:
+- **Live:** https://patchlife.tech, with 849 verified records from seven makers (Ring, Google Nest, TP-Link, EZVIZ, GL.iNet, Kyocera and ASUS), each quoting the maker's own page.
+- **Unattended:** every quote is re-checked on a schedule, new and changed rows arrive as one pull request a week, and a watchdog reports problems, all on GitHub Actions with no AI and no subscription ([`docs/OPERATIONS.md`](docs/OPERATIONS.md)).
+- **Maintenance mode:** new makers are added by hand ([`docs/RUNBOOKS.md`](docs/RUNBOOKS.md), O11), and the business side is shelved (D45).
 
-[`docs/PLAN.md`](docs/PLAN.md) has the plan, the decisions and the 14-day action plan; [`docs/MIGRATION.md`](docs/MIGRATION.md) has the plan for running with no AI and no subscription, and [`docs/COSTS.md`](docs/COSTS.md) the cost research behind it. Live progress is in [`.agent/progress/TASKS.md`](.agent/progress/TASKS.md), and the exit checks for each milestone are in [`.agent/progress/ROADMAP.md`](.agent/progress/ROADMAP.md).
+| Milestone | Goal | State |
+| --- | --- | --- |
+| M0 Foundation | CI green, labels, human gates opened | Done |
+| M1 Evidence engine | Automated quote checking and 50 verified camera and doorbell records | Done |
+| M2 Public site | Search-only static site and JSON feed | Done |
+| M3 Unattended data | Scheduled re-verification and data refresh | Done |
+| M4 Demand check | Four weeks of search data and a waitlist for business users | Planned, not active (D45) |
+| M5 Search links | A `?q=` link opens the matching records (no browser extension, D46) | Done |
+| M6 B2B | CSV reports, paid API keys, supplier SKU checks | Planned, not active (D45) |
+| M7 Growth | Atom feeds and a monthly stats page (no email alerts, D46) | Done |
 
-| Milestone | Goal |
-| --- | --- |
-| M0 Foundation | CI green, labels, human gates opened |
-| M1 Evidence engine | Automated quote checking and 50 verified camera and doorbell records |
-| M2 Public site | Search-only static site and JSON feed |
-| M3 Unattended data | Nightly data refresh and a 90-day re-check |
-| M4 Demand check | Four weeks of search data and a waitlist for business users. Planned, not active (D45) |
-| M5 Browser extension | Support status badges on three retailers' product pages |
-| M6 B2B | CSV reports, paid API keys, supplier SKU checks. Planned, not active (D45) |
-| M7 Growth | Monthly report and email alerts |
+[`docs/PLAN.md`](docs/PLAN.md) has the October 2026 plan, the owner's decisions and the Measures. [`docs/MIGRATION.md`](docs/MIGRATION.md) is how the project moved off AI sessions and subscriptions, finished on 13 November 2026; the task list, roadmap and log from that period are frozen in [`.agent/`](.agent/).
 
 ## How it works
 
@@ -104,7 +104,7 @@ verification:
 
 It also keeps one SHA-256 hash per evidence URL, of that page's normalised text, in `data/sources/page-hashes.json`, and reports each page it read as changed, unchanged or not seen before. Most records cite more than one page and many records share a page, so this shows which page changed.
 
-Only quotes and hashes are stored, never whole pages. The fetcher identifies itself as PatchlifeBot, honours `robots.txt`, and makes at most one request per second per host ([`docs/CRAWLER.md`](docs/CRAWLER.md)). It reads HTML, plain text and PDF; PDF text comes from pdf.js through `unpdf`. Archive snapshots are not supported yet.
+Only quotes and hashes are stored, never whole pages. The fetcher identifies itself as PatchlifeBot, honours `robots.txt`, and makes at most one request per second per host ([`docs/CRAWLER.md`](docs/CRAWLER.md)). It reads HTML, plain text and PDF; PDF text comes from pdf.js through `unpdf`. The nightly run also asks the Wayback Machine to capture cited pages, and links a capture only when it holds the quote.
 
 ### Support status
 Status is worked out from the dates each time the site is built, and never stored in a record:
@@ -117,7 +117,7 @@ Status is worked out from the dates each time the site is built, and never store
 | `unknown` | No date can be worked out, such as a rule whose anchor date isn't published |
 
 ## Getting started
-You need Node.js 22 or later. `npm run verify:evidence` needs Node.js 22.21 or later, because it uses Node's `--use-env-proxy` flag.
+You need Node.js 22.21 or later (`npm run verify:evidence` uses Node's `--use-env-proxy` flag). The workflows run on Node 26.
 
 ```sh
 git clone https://github.com/sombreserotonin/Patchlife.git
@@ -129,41 +129,44 @@ npm ci
 | --- | --- |
 | `npm run validate` | Checks every record against the schema and integrity rules |
 | `npm test` | Runs the unit tests offline against saved fixtures; no test touches the network |
-| `npm run verify:evidence [-- <id> ...]` | Fetches evidence URLs, marks records `verified` or `stale`, and updates the page hashes in `data/sources/page-hashes.json`. Needs network access to manufacturer sites, so in cloud sessions it runs in the `Crawl` environment |
+| `npm run verify:evidence [-- <id> ...]` | Fetches evidence URLs, marks records `verified` or `stale`, and updates the page hashes in `data/sources/page-hashes.json`. Reads makers' pages |
 | `npm run build:site` | Builds the static site into `_site/`. `BASE_PATH`, `SITE_URL`, `BUILD_DATE` and `NOINDEX` set the base path, origin, status date and preview mode. Run `npm run validate` first |
-| `node scripts/data-report.mjs` | Prints the Measures rows of `docs/PLAN.md`, then counts by brand, category, status and verification state. Reads only local files, so it runs in any environment |
+| `node scripts/data-report.mjs` | Prints the Measures rows of `docs/PLAN.md`, then counts by brand, category, status and verification state. Reads only local files |
 | `node scripts/verification-only.mjs [ref]` | Exits 0 only if, under `data/`, the working tree differs from `ref` (default `HEAD`) in nothing but device records' `verification` blocks, empty `archive_url` fields filled with a capture of their own page, and `data/sources/page-hashes.json`: the test for a re-verification that may merge without an audit |
-| `node scripts/archive-evidence.mjs [--limit <n>] [url ...]` | Asks the Wayback Machine to capture each cited page (or the ones named) that has an item with no `archive_url`, and links each item whose quote the capture's raw copy holds. Needs archive.org, which `Crawl` can't reach, so it runs on GitHub's runners (D43); always exits 0 |
-| `node scripts/merge-bot.mjs [--dry-run]` | Merges only the routine PRs the bot opens (re-verify and measures), at the exact commit it checked, once `test`, `data-gate` and `build` pass and every file fits the PR's type; anything else waits for the owner (MIGRATION decision 2). Env: `GH_TOKEN`, `GITHUB_REPOSITORY`, `BOT_LOGIN` (the App's login, ending `[bot]`) |
+| `node scripts/archive-evidence.mjs [--limit <n>] [url ...]` | Asks the Wayback Machine to capture each cited page (or the ones named) that has an item with no `archive_url`, and links each item whose quote the capture's raw copy holds. It runs in the nightly re-verify workflow (D43); always exits 0 |
+| `node scripts/merge-bot.mjs [--dry-run]` | Merges only the routine PRs the bot opens (re-verify and measures), at the exact commit it checked, once `test`, `data-gate` and `build` pass and every file fits the PR's type; anything else waits for the owner (D47). Env: `GH_TOKEN`, `GITHUB_REPOSITORY`, `BOT_LOGIN` (the App's login, ending `[bot]`) |
 | `node scripts/check-licences.mjs [lockfile]` | Exits 1 if any package in `package-lock.json` has a missing licence or one D9 and D30 don't allow |
-| `node scripts/watchdog.mjs [--dry-run] [--summary]` | The alarm once no agent runs Patchlife: checks workflows, run ages, re-verify branches, unchecked and stale records, `needs-human` age, the live site's status date and `ops/renewals.yml`, then keeps one `watchdog` issue up to date and exits 1 on any problem; `--summary` posts the weekly summary on #27, `--dry-run` writes nothing. Env: `GH_TOKEN`, `GITHUB_REPOSITORY` (MIGRATION A1) |
-| `node --use-env-proxy scripts/unquoted-dates.mjs [url ...]` | Lists each date on the cited pages (or the ones named) that no record's quote covers: rows we don't have yet, or prose. Reads pages with the polite fetcher, so it runs in `Crawl`; always exits 0 |
-| `node --use-env-proxy scripts/page-text.mjs [--grep <text>] <url>` | Prints the final URL and content type, then the page text exactly as the verifier sees it, folded at 300 characters, so quotes are copied from it (RUNBOOKS A2 step 3); `--grep` prints only the numbered lines holding the text. Reads with the polite fetcher, so it runs in `Crawl`; exits 1 when the page can't be read |
-| `node --use-env-proxy scripts/check-source.mjs <url>` | The RUNBOOKS A2 step 2 triage of a source page: robots.txt verdict, HTTP status and content type, whether dates are in the raw response, how many the page text holds and up to 5 rows around them. Exits 0 when the page can be used as evidence and 1 with the reason when it can't. Runs in `Crawl` |
+| `node scripts/watchdog.mjs [--dry-run] [--summary]` | The alarm: checks workflows, run ages, re-verify branches, unchecked and stale records, `needs-human` age, the live site's status date and `ops/renewals.yml`, then keeps one `watchdog` issue up to date and exits 1 on any problem; `--summary` posts the weekly summary on #27, `--dry-run` writes nothing. Env: `GH_TOKEN`, `GITHUB_REPOSITORY` |
+| `node scripts/unquoted-dates.mjs [url ...]` | Lists each date on the cited pages (or the ones named) that no record's quote covers: rows we don't have yet, or prose. Reads makers' pages; always exits 0 |
+| `node scripts/page-text.mjs [--grep <text>] <url>` | Prints the final URL and content type, then the page text exactly as the verifier sees it, folded at 300 characters, so quotes are copied from it (RUNBOOKS O11 step 3); `--grep` prints only the numbered lines holding the text. Exits 1 when the page can't be read |
+| `node scripts/check-source.mjs <url>` | The RUNBOOKS O11 step 2 triage of a source page: robots.txt verdict, HTTP status and content type, whether dates are in the raw response, how many the page text holds and up to 5 rows around them. Exits 0 when the page can be used as evidence and 1 with the reason when it can't |
 | `node scripts/audit-sample.mjs <pr number> [id ...]` | Picks the records to spot-check before merging a data PR: 3 or 5% of the ids, at most 10, ranked by a hash seeded with the PR number so the same PR always gives the same sample; with no ids, the records changed since the branch left main. Prints id, model, end date and the cited page with the quote highlighted. Reads only local files |
-| `node --use-env-proxy scripts/repoint-source.mjs <old url> <new url> [--dry-run]` | Moves every evidence item citing the old URL to the new one, keeping quotes and clearing `archive_url`, then re-verifies the touched records with the verifier; `--dry-run` lists them without fetching. Exits 1 listing any record that did not verify. Runs in `Crawl` |
-| `node --use-env-proxy scripts/candidates.mjs [--check] [--limit <n>] [--report <file>] [brand ...]` | Runs each brand's parser (`scripts/parsers/`, default: every brand with one) on its profiled pages and matches the candidate records to the existing ones by row quote, never by id. `--check` writes nothing and reports per page: rows found, records reproduced, fields that differ, changed rows, new rows and id mismatches; without it, a record whose row changed is rewritten from the parser's row (its row-derived fields and evidence, verification restarted, never a `parser_exceptions` record), then the new rows become unverified records under `data/devices/`, changed rows first and new rows one brand at a time, up to `--limit` (default 60; MIGRATION decision 5). `--report` writes a JSON report (the pages' counts, the records written with before and after, and the flags for a person: conflicts, ambiguous rows, unquotable candidates, changed exceptions). Exits 1 when the parser fails to reproduce a record (MIGRATION's parser gate) or a page has fewer rows than the profile's `min_rows`. Runs in `Crawl` |
-| `scripts/parsers/` | Not commands: one parser per brand. B3's `tp-link-au.mjs` and `ezviz-eol.mjs` read one table each; B4's `ring.mjs` merges the GB, AU and US pages (a model with different dates on different pages is a D33 split, reported and never written), `google.mjs` reads the Nest table's release date, end date and Yes/No cell and adds the UK and Australian statements the profile's renames table links, `gl-inet.mjs` reads the PSTI minimums and the firmware table's Maintenance rows (a model on both pages is a D39 case, reported), `kyocera.mjs` reads the bold model and list blocks, and `asus.mjs` splits each group row's models on the markup and quotes from the model to the date |
-| `scripts/table-rows.mjs` | Not a command: the cell-based table reader the parsers use (MIGRATION decision 4). Splits rows and cells on the raw HTML, keeps `<sup>` footnote markers beside the cell text, and gives each row's quote as its cell texts joined by single spaces |
+| `node scripts/repoint-source.mjs <old url> <new url> [--dry-run]` | Moves every evidence item citing the old URL to the new one, keeping quotes and clearing `archive_url`, then re-verifies the touched records with the verifier; `--dry-run` lists them without fetching. Exits 1 listing any record that did not verify |
+| `node scripts/candidates.mjs [--check] [--limit <n>] [--report <file>] [brand ...]` | Runs each brand's parser (`scripts/parsers/`, default: every brand with one) on its profiled pages and matches the candidate records to the existing ones by row quote, never by id. `--check` writes nothing and reports per page: rows found, records reproduced, fields that differ, changed rows, new rows and id mismatches; without it, a record whose row changed is rewritten from the parser's row (its row-derived fields and evidence, verification restarted, never a `parser_exceptions` record), then the new rows become unverified records under `data/devices/`, changed rows first and new rows one brand at a time, up to `--limit` (default 60; MIGRATION decision 5). `--report` writes a JSON report (the pages' counts, the records written with before and after, and the flags for a person: conflicts, ambiguous rows, unquotable candidates, changed exceptions). Exits 1 when the parser fails to reproduce a record (MIGRATION's parser gate) or a page has fewer rows than the profile's `min_rows`. Reads makers' pages |
+| `scripts/parsers/` | Not commands: one parser per brand. `tp-link-au.mjs` and `ezviz-eol.mjs` read one table each; `ring.mjs` merges the GB, AU and US pages (a model with different dates on different pages is a D33 split, reported and never written), `google.mjs` reads the Nest table's release date, end date and Yes/No cell and adds the UK and Australian statements the profile's renames table links, `gl-inet.mjs` reads the PSTI minimums and the firmware table's Maintenance rows (a model on both pages is a D39 case, reported), `kyocera.mjs` reads the bold model and list blocks, and `asus.mjs` splits each group row's models on the markup and quotes from the model to the date |
+| `scripts/table-rows.mjs` | Not a command: the cell-based table reader the parsers use. Splits rows and cells on the raw HTML, keeps `<sup>` footnote markers beside the cell text, and gives each row's quote as its cell texts joined by single spaces |
 
-## How the project runs itself
-Claude Code does the work in cloud sessions and scheduled tasks. The guard rails are in the repository itself:
+## How the project runs
+GitHub Actions does the routine work, and one person reviews it. No AI is in the loop.
 
 ```mermaid
 flowchart LR
-  A[Daily build<br/>scheduled task] --> B[One roadmap task<br/>on a claude/ branch]
-  B --> C{CI: validate<br/>and test}
-  C -->|green| D[Squash-merged<br/>to main]
-  C -->|touches protected files| E[needs-human-merge<br/>owner merges]
-  B -.->|needs a person| F[needs-human issue<br/>owner acts]
+  A[Nightly re-verify] --> B[Bot PR:<br/>verification only]
+  B --> C{test and<br/>data-gate}
+  C -->|green| D[Merge bot<br/>squash-merges]
+  E[Weekly data refresh:<br/>one parser per maker] --> F[Candidate PR:<br/>new and changed rows]
+  F --> G[Owner reviews a sample,<br/>adds audited, merges]
+  H[Nightly watchdog] -.->|a problem| I[watchdog issue<br/>and a red run]
 ```
 
-- **Daily build.** A scheduled task runs every morning at 06:08 Sydney time with the prompt in [`.agent/prompts/daily-build.md`](.agent/prompts/daily-build.md). It merges green agent PRs, does one roadmap task, and opens a PR.
-- **Two environments.** Code, tests and docs happen in the `Default` cloud environment, whose network cannot reach manufacturer sites. Everything that reads a manufacturer page, from adding records to `npm run verify:evidence`, runs in the `Crawl` environment, whose network allowlist adds a fixed list of manufacturer hosts (see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)). Step-by-step procedures are in [`docs/RUNBOOKS.md`](docs/RUNBOOKS.md).
-- **Branch protection.** `main` needs a pull request and a passing `test` check, and force pushes and deletion are blocked.
-- **Protected files.** CI labels any PR from a branch in this repository that changes `.github/`, `.claude/`, `.agent/prompts/`, `CLAUDE.md`, `package.json` or `package-lock.json` with `needs-human-merge`, and agents leave those PRs for the owner to merge. This is a project rule, not a GitHub permission: agents act with the owner's GitHub identity (see the security model in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)).
-- **Human gates.** Anything that needs a person (money, accounts, secrets, DNS, legal text, publishing) becomes a `needs-human` issue with exact steps.
-- **Memory.** Agents start every session from [`CLAUDE.md`](CLAUDE.md) and the files in [`.agent/`](.agent/): durable decisions, current context, the roadmap, an append-only log and a note per session.
+- **Re-verification.** Every night a workflow re-checks the records that are due, as `patchlife-bot`, and opens a pull request that changes nothing but verification results. The merge bot merges only that kind of PR, and the monthly measures.
+- **Weekly refresh.** Each maker with a parser has a profile in [`data/sources/seed.yaml`](data/sources/seed.yaml). The parsers must first reproduce every existing record; then changed rows and new rows are proposed as one candidate PR.
+- **The gate.** A PR that changes data beyond a re-verification merges only with the owner's own `audited` label, which every push removes. The check is judged with the base branch's scripts.
+- **Protected files.** CI labels any PR that changes the workflows, the rules, the dependency files, the bot's scripts, the source registry or the schemas with `needs-human-merge`, and only the owner merges it.
+- **The watchdog.** Each night it checks the workflows, the site, stale and unchecked records and anything waiting on the owner, keeps one `watchdog` issue, and turns its run red on a problem. On Sundays it posts a summary with five random records to spot-check.
+- **By hand.** The `Owner tools` workflow reads or triages a page, re-verifies records, moves records to a page that moved, or pulls a wrong date, all on a GitHub runner.
+
+`main` needs a pull request and passing `test` and `data-gate` checks, and force pushes and deletion are blocked. The procedures are in [`docs/RUNBOOKS.md`](docs/RUNBOOKS.md), the rules for changing the repository in [`CONTRIBUTING.md`](CONTRIBUTING.md), and the security model in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Corrections and contributions
 - **Wrong or outdated date?** Use the [Wrong or outdated date](https://github.com/sombreserotonin/Patchlife/issues/new/choose) form and link the manufacturer's own page. A fix always comes from a primary source, never from the report itself.
@@ -178,27 +181,31 @@ Patchlife doesn't publish reviews, ratings or brand rankings without a published
 | --- | --- |
 | [`data/devices/`](data/devices/) | Device records, one YAML file per model |
 | [`data/schema/`](data/schema/) | JSON Schemas for a device record and a source registry file |
-| [`data/sources/`](data/sources/) | Starting URLs per brand (leads, not evidence) |
-| [`scripts/`](scripts/) | Validator, status computation, evidence checker and polite fetcher |
+| [`data/sources/`](data/sources/) | The source registry (starting URLs and each parsed maker's profile) and the page hashes |
+| [`scripts/`](scripts/) | Validator, status computation, verifier and polite fetcher, site builder, parsers, merge bot and watchdog |
+| [`site/`](site/) | The site's search script |
 | [`tests/`](tests/) | Unit tests and saved fixtures |
-| [`docs/`](docs/) | Plan, costs, runbooks, brief, spec, architecture, data policy, crawler page |
-| [`.agent/`](.agent/) | Agent memory, roadmap, tasks, log, session notes and scheduled-task prompts |
-| [`.claude/`](.claude/) | Claude Code permissions and the `add-device-record` skill |
-| [`.github/`](.github/) | CI, the optional Claude workflow, issue forms and PR template |
-| [`CLAUDE.md`](CLAUDE.md) | Agent rules and read order, loaded every session |
-| [`KICKOFF.md`](KICKOFF.md) | The prompt that started the project |
+| [`docs/`](docs/) | Operations, runbooks, decisions, data policy, spec, architecture, brief, plan, migration, crawler page |
+| [`ops/`](ops/) | `renewals.yml`: what must be renewed, and when |
+| [`.github/`](.github/) | The workflows, Dependabot settings, issue forms and PR template |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | The commands and the rules for changing this repository |
+| [`CLAUDE.md`](CLAUDE.md) | A pointer to `CONTRIBUTING.md` for any AI tool asked to work here |
+| [`.agent/`](.agent/) | Frozen history from the period when AI sessions ran the project: tasks, roadmap, log and session notes |
 
 ## Documentation
 | Document | Covers |
 | --- | --- |
-| [`docs/PLAN.md`](docs/PLAN.md) | Where the project is going: milestones, decisions, risks and the action plan |
-| [`docs/MIGRATION.md`](docs/MIGRATION.md) | The staged plan to run Patchlife with no AI and no subscription (D44) |
-| [`docs/COSTS.md`](docs/COSTS.md) | What the automation costs, and the research behind the migration |
-| [`docs/RUNBOOKS.md`](docs/RUNBOOKS.md) | Step-by-step procedures for the owner and agent sessions |
-| [`docs/BRIEF.md`](docs/BRIEF.md) | The problem, users, revenue and risks |
-| [`docs/SPEC.md`](docs/SPEC.md) | What gets built: records, status, verifier, site, extension, B2B |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | How it is built and run, and the security model |
+| [`docs/OPERATIONS.md`](docs/OPERATIONS.md) | How it runs: what runs when, settings, alerts, backups, rollback |
+| [`docs/RUNBOOKS.md`](docs/RUNBOOKS.md) | Step-by-step procedures for the owner |
 | [`docs/DATA-POLICY.md`](docs/DATA-POLICY.md) | Evidence, quoting, accuracy and crawling rules |
+| [`docs/DECISIONS.md`](docs/DECISIONS.md) | Durable decisions, one line each |
+| [`docs/SPEC.md`](docs/SPEC.md) | What gets built: records, status, verifier, site |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | How it is built and run, and the security model |
+| [`docs/BRIEF.md`](docs/BRIEF.md) | The problem, users, revenue and risks |
+| [`docs/PLAN.md`](docs/PLAN.md) | The October 2026 plan: milestones, the owner's decisions, risks and the Measures |
+| [`docs/MEASURES.md`](docs/MEASURES.md) | The monthly counts, regenerated by a workflow |
+| [`docs/MIGRATION.md`](docs/MIGRATION.md) | How the project moved off AI and subscriptions (D44), finished 13 Nov 2026 |
+| [`docs/COSTS.md`](docs/COSTS.md) | The cost research behind the migration (history) |
 | [`docs/CRAWLER.md`](docs/CRAWLER.md) | PatchlifeBot, for site owners |
 
 ## Licence

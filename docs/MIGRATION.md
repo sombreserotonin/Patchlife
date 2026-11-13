@@ -1,5 +1,14 @@
 # Migration: running Patchlife without AI or subscriptions
 
+> **Finished on 13 November 2026 (D59).** No AI session runs any part of Patchlife. Stage 1 ended on 2 Nov; Stages 2 to 4 were closed out together on 13 Nov, six days early, on the owner's instruction to wrap the project up within a day with no human approval. What differs from the plan below:
+> - **The shadow fortnight was not run.** The workflows ran nightly from 2 Nov beside the two Claude scheduled tasks, which were never paused; on 13 Nov every workflow was run by hand with no session doing its work, including the first weekly candidate PR (#196, 382 TP-Link records). Stage 2's 14-day exit check was not kept, so the weeks to mid-January are the real shadow.
+> - **Stages 3 and 4 merged the same day.** P4, the copy changes, the decisions (D47 to D50) and the Stage 4 changes (`CONTRIBUTING.md`, `docs/DECISIONS.md`, the pointer `CLAUDE.md`, no `.claude/`) went in as one cut-over PR; `git revert` of it is the rollback.
+> - **The weekly refresh has no `DATA_REFRESH` switch.** A session can't set a repository variable, so the schedule always acts; disabling the workflow pauses it.
+> - **The two scheduled tasks were retired through their prompts,** because a session can't pause a task the owner created. The owner deletes them, with the other removals in [`OPERATIONS.md`](OPERATIONS.md), "What is left for you".
+> - **Not done:** the coverage backlog beyond the 382 TP-Link rows in #196 (the rest are listed in #199), the registry notes for NETGEAR and Samsung (#194 has the triage), and the owner's settings from "Your actions in Stage 1", items 4 and 5.
+>
+> The text below is the plan as it stood, kept as the record.
+
 This is the plan as at 22 Oct 2026. It was revised the same day after a feasibility, fact and completeness review, and it is for the owner to follow. A step counts as done only when its exit check passes. *Estimate* marks a number nobody has measured. "Unverified" marks a fact nobody could confirm.
 
 ## Summary

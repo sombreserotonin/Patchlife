@@ -1,5 +1,7 @@
 # Costs, and moving off subscription AI
 
+> **History, 13 Nov 2026.** The migration this research led to is finished ([`MIGRATION.md`](MIGRATION.md), D59): no AI model or subscription runs Patchlife. Nothing below is an instruction any more.
+>
 > **Superseded in part, 22 Oct 2026 (D44).** The goal is now no AI model and no subscription at all: the plan is [`MIGRATION.md`](MIGRATION.md). The Summary's end state, stages 3 and 4 of "The pivot, in stages" and "Getting to Pro" no longer apply. The research below (Actions limits, the RX 9070 XT, prices, terms) stays as reference.
 
 Researched 21 Oct 2026 by four researchers and a workload analyst, with every key claim re-checked at its source by an independent fact-checker. Figures marked *estimate* are ours; everything else cites a source below. Prices are USD unless marked A$.

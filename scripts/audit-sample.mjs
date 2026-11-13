@@ -1,4 +1,4 @@
-// Picks the records a human spot-checks before merging a data PR (RUNBOOKS A8, once no second session reads the
+// Picks the records a human spot-checks before merging a data PR (RUNBOOKS O9: nobody else reads the
 // source): 3 records or 5% of the PR's records, whichever is larger, at most 10, ranked by a hash of the PR number and
 // each id as scripts/watchdog.mjs ranks the weekly spot check, so the same PR always gives the same sample and nobody
 // chooses which records get checked. Prints one line per record: id, brand and model, end date (or the rule when
