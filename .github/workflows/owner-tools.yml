@@ -107,7 +107,9 @@ jobs:
             echo '```'
             if [ "$status" -ne 0 ]; then echo; echo "page-text.mjs exited $status: the page could not be read, or nothing holds the text."; fi
           } >> "$GITHUB_STEP_SUMMARY"
-          cat "$RUNNER_TEMP/err.txt"
+          # The log's copy of anything a page can put in it is cleaned, here and in the steps below, as in
+          # data-gate.yml: text from outside must not read as a workflow command. The summary keeps it as it was.
+          sed -uE 's/::/: :/g; s/##\[/# #[/g' "$RUNNER_TEMP/err.txt"
       - name: Check the source
         if: inputs.action == 'check-source'
         # The RUNBOOKS O11 step 2 triage; its last line is the verdict, so the run stays green either way.
@@ -117,7 +119,7 @@ jobs:
           status=$?
           set -e
           { echo "## check-source: $URL"; echo; echo '```'; cat "$RUNNER_TEMP/check.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
-          cat "$RUNNER_TEMP/check.txt"
+          sed -uE 's/::/: :/g; s/##\[/# #[/g' "$RUNNER_TEMP/check.txt"
           echo "check-source.mjs exited $status (0 usable, 1 not usable, 2 bad arguments)"
       - name: Re-verify the records
         if: inputs.action == 'verify'
@@ -125,7 +127,7 @@ jobs:
         # verification changes.
         run: |
           set +e
-          npm run verify:evidence -- $IDS 2>&1 | tee "$RUNNER_TEMP/verify.txt"
+          npm run verify:evidence -- $IDS 2>&1 | tee "$RUNNER_TEMP/verify.txt" | sed -uE 's/::/: :/g; s/##\[/# #[/g'
           status=${PIPESTATUS[0]}
           set -e
           sed 's/^/    /' "$RUNNER_TEMP/verify.txt" >> "$GITHUB_STEP_SUMMARY"
@@ -136,7 +138,7 @@ jobs:
         # Exit 1 means a moved record did not verify, which the PR shows; the owner decides.
         run: |
           set +e
-          node scripts/repoint-source.mjs "$URL" "$NEW_URL" 2>&1 | tee "$RUNNER_TEMP/repoint.txt"
+          node scripts/repoint-source.mjs "$URL" "$NEW_URL" 2>&1 | tee "$RUNNER_TEMP/repoint.txt" | sed -uE 's/::/: :/g; s/##\[/# #[/g'
           status=${PIPESTATUS[0]}
           set -e
           sed 's/^/    /' "$RUNNER_TEMP/repoint.txt" >> "$GITHUB_STEP_SUMMARY"
@@ -146,7 +148,7 @@ jobs:
         # Exit 1 (no such record, already withdrawn, or the result does not validate) stops the run before any push.
         run: |
           set +e
-          node scripts/withdraw-record.mjs "$IDS" "$TEXT" 2>&1 | tee "$RUNNER_TEMP/withdraw.txt"
+          node scripts/withdraw-record.mjs "$IDS" "$TEXT" 2>&1 | tee "$RUNNER_TEMP/withdraw.txt" | sed -uE 's/::/: :/g; s/##\[/# #[/g'
           status=${PIPESTATUS[0]}
           set -e
           sed 's/^/    /' "$RUNNER_TEMP/withdraw.txt" >> "$GITHUB_STEP_SUMMARY"
