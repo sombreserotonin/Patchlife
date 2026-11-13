@@ -97,20 +97,21 @@ jobs:
         if: steps.gate.outputs.verified == 'no'
         run: |
           record() { gh api -X POST "repos/$REPO/statuses/$HEAD_SHA" -f context=audited -f state="$1" -f description="$2" > /dev/null; }
-          if [ "$LABEL" = audited ]; then
-            if [ "$ACTION" = labeled ] && [ "$SENDER" = "$OWNER" ]; then
-              record success "$BASE_REF"
-            elif [ "$ACTION" = unlabeled ]; then
-              record failure "the audited label was removed"
-            fi
+          pass() { echo "The data changes go beyond a re-verification, and $OWNER added the audited label on this commit (RUNBOOKS A8)."; exit 0; }
+          refuse() { echo "::error::The data changes go beyond a re-verification (RUNBOOKS A9), and $OWNER has not added the audited label on this commit (RUNBOOKS A8)."; exit 1; }
+          # The run that a label event starts decides from the event itself. GitHub may not list a status in the
+          # second after it is written, so this run never reads back what it has just recorded.
+          if [ "$LABEL" = audited ] && [ "$ACTION" = labeled ] && [ "$SENDER" = "$OWNER" ]; then
+            record success "$BASE_REF"
+            pass
+          fi
+          if [ "$LABEL" = audited ] && [ "$ACTION" = unlabeled ]; then
+            record failure "the audited label was removed"
+            refuse
           fi
           latest=$(gh api "repos/$REPO/commits/$HEAD_SHA/statuses?per_page=100" --jq '[.[] | select(.context == "audited")][0] | if . == null then "" else "\(.state) \(.creator.login) \(.description)" end')
-          if [ "$latest" = "success github-actions[bot] $BASE_REF" ]; then
-            echo "The data changes go beyond a re-verification, and $OWNER added the audited label on this commit (RUNBOOKS A8)."
-          else
-            echo "::error::The data changes go beyond a re-verification (RUNBOOKS A9), and $OWNER has not added the audited label on this commit (RUNBOOKS A8)."
-            exit 1
-          fi
+          if [ "$latest" = "success github-actions[bot] $BASE_REF" ]; then pass; fi
+          refuse
 
   protected-paths:
     # Labels PRs that change workflows, the rules and decisions files, dependencies, the scripts the bot and the gate
