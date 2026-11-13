@@ -113,6 +113,28 @@ export function plainScalarProblems(source) {
 
 const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+// Characters no record field may hold: the C0 and C1 controls other than tab, line feed and carriage return, the
+// bidirectional embeddings, overrides and isolates, and the two non-characters XML forbids. A control character makes
+// an Atom feed unparseable, and an override reorders the text a reader sees.
+const UNSAFE_CHARACTER = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F\u202A-\u202E\u2066-\u2069\uFFFE\uFFFF]/;
+
+// Every string in a parsed record, with the path to it (/evidence/0/quote).
+function* stringFields(value, path = "") {
+  if (typeof value === "string") yield [path, value];
+  else if (Array.isArray(value)) for (const [i, item] of value.entries()) yield* stringFields(item, `${path}/${i}`);
+  else if (value && typeof value === "object") for (const [key, item] of Object.entries(value)) yield* stringFields(item, `${path}/${key}`);
+}
+
+// True when a URL carries a user name or password before its host, as in https://ring.com@example.net/.
+export function hasCredentials(value) {
+  try {
+    const url = new URL(value);
+    return Boolean(url.username || url.password);
+  } catch {
+    return false;
+  }
+}
+
 export function loadValidator(schemaPath = join(ROOT, "data/schema/device.schema.json")) {
   const ajv = new Ajv2020({ allErrors: true, strict: true });
   addFormats(ajv);
@@ -176,6 +198,11 @@ export function validateDevices(
       continue;
     }
 
+    for (const [path, value] of stringFields(record)) {
+      const found = value.match(UNSAFE_CHARACTER);
+      if (found) fail(`${path} holds the character U+${found[0].codePointAt(0).toString(16).toUpperCase().padStart(4, "0")}, a control or bidirectional-override character`);
+    }
+
     const stem = basename(file, ".yaml");
     const folder = basename(dirname(file));
     if (record.id !== stem) fail(`id "${record.id}" must match filename "${stem}"`);
@@ -234,6 +261,7 @@ export function validateDevices(
     for (const ev of record.evidence) {
       if (ev.retrieved > today) fail(`evidence retrieved date ${ev.retrieved} is in the future`);
       if (ev.archive_url && !isCaptureOf(ev.archive_url, ev.url)) fail(`archive_url ${ev.archive_url} is not a Wayback capture of ${ev.url}`);
+      if (hasCredentials(ev.url)) fail(`evidence URL ${ev.url} carries a user name or password before its host, so its link would look like another site's`);
     }
     const checked = record.verification.checked;
     if (checked && checked > today) fail(`verification.checked ${checked} is in the future`);

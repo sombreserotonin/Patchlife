@@ -12,7 +12,8 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 // Keys listed in `keys` always appear, in that order, even with a count of zero.
 function tally(values, keys = []) {
   const counts = Object.fromEntries(keys.map((key) => [key, 0]));
-  for (const value of values) counts[value] = (counts[value] ?? 0) + 1;
+  // Object.hasOwn, so a value such as "constructor" starts from zero and not from an inherited property.
+  for (const value of values) counts[value] = (Object.hasOwn(counts, value) ? counts[value] : 0) + 1;
   return counts;
 }
 
