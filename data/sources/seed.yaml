@@ -133,8 +133,8 @@
     - https://www.tp-link.com/uk/support/psti/
     - https://www.tp-link.com/uk/support/faq/3562/
   date_order: dmy
-  note: The AU page gives a date per model and hardware version; the Tapo records (#22) cite it. The UK pages give 3 years after a product's end-of-life date; the UK per-model periods are only in a PDF.
-  last_checked: "2026-10-30"
+  note: "The AU page gives a date per model and hardware version; the Tapo records (#22) cite it. The UK pages give 3 years after a product's end-of-life date; the UK per-model periods are only in a PDF. Left unmapped on purpose (13 Nov 2026): accessories, solar power, alarm kits, OLT and PON gear, USB hubs and adapters, controllers, Pharos and wireless bridges. Rows with no hardware version, or with a date that is not a calendar date, are skipped."
+  last_checked: "2026-11-13"
   regions_by_url:
     https://www.tp-link.com/au/landing/au-cyber-compliance/: [AU]
     https://www.tp-link.com/uk/support/psti/: [UK]
@@ -206,6 +206,7 @@
     - { row: '^Wi-Fi 7 USB Adapter\b', category: other }
     - { row: '^PCI-E Adapter\b', category: other }
     - { row: '^USB to Ethernet Adapter\b', category: other }
+    - { row: '^Smart Door Lock\b', category: smart-lock }
   versioned: true
   min_rows:
     https://www.tp-link.com/au/landing/au-cyber-compliance/: 199
@@ -419,22 +420,22 @@
   brand_slug: netgear
   kind: unknown
   urls: [https://kb.netgear.com/000066102/UK-PSTI-Declaration-of-Conformity]
-  note: "From a 2024 list. The page lists models and links per-model declarations (PDFs on www.downloads.netgear.com, allowed in #117) that give no dates: \"Support is ended when product is End of Service, listed at https://www.netgear.com/about/eos/\". That page needs www.netgear.com on the allowlist (#152)."
-  last_checked: null
+  note: "From a 2024 list. The page lists models and links per-model declarations (PDFs) that give no dates: \"Support is ended when product is End of Service, listed at https://www.netgear.com/about/eos/\". Unusable on 13 Nov 2026: that page answers a GitHub runner (robots.txt allows it, HTTP 200), but its dates are only inside scripts, so the verifier can't see them (Owner tools run 43360466616)."
+  last_checked: "2026-11-13"
 
 - brand: Samsung
   brand_slug: samsung
   kind: unknown
   urls: [https://news.samsung.com/uk/notice-new-uk-product-security-and-telecommunications-infrastructure-psti-law]
-  note: From a 2024 list. A news post; find the underlying statement.
-  last_checked: null
+  note: "From a 2024 list. A news post, not the statement itself. Unusable on 13 Nov 2026: news.samsung.com's robots.txt timed out from a GitHub runner (Owner tools run 43360517904), as it had twice before. Leads from a web search the same day, neither checked: the periods may be listed on securityreport.samsung.com, and Samsung publishes per-product statements for Australia as PDFs."
+  last_checked: "2026-11-13"
 
 - brand: Grandstream
   brand_slug: grandstream
-  kind: lead_only
-  urls: [https://cie-group.com/compliances-bsi/]
-  note: "A distributor page says support ends 1 year after end of life. Lead only; find Grandstream's own statement. Unusable on 29 Oct 2026: cie-group.com is a distributor, not a primary source, and is not on the allowlist."
-  last_checked: "2026-10-29"
+  kind: per_model_dates
+  urls: [https://www.grandstream.com/compliance]
+  note: "Grandstream's own compliance page: a table with a support period date per model, each followed by \"or later\". Usable on 13 Nov 2026: robots.txt allows it, it answers HTTP 200 and the page text holds 188 dates (Owner tools run 43422100152). No records yet: it has no parser (RUNBOOKS O11). At least one row gives a date that is not a calendar date. A distributor's page, cie-group.com/compliances-bsi/, was the earlier lead."
+  last_checked: "2026-11-13"
 
 - brand: EZVIZ
   brand_slug: ezviz

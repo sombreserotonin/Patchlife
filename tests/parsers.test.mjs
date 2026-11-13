@@ -81,7 +81,7 @@ test("the TP-Link AU parser skips, with a reason, rows it cannot read without gu
   assert.deepEqual(skipped, [
     { quote: "Wi-Fi 6 Router Archer ZX10 V3 31/6/2029 or later*", reason: '"31/6/2029 or later*" is not a calendar date' },
     { quote: "Wi-Fi 6 Router Archer ZX5 V1 31/12/2028 or sooner*", reason: `"or sooner*" after the date is not the profile's at-least phrase` },
-    { quote: "Smart Door Lock M9000 V1 31/12/2028 or later*", reason: 'no category_map entry for product line "Smart Door Lock"' },
+    { quote: "USB-C Hub M9000 V1 31/12/2028 or later*", reason: 'no category_map entry for product line "USB-C Hub"' },
     { quote: "L3 Managed Switch S9900-48C 31/12/2028 or later*", reason: "no hardware version in the model cell" },
   ]);
   // Header and section rows are neither candidates nor skipped; a model listed twice gives two candidates here, which
