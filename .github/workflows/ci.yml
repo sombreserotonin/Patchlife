@@ -24,8 +24,8 @@ jobs:
       - run: npm test
 
   protected-paths:
-    # Labels PRs that change workflows, agent config, dependencies, the scripts the bot and the gate run, the source
-    # registry (its profiles are binding, MIGRATION D49) or the schemas, so only a human merges them.
+    # Labels PRs that change workflows, the rules and decisions files, dependencies, the scripts the bot and the gate
+    # run, the source registry (its profiles are binding, D49) or the schemas, so only the owner merges them.
     if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -39,7 +39,7 @@ jobs:
       - name: Label protected-path changes
         run: |
           files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename')
-          protected=$(printf '%s\n' "$files" | grep -E '^(\.github/|\.claude/|\.agent/prompts/|CLAUDE\.md$|package(-lock)?\.json$|scripts/(merge-bot|watchdog|verification-only|validate-data)\.mjs$|data/sources/seed\.yaml$|data/schema/)' || true)
+          protected=$(printf '%s\n' "$files" | grep -E '^(\.github/|\.claude/|\.agent/prompts/|CLAUDE\.md$|CONTRIBUTING\.md$|docs/DECISIONS\.md$|package(-lock)?\.json$|scripts/(merge-bot|watchdog|verification-only|validate-data)\.mjs$|data/sources/seed\.yaml$|data/schema/)' || true)
           # A registry change that moves only `last_checked` dates is a revisit, not a profile change (the same
           # exemption as the gate's, #146), so the nightly revisit PRs don't wait on a human. A missing patch counts
           # as a change.

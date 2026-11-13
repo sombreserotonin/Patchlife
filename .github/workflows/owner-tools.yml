@@ -1,6 +1,6 @@
 name: Owner tools
 
-# The owner's five by-hand actions on a GitHub runner, which reaches the makers' pages, so none needs a session or a
+# The owner's five by-hand actions on a GitHub runner, which reaches the makers' pages, so none needs a
 # local clone (docs/MIGRATION.md P3; RUNBOOKS O8, O11). Dispatch only. Every input reaches the shell through env,
 # never inline in a script. read-page and check-source only print; verify opens a re-verify PR as patchlife-bot,
 # which the merge bot merges; repoint and withdraw open PRs for the owner to review and merge with `audited`.

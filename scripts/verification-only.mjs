@@ -1,9 +1,9 @@
 // Checks that, under data/, the working tree differs from a git ref only in what a re-verification may change: the
 // `verification` block of existing device records, an empty `archive_url` filled with a capture of its item's own page
 // (D43), data/sources/page-hashes.json, and a registry entry's `last_checked` (a revisit that found nothing to add,
-// RUNBOOKS A5 step 4). Files outside data/ (notes, the log) are not data and are ignored. The nightly re-verify
-// workflow runs it before pushing, and the data-gate check and the daily build before merging a PR without an audit
-// (D20, RUNBOOKS A9).
+// RUNBOOKS A9). Files outside data/ (notes, the log) are not data and are ignored. The nightly re-verify
+// workflow runs it before pushing, and the data-gate check runs it on every PR: anything more needs the owner's
+// `audited` label (D48, RUNBOOKS A9).
 // Usage: node scripts/verification-only.mjs [ref]   (ref defaults to HEAD; run it from inside the repository)
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";

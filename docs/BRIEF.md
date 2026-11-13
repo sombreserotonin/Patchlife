@@ -37,4 +37,4 @@ Prove B2B demand (M4) before investing in the extension.
 ## Risks
 - Wrong dates: mitigated by quotes, automated verification and a visible corrections path.
 - Source pages move or change: nightly re-checks (from M3) re-verify every record at least every 90 days, and a record whose quote no longer matches is marked stale.
-- A larger player builds the same thing: the moat is coverage, freshness and evidence quality, kept up by agents.
+- A larger player builds the same thing: the moat is coverage, freshness and evidence quality, kept up by scripts and one person's weekly review.

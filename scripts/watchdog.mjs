@@ -4,7 +4,7 @@
 // exits 1 on any problem, so the run goes red. It only reports: it never re-enables a workflow or deletes a branch. The
 // one thing it starts is a Pages run, when the last deploy is too old.
 // --summary also posts the weekly summary on the heartbeat issue (#27). --dry-run writes nothing and only prints.
-// Usage: node scripts/watchdog.mjs [--dry-run] [--summary]   (add --use-env-proxy in a cloud session, D16)
+// Usage: node scripts/watchdog.mjs [--dry-run] [--summary]   (add --use-env-proxy behind an HTTP proxy, D16)
 // Env: GH_TOKEN and GITHUB_REPOSITORY (owner/name) are required; SITE_URL defaults to https://patchlife.tech/, and
 // GITHUB_API_URL (which Actions sets) to https://api.github.com.
 // It dates stale records from git history, so Actions must check out with fetch-depth: 0.

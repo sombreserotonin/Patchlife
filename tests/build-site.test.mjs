@@ -413,7 +413,8 @@ test("no built file carries an H9a draft marker, and the approved wording stays"
   assertApproved(site.read("brands/acme/index.html"), "Minimum support period ended on", "brand page P8 copy");
   const about = site.read("about/index.html");
   assertApproved(about, "Australia's smart device rules apply", "about");
-  assertApproved(about, "Claude Code, an AI coding tool", "about");
+  assertApproved(about, "One person runs Patchlife. Scripts on GitHub re-check every quote against the maker's page", "about");
+  assertApproved(about, "which no longer runs any part of it", "about");
   assertApproved(site.read("methodology/index.html"), "The source gave a minimum period", "methodology");
 });
 
