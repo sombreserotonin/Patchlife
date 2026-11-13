@@ -434,8 +434,24 @@
   brand_slug: grandstream
   kind: per_model_dates
   urls: [https://www.grandstream.com/compliance]
-  note: "Grandstream's own compliance page: a table with a support period date per model, each followed by \"or later\". Usable on 13 Nov 2026: robots.txt allows it, it answers HTTP 200 and the page text holds 188 dates (Owner tools run 43422100152). No records yet: it has no parser (RUNBOOKS O11). At least one row gives a date that is not a calendar date. A distributor's page, cie-group.com/compliances-bsi/, was the earlier lead."
+  note: "Grandstream's own compliance page: a table per product section with a \"Defined Support Period\" date per model, most followed by \"or later\". scripts/parsers/grandstream.mjs reads the sections whose name states a category: Access Points, Gigabit Routers and Managed Switches. The telephony, conferencing, convergence and facility sections are left out on purpose. Rows reading Pending, EOL or NA, or a date that is not a calendar date, are skipped."
   last_checked: "2026-11-13"
+  regions_by_url:
+    https://www.grandstream.com/compliance: [GLOBAL]
+  at_least:
+    - "or later"
+  notes:
+    https://www.grandstream.com/compliance:
+      - "Grandstream's compliance page gives this date in its \"Defined Support Period\" column."
+  # The page puts each table under a section name, and the parser reads the sections named above. Each line here is
+  # the model family one of those sections holds, so a model of another family in a section waits for a person.
+  category_map:
+    - { model: '^GWN76', category: access-point }
+    - { model: '^GWN7302$', category: access-point }
+    - { model: '^GWN70', category: router }
+    - { model: '^GWN7[78]', category: network-switch }
+  min_rows:
+    https://www.grandstream.com/compliance: 160
 
 - brand: EZVIZ
   brand_slug: ezviz

@@ -20,12 +20,13 @@ import * as asus from "./parsers/asus.mjs";
 import * as ezvizEol from "./parsers/ezviz-eol.mjs";
 import * as glInet from "./parsers/gl-inet.mjs";
 import * as google from "./parsers/google.mjs";
+import * as grandstream from "./parsers/grandstream.mjs";
 import * as kyocera from "./parsers/kyocera.mjs";
 import * as ring from "./parsers/ring.mjs";
 import * as tpLinkAu from "./parsers/tp-link-au.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-export const PARSERS = { "tp-link": tpLinkAu, ezviz: ezvizEol, ring, google, "gl-inet": glInet, kyocera, asus };
+export const PARSERS = { "tp-link": tpLinkAu, ezviz: ezvizEol, ring, google, "gl-inet": glInet, kyocera, asus, grandstream };
 // The fields the parser gate compares (MIGRATION, "The parser gate"); the support ones live under support.
 const GATE_FIELDS = ["model", "end_date", "at_least", "regions", "category", "conditions", "notes"];
 const field = (record, name) => (name in record.support ? record.support[name] : record[name] ?? null);
