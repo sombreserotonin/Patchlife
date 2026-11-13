@@ -18,10 +18,12 @@ evidence:
     quote: "Unmanaged/Easy Smart PoE Switch LS108GP V1 31/12/2028 or later*"
     retrieved: "2026-11-13"
     regime: au_smart_device_rules
+    archive_url: https://web.archive.org/web/20261102215447/https://www.tp-link.com/au/landing/au-cyber-compliance/
   - url: https://www.tp-link.com/au/landing/au-cyber-compliance/
     quote: "*The non-EOL product’s defined support period may be refreshed to extend specified date."
     retrieved: "2026-11-13"
     regime: au_smart_device_rules
+    archive_url: https://web.archive.org/web/20261102215447/https://www.tp-link.com/au/landing/au-cyber-compliance/
 verification:
   status: verified
   checked: "2026-11-13"

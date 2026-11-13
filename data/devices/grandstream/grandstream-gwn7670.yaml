@@ -17,6 +17,7 @@ evidence:
     quote: "GWN7670 Compliant Compliant Download Download Download Download Download 2030-02-06 or Later"
     retrieved: "2026-11-13"
     regime: vendor_policy
+    archive_url: https://web.archive.org/web/20261113200130/https://www.grandstream.com/compliance
 verification:
   status: verified
   checked: "2026-11-13"
