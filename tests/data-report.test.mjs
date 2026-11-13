@@ -33,6 +33,12 @@ test("counts records by brand, category, status and verification state", () => {
   assert.equal(report.brandsVerified, 2);
 });
 
+test("a brand named like an Object property is counted like any other", () => {
+  const report = buildReport([record("constructor", "camera", "2035-01-01", "verified", "2030-05-01"), record("constructor", "hub", null, "verified", "2030-05-01")], TODAY);
+  assert.deepEqual(report.brands, { constructor: 2 });
+  assert.deepEqual(report.categories, { camera: 1, hub: 1 });
+});
+
 test("brands and categories are sorted", () => {
   const report = buildReport(records, TODAY);
   assert.deepEqual(Object.keys(report.brands), ["acme", "google", "ring"]);

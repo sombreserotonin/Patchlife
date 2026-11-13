@@ -902,6 +902,35 @@ test("a URL that is not https is shown as text, never as a link", (t) => {
   assert.match(site.read("devices/acme-router-2/index.html"), /<a class="url" href="https:\/\/example\.com\/acme\/eol">/, "https sources stay linked");
 });
 
+test("a URL with a user name before its host is shown as text, never as a link", (t) => {
+  const records = fixtures();
+  const cam = byId(records, "acme-cam-1");
+  cam.evidence[0].url = "https://example.com@example.net/acme/security";
+  const page = build(t, { records }).read("devices/acme-cam-1/index.html");
+  assert.doesNotMatch(page, /(?:href|cite)="https:\/\/example\.com@/);
+  assert.ok(text(page).includes("https://example.com@example.net/acme/security (not linked: not an https address)"));
+});
+
+test("a control character in a record never reaches a page or a feed", (t) => {
+  const records = fixtures();
+  const cam = byId(records, "acme-cam-1");
+  cam.model = "Cam 1\u0001";
+  cam.brand = "Ac\u000Bme";
+  const site = build(t, { records, today: "2029-01-01" });
+  const files = readdirSync(site.outDir, { recursive: true }).filter((name) => /\.(html|xml)$/.test(name));
+  assert.ok(files.some((name) => name.endsWith(".xml")), "the feeds are checked too");
+  // eslint-disable-next-line no-control-regex
+  for (const file of files) assert.doesNotMatch(site.read(file), /[\u0000-\u0008\u000B\u000C\u000E-\u001F]/, `${file} holds a character XML forbids`);
+  assert.ok(site.read("feeds/ending-soon.xml").includes("<title>Acme Cam 1: "), "the entry is still there, without the characters");
+});
+
+test("the search box has no name, so a form submitted without JavaScript sends nothing that was typed", (t) => {
+  const home = build(t).read("index.html");
+  const input = home.match(/<input id="q"[^>]*>/)[0];
+  assert.doesNotMatch(input, /\bname=/);
+  assert.match(home, /<label for="q">/);
+});
+
 test("matchDevices finds aliases and model numbers and needs every term", (t) => {
   const index = build(t).json("search-index.json");
   assert.equal(index.license, "ODbL-1.0");

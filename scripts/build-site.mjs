@@ -95,7 +95,9 @@ class Html {
 }
 
 const ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
-export const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (c) => ESCAPES[c]);
+// The characters XML 1.0 forbids are dropped first, so one that reaches a record can't make an Atom feed unparseable.
+const XML_FORBIDDEN = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g;
+export const escapeHtml = (value) => String(value).replace(XML_FORBIDDEN, "").replace(/[&<>"']/g, (c) => ESCAPES[c]);
 
 function renderValue(value) {
   if (value instanceof Html) return value.text;
@@ -118,11 +120,12 @@ function jsonLd(value) {
   return new Html(`<script type="application/ld+json">${json}</script>`);
 }
 
-// The URL when it parses as https, otherwise null. Only these become hrefs.
+// The URL when it parses as https and carries no user name or password, otherwise null. Only these become hrefs: in
+// https://ring.com@example.net/ the host is example.net, so such a link would look like another site's.
 export function httpsUrl(value) {
   try {
     const url = new URL(String(value));
-    return url.protocol === "https:" ? url.href : null;
+    return url.protocol === "https:" && !url.username && !url.password ? url.href : null;
   } catch {
     return null;
   }
@@ -314,6 +317,7 @@ function start() {
 }
 input.addEventListener("focus", start);
 input.addEventListener("input", start);
+// The input has no name, so even without this script a submitted form sends nothing that was typed.
 form.addEventListener("submit", (event) => event.preventDefault());
 // A link such as /?q=Tapo%20C200 opens with its search done (M5, D46). What is typed is never written back into the
 // URL, so it stays out of the address bar, the history and any analytics beacon that reports URL changes.
@@ -487,7 +491,7 @@ function homePage(ctx, { items, brands, categories, coverage }) {
 <p>Patchlife looks up when smart devices stop getting security updates, and quotes the manufacturer's own words as evidence. So far it covers ${plural(items.length, "device")}: ${coverage}.</p>
 <form id="search" role="search" data-base="${ctx.base}">
 <label for="q">Search by brand, model or model number</label>
-<input id="q" name="q" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search">
+<input id="q" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search">
 </form>
 <noscript><p>Search needs JavaScript. You can browse by brand or category below.</p></noscript>
 ${disclaimerNote(ctx)}
