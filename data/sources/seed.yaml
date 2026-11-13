@@ -447,8 +447,9 @@
   # the model family one of those sections holds, so a model of another family in a section waits for a person.
   category_map:
     - { model: '^GWN76', category: access-point }
+    - { model: '^GWN7302$', category: access-point }
     - { model: '^GWN70', category: router }
-    - { model: '^GWN78', category: network-switch }
+    - { model: '^GWN7[78]', category: network-switch }
   min_rows:
     https://www.grandstream.com/compliance: 160
 
