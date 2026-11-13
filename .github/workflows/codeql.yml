@@ -34,6 +34,11 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           build-mode: none
+          # The tests are neither run in production nor published, and their page-reading helpers read to the scanner
+          # as flawed sanitisers (8 of the 11 findings on 13 Nov 2026).
+          config: |
+            paths-ignore:
+              - tests
       - uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
           category: /language:${{ matrix.language }}
