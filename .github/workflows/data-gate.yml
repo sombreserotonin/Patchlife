@@ -19,16 +19,13 @@ on:
   pull_request_target:
     # edited: a PR pointed at another base branch is judged again against it.
     types: [opened, synchronize, reopened, edited, labeled, unlabeled]
-  # Kept for one more merge: the PR that removes this trigger is the first one judged by the copy on the base branch.
-  pull_request:
-    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
 
 permissions:
   contents: read
 
 # Every event's run is kept and they go in order, so the run that records an audit is never dropped for a later one.
 concurrency:
-  group: data-gate-${{ github.event_name }}-${{ github.event.pull_request.number }}
+  group: data-gate-${{ github.event.pull_request.number }}
   cancel-in-progress: false
   queue: max
 
@@ -50,18 +47,12 @@ jobs:
       ACTION: ${{ github.event.action }}
       LABEL: ${{ github.event.label.name }}
       SENDER: ${{ github.event.sender.login }}
-      # Whether this run's token can write: always on pull_request_target, and on pull_request only for a branch of
-      # this repository.
-      CAN_WRITE: ${{ github.event_name == 'pull_request_target' || github.event.pull_request.head.repo.full_name == github.repository }}
     steps:
       - name: Remove the audited label after a push
         # The label is for people: it shows that the PR was reviewed as it stands. The audit itself is the commit
         # status below, which a push leaves behind on the old commit.
         if: github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'audited')
-        run: |
-          if [ "$CAN_WRITE" = true ]; then
-            gh api -X DELETE "repos/$REPO/issues/$PR/labels/audited" > /dev/null || echo "The audited label was already gone."
-          fi
+        run: gh api -X DELETE "repos/$REPO/issues/$PR/labels/audited" > /dev/null || echo "The audited label was already gone."
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # The base branch, never the PR: this copy's scripts are the ones that run. Whole history, so the commit the
@@ -106,7 +97,7 @@ jobs:
         if: steps.gate.outputs.verified == 'no'
         run: |
           record() { gh api -X POST "repos/$REPO/statuses/$HEAD_SHA" -f context=audited -f state="$1" -f description="$2" > /dev/null; }
-          if [ "$LABEL" = audited ] && [ "$CAN_WRITE" = true ]; then
+          if [ "$LABEL" = audited ]; then
             if [ "$ACTION" = labeled ] && [ "$SENDER" = "$OWNER" ]; then
               record success "$BASE_REF"
             elif [ "$ACTION" = unlabeled ]; then
@@ -126,7 +117,7 @@ jobs:
     # run, the source registry (its profiles are binding, D49) or the schemas, so only the owner merges them. It runs
     # here, from the base branch's copy, so a PR can't drop its own label, and it reads the PR's list of files, never
     # the files.
-    if: contains(fromJSON('["opened", "synchronize", "reopened"]'), github.event.action) && (github.event_name == 'pull_request_target' || github.event.pull_request.head.repo.full_name == github.repository)
+    if: contains(fromJSON('["opened", "synchronize", "reopened"]'), github.event.action)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
