@@ -6,7 +6,7 @@
 On 13 Nov the owner asked for the project to be wrapped up within a day, with no human approval for the work. What became of each open item below:
 - **Migration (D44).** Finished: Stage 1 ended on 2 Nov, and Stages 2 to 4 were closed out together on 13 Nov (D59; the banner at the top of `docs/MIGRATION.md` lists what differs from the plan). The owner's remaining steps are in `docs/OPERATIONS.md`, "What is left for you".
 - **M3.** Its exit checks were met on 30 Oct (the entry under Waiting). Closed with the cut-over (ROADMAP).
-- **Coverage.** 849 records on `main`. #196, the first weekly candidate PR, holds 382 new TP-Link records and waits for the owner's `audited` label. Leads not taken up: #199. Makers with no records: #194.
+- **Coverage.** 1,231 records on `main`: #196, the first weekly candidate PR, added 382 TP-Link records the same day (D60). Leads not taken up: #199. Makers with no records: #194. Hardening left over from the security reads: #202.
 - **The business side (D45).** Still planned: #99.
 
 The sections below are as they stood on 12 Nov and are not kept up.
