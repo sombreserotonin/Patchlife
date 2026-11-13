@@ -1,6 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { cpSync, mkdirSync, mkdtempSync, renameSync, rmSync, symlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { addYears, ambiguousDates, mentionsDate, mentionsYears, plainScalarProblems, validateDevices, validateSources, versionsIn, writesToken } from "../scripts/validate-data.mjs";
@@ -25,6 +27,43 @@ test("valid fixtures pass", () => {
   const { files, errors } = run("valid");
   assert.equal(files, 5);
   assert.deepEqual(errors, [], messages(errors));
+});
+
+// A copy of the valid fixtures that a test may rearrange.
+function scratchDevices(t) {
+  const dir = mkdtempSync(join(tmpdir(), "patchlife-validate-"));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  cpSync(join(FIXTURES, "valid"), join(dir, "devices"), { recursive: true });
+  return { dir, devices: join(dir, "devices") };
+}
+
+test("a record one folder deeper than <brand_slug>/<id>.yaml is refused, though its last folder and file name match", (t) => {
+  const { devices } = scratchDevices(t);
+  mkdirSync(join(devices, "extra", "acme"), { recursive: true });
+  renameSync(join(devices, "acme", "acme-cam-1.yaml"), join(devices, "extra", "acme", "acme-cam-1.yaml"));
+  const { files, errors } = validateDevices(devices, { today: TODAY, sources: SOURCES });
+  assert.equal(files, 5);
+  assert.deepEqual(errors, [{ file: join("extra", "acme", "acme-cam-1.yaml"), message: "a record's path must be <brand_slug>/<id>.yaml, directly under the devices folder" }]);
+});
+
+test("a record or a brand folder that is a symbolic link is refused", (t) => {
+  const { dir, devices } = scratchDevices(t);
+  const link = "a record and its folder must be a regular file and folder, not symbolic links";
+  renameSync(join(devices, "acme", "acme-cam-1.yaml"), join(dir, "elsewhere.yaml"));
+  try {
+    symlinkSync(join(dir, "elsewhere.yaml"), join(devices, "acme", "acme-cam-1.yaml"));
+  } catch {
+    return t.skip("symbolic links can't be made here");
+  }
+  assert.deepEqual(validateDevices(devices, { today: TODAY, sources: SOURCES }).errors, [{ file: join("acme", "acme-cam-1.yaml"), message: link }]);
+  // The whole brand folder behind a link: every record in it is refused.
+  rmSync(join(devices, "acme", "acme-cam-1.yaml"));
+  renameSync(join(dir, "elsewhere.yaml"), join(devices, "acme", "acme-cam-1.yaml"));
+  renameSync(join(devices, "acme"), join(dir, "acme"));
+  symlinkSync(join(dir, "acme"), join(devices, "acme"));
+  const { files, errors } = validateDevices(devices, { today: TODAY, sources: SOURCES });
+  assert.equal(files, 5);
+  assert.deepEqual(errors.map((error) => error.message), Array(5).fill(link));
 });
 
 const rejected = [

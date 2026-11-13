@@ -42,9 +42,9 @@ jobs:
           protected=$(printf '%s\n' "$files" | grep -E '^(\.github/|\.claude/|\.agent/prompts/|CLAUDE\.md$|CONTRIBUTING\.md$|docs/DECISIONS\.md$|package(-lock)?\.json$|scripts/(merge-bot|watchdog|verification-only|validate-data)\.mjs$|data/sources/seed\.yaml$|data/schema/)' || true)
           # A registry change that moves only `last_checked` dates is a revisit, not a profile change (the same
           # exemption as the gate's, #146), so the nightly revisit PRs don't wait on a human. A missing patch counts
-          # as a change.
+          # as a change: GitHub leaves the patch out of a large diff, and the `+` keeps that line through the grep.
           if [ "$protected" = "data/sources/seed.yaml" ]; then
-            other=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[] | select(.filename == "data/sources/seed.yaml") | .patch // "no patch"' | grep -E '^[-+]' | grep -vE '^[-+]  last_checked: ' || true)
+            other=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[] | select(.filename == "data/sources/seed.yaml") | .patch // "+no patch"' | grep -E '^[-+]' | grep -vE '^[-+]  last_checked: ' || true)
             [ -z "$other" ] && protected=""
           fi
           if [ -n "$protected" ]; then
