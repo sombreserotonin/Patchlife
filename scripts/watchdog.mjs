@@ -154,7 +154,8 @@ export async function gatherState({ api, fetchSite, now, repo, siteUrl = SITE_UR
 
   await read("Candidate PR", "the open PRs", async () => {
     const pulls = await all(api, `/repos/${repo}/pulls?state=open`);
-    state.pulls = pulls.map((pr) => ({ number: pr.number, head: pr.head.ref, created_at: pr.created_at, labels: labelNames(pr) }));
+    // own: the head branch is in this repository. A fork's PR can carry any branch name, and a deleted fork gives null.
+    state.pulls = pulls.map((pr) => ({ number: pr.number, head: pr.head.ref, own: pr.head.repo?.full_name === repo, created_at: pr.created_at, labels: labelNames(pr) }));
   });
 
   const url = siteUrl.endsWith("/") ? siteUrl : `${siteUrl}/`;
@@ -248,7 +249,7 @@ export function checkState(state, now) {
   // The weekly refresh skips while its last PR is open (decision 5).
   for (const pr of state.pulls ?? []) {
     const days = (time - Date.parse(pr.created_at)) / DAY;
-    if (pr.head.startsWith("claude/data-auto-") && days > 14) add("Candidate PR", `#${pr.number} (${pr.head}) has been open ${Math.floor(days)} days, so the weekly data refresh keeps skipping.`);
+    if (pr.own && pr.head.startsWith("claude/data-auto-") && days > 14) add("Candidate PR", `#${pr.number} (${pr.head}) has been open ${Math.floor(days)} days, so the weekly data refresh keeps skipping.`);
   }
 
   if (state.site) {

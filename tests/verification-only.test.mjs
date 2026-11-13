@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -150,4 +150,32 @@ test("a committed rename shows as the old record deleted and a new file", (t) =>
   r.git("add", "-A");
   r.git("-c", "user.name=t", "-c", "user.email=t@example.invalid", "commit", "-qm", "rename");
   assert.deepEqual(r.problems(base), ["data/devices/acme/acme-hub-4.yaml: deleted or unreadable", "data/devices/acme/acme-hub-5.yaml: new file"]);
+});
+
+test("a path git would print in quotes is still judged, untracked or staged", (t) => {
+  // Without -z, git prints "data/devices/\303\251/..." in double quotes, which does not start with data/.
+  const r = repo(t);
+  const folder = join(r.dir, "data", "devices", "\u00e9", "acme");
+  mkdirSync(folder, { recursive: true });
+  cpSync(r.file("acme-cam-1"), join(folder, "acme-cam-9.yaml"));
+  writeFileSync(join(r.dir, "data", "sources", "\u00e9.yaml"), "- brand: Other\n");
+  const expected = [
+    "data/devices/\u00e9/acme/acme-cam-9.yaml: data other than a device record, a registry file or the page hash file",
+    "data/sources/\u00e9.yaml: new file",
+  ];
+  assert.deepEqual(r.problems(), expected);
+  r.git("add", ".");
+  assert.deepEqual(r.problems(), expected);
+});
+
+test("a record replaced by a symbolic link is refused, even when the link leads to the same text", (t) => {
+  const r = repo(t);
+  renameSync(r.file("acme-cam-1"), join(r.dir, "elsewhere.yaml"));
+  try {
+    symlinkSync(join("..", "..", "..", "elsewhere.yaml"), r.file("acme-cam-1"));
+  } catch {
+    return t.skip("symbolic links can't be made here");
+  }
+  assert.equal(readFileSync(r.file("acme-cam-1"), "utf8"), readFileSync(join(r.dir, "elsewhere.yaml"), "utf8"));
+  assert.deepEqual(r.problems(), ["data/devices/acme/acme-cam-1.yaml: not a regular file"]);
 });
