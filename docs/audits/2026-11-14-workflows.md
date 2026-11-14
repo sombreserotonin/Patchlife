@@ -22,7 +22,7 @@ After the merge, a re-verify run (43567904406) and an Owner tools `verify` run (
 | M1 page text in the weekly PR body's flags is live markdown: closing keywords and mentions act | workflows | VERIFIED REAL | Medium | Medium | needs a maker's page to carry the text, and the owner to merge | `tests/workflows.test.mjs` "the weekly PR body fences the flags, and the push alone gets the App's token", ran, fails as expected on e484c80, passes after #224 |
 | M2 `probe-hosts.yml` prints a maker's redirect target to the log without D62's cleaning | workflows | VERIFIED REAL | Medium | Medium | manual workflow with a read-only token | `tests/workflows.test.mjs` "every command that reads makers' pages sends its output to a file or through D62's cleaning", ran, fails as expected, passes after #224 |
 | M3 the App's write token stays in the git configuration for every step of the crawl jobs | workflows | VERIFIED REAL | Medium | Medium | the fix narrows the gap; code that runs in a job can still plant something for its push step, because runners allow sudo | `tests/workflows.test.mjs` "no job that holds the App's token keeps it in the git configuration or hands it to a step that reads pages", ran, fails as expected, passes after #224 |
-| M4 `refresh_open_pr` re-parses over the PR's own rows, so the rename fix RUNBOOKS O9 prescribed fails the parser gate | workflows | VERIFIED REAL | Medium | Medium | answered by a documented route, not a code change: the code behaviour stays | `tests/audit/open-findings.test.mjs` "workflows M4: a refresh after a rename on the PR's branch passes the parser gate", ran, fails as expected (open). The route's own test in `tests/candidates.test.mjs` passes |
+| M4 `refresh_open_pr` re-parses over the PR's own rows, so the rename fix RUNBOOKS O9 prescribed fails the parser gate | workflows | VERIFIED REAL | Medium | Medium | answered by a documented route (#225); a code fix tried in #235 was withdrawn before merge | `tests/audit/open-findings.test.mjs` "workflows M4: a refresh after a rename on the PR's branch passes the parser gate", ran, fails as expected (open). The route's own test in `tests/candidates.test.mjs` passes |
 | M5 Owner tools `verify` puts every id in the PR title, and pushes first | workflows | VERIFIED REAL | Medium | Medium | GitHub's 256-character limit was not hit live; it is GitHub's documented limit | `tests/workflows.test.mjs` "owner tools verify keeps its PR title short, whatever the number of ids", ran, fails as expected, passes after #224 |
 | L1 Owner tools `verify` takes a crashed verifier for a finished one | workflows | VERIFIED REAL | Low | Low | | `tests/workflows.test.mjs` "owner tools verify stops when the verifier crashes, and goes on when it finishes", ran, fails as expected, passes after #224 |
 | L2 the open-PR lookup loses a `gh` failure, so the weekly run can open a second PR | workflows | VERIFIED REAL | Low | Low | | `tests/workflows.test.mjs` "the weekly PR's lookup fails the run when GitHub fails, instead of opening a second PR", ran, fails as expected, passes after #224 |
@@ -61,7 +61,14 @@ Fix (#224):
 ### M4, `.github/workflows/data-refresh.yml:81`, legitimate path blocked
 After `git switch` to the PR's branch, the parsers treat the PR's own unaudited rows as published records. A rename made on the branch then gives `differs: model` and `id differs`, and the run writes nothing.
 
-Answer (#225): RUNBOOKS O9 says to delete that row's record on the branch first. A test runs that route and it passes. The code behaviour is unchanged, and the hand-off proposes the code fix.
+Answer (#225): RUNBOOKS O9 says to delete that row's record on the branch first. A test runs that route and it passes. The code behaviour is unchanged.
+
+A code fix was tried in #235 and withdrawn before merge. It put a brand's records back as `main` had them before parsing, and the independent check of #235 found three problems:
+- it restored from `main`'s tip, not the PR's base, so re-verifications made since the branch was cut came into the PR;
+- it stopped O9's wrong-category fix from being refreshed, as putting the record back restored the old category;
+- it rewrote at most `--limit` rows, so a large PR would shrink to 60 rows and could no longer grow.
+
+A sound fix needs the PR's merge base fetched, the owner's own edits kept, and an opt-in input, so that a refresh can still grow a PR. That is more workflow than this owner-run path warrants, so the manual route stays.
 
 ### M5, `.github/workflows/owner-tools.yml:181`, legitimate path blocked
 Ten ids made a title over 256 characters after the branch was pushed, and the leftover branch stopped the nightly run at its guard.
@@ -101,5 +108,5 @@ Code quality, from the reviewer:
 All four changed in #224.
 
 ## Hand-off
-- M4: proposed code fix for the owner. On the refresh path, restore `data/devices/<brand>` from `main` for the brands being refreshed before the parsers run, so a refresh redoes the weekly run with the fixed profile. This changes what a refresh writes, so it is the owner's call; until then, RUNBOOKS O9 has the route.
-- M3: proposed design change. Move the push into a separate job that receives only the data change, so no code that read a maker's page shares a runner with the App's token.
+- M4: stays answered by RUNBOOKS O9's route; the M4 section says why the code fix was withdrawn.
+- M3: decided in D63 (#235): the push stays in the job. Nothing in these jobs runs page content: #235 also turned off PDF.js's WebAssembly, so a PDF's PostScript functions are interpreted, not compiled. D63 records the risk accepted and when to move the push to its own job.

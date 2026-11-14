@@ -52,5 +52,5 @@ A full build on 14 Nov 2026 from `main` and from #231 differs in exactly nine fi
 Code quality, from the reviewer: seven notes on wording and on duplicated helpers. None changes behaviour, and they are left.
 
 ## Hand-off
-- `site/search.js` could fold names through the same invisible-character strip as `normalise` (from the data-integrity sweep), so a name with a soft hyphen is found by its visible spelling.
+- `site/search.js` could fold names through the same invisible-character strip as `normalise` (from the data-integrity sweep), so a name with a soft hyphen is found by its visible spelling. Not done (14 Nov 2026): none of the 1,322 records has an invisible character in its model or aliases.
 - Once #231 merges, `docs/SPEC.md` may name the new Atom id scheme beside D51's dating rule.

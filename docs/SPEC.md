@@ -52,7 +52,7 @@ Against today's date: `supported` (more than 12 months left), `ending_soon` (12 
 
 ## 7. Alerts and reports (M7)
 - **Cut (D46, 27 Oct 2026):** Atom feeds replace email alerts; the monthly stats report stays, as `/stats/`.
-- **Shipped 27 Oct 2026 (MIGRATION C2):** `/feeds/ending-soon.xml`, `/feeds/ended.xml` and `/feeds/brands/<slug>.xml`, listed at `/feeds/` and announced in the heads of the home and brand pages. An entry is a model whose status is ending soon or ended, dated the first day that status applied under section 2's rules (`statusSince` in `scripts/status.mjs`), never the build date, so readers show it once. `/stats/` shows the counts from `scripts/data-report.mjs` as at the build date.
+- **Shipped 27 Oct 2026 (MIGRATION C2):** `/feeds/ending-soon.xml`, `/feeds/ended.xml` and `/feeds/brands/<slug>.xml`, listed at `/feeds/` and announced in the heads of the home and brand pages. An entry is a model whose status is ending soon or ended, dated the first day that status applied under section 2's rules (`statusSince` in `scripts/status.mjs`), never the build date, so readers show it once. An entry's id is the model's page, with `#ended` added for the ended status, so a model that ends after it was ending soon shows again, as a new entry. `/stats/` shows the counts from `scripts/data-report.mjs` as at the build date.
 - Email alerts per device with double opt-in and one-click unsubscribe.
 - Monthly stats report generated from the data, for example the share of on-sale cameras with under two years of support left.
 

@@ -45,9 +45,9 @@ While #225 was in review, CodeQL flagged the first form of `stripHidden`: the sa
 | F3 the row reader reads rows inside comments and script or template content, which the verifier strips | record-writers | VERIFIED REAL | Medium | Medium | | `tests/candidates.test.mjs` "a row in an HTML comment or a script is not read, as the verifier does not read it, so it fails no run", ran, fails as expected, passes after #225 |
 | F4 the ASUS note always says the page writes "31th December <year>" | record-writers | VERIFIED REAL | Medium | Low | every one of the 56 ASUS rows today is that form, so no published note is wrong yet | `tests/parsers.test.mjs` "ASUS: a row that writes another day or month than the profile's note describes is skipped, not given that note", ran, fails as expected, passes after #225 |
 | F5 Grandstream accepts "2027-6-30", which the validator cannot find in the quote, so one row undoes every brand's run | record-writers | VERIFIED REAL | Medium | Medium | | `tests/parsers.test.mjs` "Grandstream: only the date forms the validator finds in a quote are read", ran, fails as expected, passes after #225 |
-| L1 a parser exception kept only for its notes silences later conflict flags for its model | record-writers | VERIFIED REAL | Low | Low | | `tests/audit/open-findings.test.mjs` "record-writers L1: a new date for a model whose record is an exception for its notes is flagged", ran, fails as expected (open) |
-| L2 a rewrite can drop a region, and the PR's change table does not show regions | record-writers | VERIFIED REAL | Low | Low | | `tests/audit/open-findings.test.mjs` "record-writers L2: a rewrite that drops a region is flagged", ran, fails as expected (open) |
-| L4 the row expression is quadratic on unclosed rows | record-writers | VERIFIED REAL | Low | Low | only a hostile page; it turns a fast failure into a slow one | `tests/audit/open-findings.test.mjs` "record-writers L4: the row reader reads a page of unclosed rows in linear time", ran, fails as expected (open; 560 KB takes about 5 s) |
+| L1 a parser exception kept only for its notes silences later conflict flags for its model | record-writers | VERIFIED REAL | Low | Low | | `tests/candidates.test.mjs` "a later row with another date is flagged even for a model whose record is an exception for its notes alone", ran, fails on `main` before #234, passes after it |
+| L2 a rewrite can drop a region, and the PR's change table does not show regions | record-writers | VERIFIED REAL | Low | Low | | `tests/candidates.test.mjs` "a rewrite that drops a region the record had is flagged for a person", ran, fails on `main` before #234, passes after it |
+| L4 the row expression is quadratic on unclosed rows | record-writers | VERIFIED REAL | Low | Low | only a hostile page; it turns a fast failure into a slow one | `tests/table-rows.test.mjs` "a page of unclosed rows, cells or footnotes is read in linear time", ran, fails on `main` before #234 (28 s for unclosed rows), passes after it |
 | C1 a parser swaps day and month, or reads a two-digit year | record-writers | FALSE POSITIVE | - | - | lens: claim correctness | see the refused section |
 | C2 a date is taken from another cell, or a range or trailing text is read as a date | record-writers | FALSE POSITIVE | - | - | lens: existing mitigation | see the refused section |
 | C3 a write leaves `data/devices/<brand>/` or overwrites another brand's record | record-writers | FALSE POSITIVE | - | - | lens: claim correctness | see the refused section |
@@ -84,10 +84,13 @@ The note filled in only the year. Fix (#225): a row whose date does not stand wh
 ### F5, `scripts/parsers/grandstream.mjs:22`, legitimate path blocked
 Fix (#225): only `YYYY-MM-DD` and `YYYY/M/D` are read. All 80 Grandstream records use one of the two.
 
-### L1, L2, L4: open
-- **L1, `scripts/candidates.mjs:88`:** `exceptionModels` drops every conflict flag for a model with any exception record. Five of Ring's nine exceptions are kept for notes, not splits.
-- **L2, `scripts/candidates.mjs:238`:** `row()` keeps neither regions nor model, so the change table can't show a region the rewrite drops.
-- **L4, `scripts/table-rows.mjs:9`:** `ROW` rescans to the end of the page from every unclosed `<tr`.
+### L1, L2, L4: fixed in #234
+Fixed on the owner's instruction of 14 Nov 2026 to settle the open items.
+- **L1, `scripts/candidates.mjs:88`:** `exceptionModels` dropped every conflict flag for a model with any exception record, and five of Ring's nine exceptions are kept for notes, not splits. A conflict flag now carries each page's row (`sides`). Every row each page gives the model is a side. The flag is dropped only when exception records quote every side, as the recorded splits do: Video Doorbell 4, Spotlight Cam 4K Pro, Velica (GL-B2200), and Beryl (GL-MT1300), whose one record quotes both pages' rows.
+- **L2, `scripts/candidates.mjs:238`:** `row()` keeps neither regions nor model, so the change table can't show a region the rewrite drops. A rewrite that loses a region is now flagged for a person, as it is written; a row the parser skipped counts as none.
+- **L4, `scripts/table-rows.mjs:9`:** `ROW` rescanned to the end of the page from every unclosed `<tr`, and the cell and `<sup>` expressions did the same. One scan now finds the same elements. A test compares it with the three expressions on every fixture page and on 5,000 random inputs, and the independent check found no difference on 4.5 million more. Left, both needing a hostile page and bounded by the 32 MiB body cap and the job's timeout:
+  - each cell's text still goes through `htmlToText`, which stays quadratic on tags that never end (fetchers F2);
+  - the parsers' own element expressions have the same shape: Grandstream's tables and buttons, Kyocera's blocks and items.
 
 ## Refused or unconfirmed candidates
 - C1, day and month swapped, two-digit years: refused, lens claim correctness.
@@ -110,13 +113,10 @@ Code quality, from the reviewer:
 - The `recordYaml` comment covers rewritten records (#225).
 - The "changed rows" label names everything it counts (#225).
 
-Left for a later change, since each would touch every parser for no behaviour change:
-- the duplicated `collapse` and name-splitting helpers across parsers;
-- `monthDate`'s ordinal strip that no caller needs;
-- Google's own month-name lookup.
+The duplicated `collapse` and name-splitting helpers became `textOf` and `cellNames` in `scripts/parsers/common.mjs` (#236). Left as they are:
+- `monthDate`'s ordinal strip, which no caller needs but which costs nothing;
+- Google's own month-name lookup, which matches capitalised names only, so merging it with `monthDate` would change what the parser accepts.
 
 ## Hand-off
-- L1: carry each conflict's regions and dates in its flag, and drop it only when exception records cover them (`ring.mjs` and `gl-inet.mjs` raise the flags).
-- L2: add regions and model to `row()`, and show them in the weekly PR's change table (a protected workflow change), or flag a proposal whose candidate lacks a region the record has.
-- L4: find row boundaries with an index scan, as `stripHidden` does for hidden markup, or cap the page size before parsing.
-- Move `collapse` and the name-splitting expression into `scripts/parsers/common.mjs`, with the parser tests as the guard.
+- L1, L2 and L4: fixed in #234. L1 settles a conflict by the rows exception records quote, not by regions and dates, since Beryl's one record covers two regions with one date.
+- The shared helpers: done in #236.

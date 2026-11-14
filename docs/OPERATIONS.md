@@ -25,7 +25,7 @@ Actions schedules are in UTC. The Sydney column is for daylight time (UTC+11, fr
 - `claude/measures-<yyyy-mm>`: the monthly measures branch; the bot merges it.
 - `claude/data-auto-*`: the weekly candidate PR; you review and merge it (RUNBOOKS O9).
 - Labels: `audited` (your review is done; only a label you add counts, and every push removes it), `needs-human` (an issue waiting on you; the watchdog flags it after 7 days), `needs-human-merge` (CI's label on protected-path PRs; never remove it), `watchdog` (the watchdog's own issue), `data-correction` and `add-model` (the public issue forms), and `planned` (shelved work, D45).
-- Issue #27 (https://github.com/sombreserotonin/Patchlife/issues/27): the Sunday summary goes here. Older comments are the retired daily build's one-line results.
+- Issue #27 (https://github.com/sombreserotonin/Patchlife/issues/27): the Sunday summary goes here, as a comment by `patchlife-bot[bot]`. Anyone can comment on the issue, so read the bot's comments only. Older comments are the retired daily build's one-line results.
 
 ## Settings that matter
 
@@ -122,7 +122,7 @@ A finding that is not one of these is new: read it, and fix it or dismiss it wit
 
 ### Audits (14 November 2026)
 
-`docs/audits/` holds the codebase audit: one report per zone (`2026-11-14-<zone>.md`), with what was read, every candidate's verdict and the fixes (#223 to #231); `findings.jsonl`, one line per confirmed finding with the test that reproduces it; and `sweep-registry.md`, when each zone was last read. The findings left open have their reproductions in `tests/audit/open-findings.test.mjs`, which `npm test` does not run: `node --test tests/audit/open-findings.test.mjs` shows which still fail. A later audit starts from those files rather than from scratch.
+`docs/audits/` holds the codebase audit: one report per zone (`2026-11-14-<zone>.md`), with what was read, every candidate's verdict and the fixes (#223 to #231, then #234 to #236); `findings.jsonl`, one line per confirmed finding with the test that reproduces it; `recheck-log.jsonl`, each re-run of those tests; and `sweep-registry.md`, when each zone was last read. Two findings stay open. Workflows M4: a `refresh_open_pr` run reads the PR's own rows as published, which RUNBOOKS O9's manual route answers. Fetchers F2: `htmlToText` is slow on a hostile page, and it stays as it is because every quote match and page hash depends on its output. Their reproductions are in `tests/audit/open-findings.test.mjs`, which `npm test` does not run: `node --test tests/audit/open-findings.test.mjs` shows whether they still fail. A later audit starts from those files rather than from scratch.
 
 ## Backups
 
