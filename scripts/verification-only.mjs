@@ -7,8 +7,7 @@
 // Usage: node scripts/verification-only.mjs [ref]   (ref defaults to HEAD; run it from inside the repository)
 import { execFileSync } from "node:child_process";
 import { lstatSync, readFileSync } from "node:fs";
-import { join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import YAML from "yaml";
 import { isCaptureOf } from "./validate-data.mjs";
@@ -58,7 +57,11 @@ export function verificationOnlyProblems(ref = "HEAD", cwd = process.cwd()) {
   };
   const problems = [];
   for (const path of [...new Set(changed)].sort()) {
-    if (path === PAGE_HASHES || !path.startsWith("data/")) continue;
+    if (!path.startsWith("data/")) continue;
+    if (path === PAGE_HASHES) {
+      if (!regular(join(root, path))) problems.push(`${path}: not a regular file`);
+      continue;
+    }
     if (!DEVICE.test(path) && !REGISTRY.test(path)) {
       problems.push(`${path}: data other than a device record, a registry file or the page hash file`);
       continue;
@@ -83,12 +86,24 @@ export function verificationOnlyProblems(ref = "HEAD", cwd = process.cwd()) {
     }
     if (REGISTRY.test(path)) {
       if (!sameButLastChecked(before, after)) problems.push(`${path}: changes more than last_checked`);
-    } else if (!isDeepStrictEqual(comparable(before), comparable(after, before))) problems.push(`${path}: changes more than the verification block`);
+    } else if (!isDeepStrictEqual(comparable(before), comparable(after, before))) {
+      problems.push(`${path}: changes more than the verification block`);
+    } else {
+      // Within the block, only what the verifier itself does: it skips a disputed record, which a person settles, and it
+      // writes the day of its check, so a check date never moves back.
+      const was = before?.verification ?? {};
+      const now = after?.verification ?? {};
+      if (was.status === "disputed" && !isDeepStrictEqual(was, now)) problems.push(`${path}: changes the verification of a disputed record`);
+      else if (was.checked && now.checked && now.checked < was.checked) problems.push(`${path}: moves verification.checked back from ${was.checked} to ${now.checked}`);
+    }
   }
   return problems;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+// import.meta.main is true only for the entry point, however it was reached (a symbolic link included), so the check
+// never silently does nothing. A Node too old to set it stops here instead of passing.
+if (import.meta.main === undefined) throw new Error("verification-only.mjs needs Node 22.18 or later (package.json engines)");
+if (import.meta.main) {
   const problems = verificationOnlyProblems(process.argv[2]);
   for (const problem of problems) console.error(problem);
   console.log(problems.length ? `${problems.length} change(s) outside verification` : "Only verification changed");
