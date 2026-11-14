@@ -24,9 +24,12 @@ const DAY = 24 * HOUR;
 const SITE_URL = "https://patchlife.tech/";
 const LABEL = "watchdog";
 const SUMMARY_ISSUE = 27;
-// Names that reverify.yml prints; renaming either there silences a check here.
-const PUSH_STEP = "Push verification changes";
-const UNCHECKED_TITLE = "Records not checked";
+// Names that reverify.yml prints: with the step renamed the Re-verify line fires every night, and with the title
+// renamed the Unchecked records line goes quiet. tests/watchdog.test.mjs checks that reverify.yml still has both.
+export const PUSH_STEP = "Push verification changes";
+export const UNCHECKED_TITLE = "Records not checked";
+// The weekly refresh runs on Sundays, up to some hours late; past this its schedule has stopped or its runs fail.
+const REFRESH_DAYS = 8;
 // The `crawl` concurrency group (decision 14), where a queued run can cancel another.
 const CRAWL_WORKFLOWS = ["reverify.yml", "data-refresh.yml", "probe-hosts.yml", "owner-tools.yml"];
 // pages.yml deploys on these; a pull request run only builds.
@@ -60,8 +63,12 @@ export function siteDate(html) {
 // clone would date every stale record to its oldest commit, so there each one counts as undated, which is reported.
 export function gitStaleSince(root = ROOT) {
   const git = (...args) => execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
-  const shallow = git("rev-parse", "--is-shallow-repository") === "true";
-  return (file) => (shallow ? null : git("log", "-1", "--format=%cs", "-G", "status: stale", "--", file) || null);
+  // Asked on the first call, inside the Data health read, so a checkout git can't read is reported there.
+  let shallow;
+  return (file) => {
+    shallow ??= git("rev-parse", "--is-shallow-repository") === "true";
+    return shallow ? null : git("log", "-1", "--format=%cs", "-G", "status: stale", "--", file) || null;
+  };
 }
 
 // Reads what the checks need. api(method, path, body) is a GitHub REST helper that returns parsed JSON and throws
@@ -110,16 +117,15 @@ export async function gatherState({ api, fetchSite, now, repo, siteUrl = SITE_UR
     state.pagesRuns = list.map((run) => ({ event: run.event, updated_at: run.updated_at, url: run.html_url }));
   });
 
+  await read("Data refresh", "the data refresh runs", async () => {
+    state.refreshRuns = (await runs("data-refresh.yml", "status=success&per_page=1")).map((run) => ({ updated_at: run.updated_at, url: run.html_url }));
+  });
+
+  // All four crawl workflows exist, so a missing one (HTTP 404) is reported like any failed read.
   await read("Cancelled runs", "the cancelled runs", async () => {
     const list = [];
     for (const file of CRAWL_WORKFLOWS) {
-      let cancelled;
-      try {
-        cancelled = await runs(file, "status=cancelled&per_page=20");
-      } catch (err) {
-        if (err.status === 404) continue; // not added yet: data-refresh.yml and owner-tools.yml come with P3
-        throw err;
-      }
+      const cancelled = await runs(file, "status=cancelled&per_page=20");
       list.push(...cancelled.map((run) => ({ workflow: file, updated_at: run.updated_at, url: run.html_url })));
     }
     state.cancelled = list;
@@ -168,6 +174,9 @@ export async function gatherState({ api, fetchSite, now, repo, siteUrl = SITE_UR
   return state;
 }
 
+// Text from outside for the Actions log: D62's sed in JavaScript, so no "::name::" or "##[name]" reads as a command.
+export const forLog = (text) => text.replace(/::/g, ": :").replace(/##\[/g, "# #[");
+
 // Every problem in the state, as { check, message }. A part of the state that is missing (its read failed) is skipped.
 export function checkState(state, now) {
   const time = new Date(now).getTime();
@@ -176,7 +185,7 @@ export function checkState(state, now) {
   const add = (check, message) => problems.push({ check, message });
 
   // Alert only: whoever re-enables a scheduled workflow gets its failure emails, so the owner does it. A deleted
-  // workflow can't be re-enabled, and the run-age checks notice one that matters.
+  // workflow can't be re-enabled, and the run-age checks (re-verify, Pages, data refresh) notice one that matters.
   for (const w of state.workflows ?? []) {
     if (w.state !== "active" && w.state !== "deleted") add("Workflows", `${w.name} (${w.path}) is switched off (${w.state}). Re-enable it in the Actions tab.`);
   }
@@ -200,6 +209,14 @@ export function checkState(state, now) {
     else if ((time - last) / HOUR >= 36) add("Pages", `The last Pages deploy finished ${Math.floor((time - last) / HOUR)} hours ago (${stamp(last)}).`);
   }
 
+  if (state.refreshRuns) {
+    const [last] = state.refreshRuns;
+    if (!last) add("Data refresh", "No successful data refresh run found.");
+    else if ((time - Date.parse(last.updated_at)) / DAY >= REFRESH_DAYS) {
+      add("Data refresh", `The last successful data refresh run finished ${Math.floor((time - Date.parse(last.updated_at)) / DAY)} days ago (${stamp(last.updated_at)}), so the weekly run has stopped or keeps failing: ${last.url}`);
+    }
+  }
+
   for (const run of state.cancelled ?? []) {
     if (hoursSince(run.updated_at, time) <= 48) add("Cancelled runs", `A ${run.workflow} run was cancelled (${stamp(run.updated_at)}): ${run.url}`);
   }
@@ -207,8 +224,12 @@ export function checkState(state, now) {
   // Report, never delete (decision 8). While any of these exists, reverify.yml stops at its guard.
   for (const branch of state.branches ?? []) {
     const closed = branch.prs.length > 0 && branch.prs.every((pr) => pr.state === "closed" && !pr.merged_at);
+    // A re-run can push a new commit to a branch whose first PR merged; while a PR on it is open, it is not left over.
+    const merged = !branch.prs.some((pr) => pr.state === "open") && branch.prs.find((pr) => pr.merged_at);
     const age = hoursSince(branch.committed_at, time);
-    if (closed) {
+    if (merged) {
+      add("Re-verify branches", `${branch.name}: its PR #${merged.number} was merged, but the branch is still there, so re-verification stops at its guard. Delete the branch.`);
+    } else if (closed) {
       const prs = branch.prs.map((pr) => `#${pr.number}`).join(", ");
       add("Re-verify branches", `${branch.name}: its ${branch.prs.length === 1 ? `PR ${prs} was` : `PRs ${prs} were`} closed without merging. Delete the branch, or reopen the PR.`);
     } else if (age > 36) {
@@ -392,7 +413,7 @@ export async function publish({ api, repo, problems, now, summary = null, dryRun
   return done;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (import.meta.main) {
   const args = process.argv.slice(2);
   const unknown = args.find((arg) => arg !== "--dry-run" && arg !== "--summary");
   const missing = ["GH_TOKEN", "GITHUB_REPOSITORY"].filter((name) => !process.env[name]);
@@ -456,7 +477,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (args.includes("--summary")) {
     const measures = execFileSync(process.execPath, [join(ROOT, "scripts/data-report.mjs")], { encoding: "utf8" }).split("\n").slice(0, 4);
     summary = summaryText(state, measures, pickSample(devices, dateOf(now)));
-    if (dryRun) console.log(`\n${summary}\n`);
+    // The summary holds model names from makers' pages, so the log's copy is cleaned as D62 asks; the comment keeps them.
+    if (dryRun) console.log(`\n${forLog(summary)}\n`);
   }
   for (const line of await publish({ api, repo, problems, now, summary, dryRun })) console.log(line);
   console.log(problems.length ? `${problems.length} problem(s)` : "No problems found");

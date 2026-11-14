@@ -7,14 +7,34 @@ const MAX_ATTEMPTS = 3;
 const MAX_WAIT_S = 60;
 const MAX_REDIRECTS = 5;
 const TIMEOUT_MS = 30_000;
+// A body larger than this is refused rather than held in memory: a page that inflates without end (a compressed bomb)
+// must not stop the runner. Real support pages and statements are well under it.
+export const MAX_BODY_BYTES = 32 * 1024 * 1024;
 
-function ruleRegExp(pattern) {
-  const anchored = pattern.endsWith("$");
-  const body = (anchored ? pattern.slice(0, -1) : pattern)
-    .split("*")
-    .map((part) => part.replace(/[.+?^${}()|[\]\\]/g, "\\$&"))
-    .join(".*");
-  return new RegExp(`^${body}${anchored ? "$" : ""}`);
+// RFC 9309: "*" matches any run of characters, a final "$" anchors the end, and otherwise a rule matches a prefix of
+// the path. A walk that backtracks only to the last "*" instead of a regular expression, so a robots.txt rule with many
+// "*" (a maker's own file) costs at most path length times rule length, where ".*" groups could run for minutes.
+export function ruleMatches(rule, path) {
+  const anchored = rule.endsWith("$");
+  const pattern = anchored ? rule.slice(0, -1) : `${rule}*`;
+  let p = 0;
+  let s = 0;
+  let star = -1;
+  let mark = 0;
+  while (s < path.length) {
+    if (p < pattern.length && pattern[p] === "*") {
+      star = p++;
+      mark = s;
+    } else if (p < pattern.length && pattern[p] === path[s]) {
+      p++;
+      s++;
+    } else if (star !== -1) {
+      p = star + 1;
+      s = ++mark;
+    } else return false;
+  }
+  while (p < pattern.length && pattern[p] === "*") p++;
+  return p === pattern.length;
 }
 
 // RFC 9309: groups naming PatchlifeBot replace the "*" groups; the longest matching rule wins, Allow on a tie.
@@ -34,7 +54,7 @@ export function robotsAllows(robotsTxt, path) {
     } else if ((key === "allow" || key === "disallow") && group) {
       // URL paths arrive percent-encoded, so encode non-ASCII in rules the same way before comparing.
       const pattern = match[2].replace(/[^\x00-\x7f]+/gu, encodeURIComponent);
-      if (pattern) group.rules.push({ allow: key === "allow", length: pattern.length, re: ruleRegExp(pattern) });
+      if (pattern) group.rules.push({ allow: key === "allow", length: pattern.length, pattern });
       inAgentLines = false;
     }
   }
@@ -42,7 +62,7 @@ export function robotsAllows(robotsTxt, path) {
   const rules = (ours.length ? ours : groups.filter((g) => g.agents.includes("*"))).flatMap((g) => g.rules);
   let best = null;
   for (const rule of rules) {
-    if (!rule.re.test(path)) continue;
+    if (!ruleMatches(rule.pattern, path)) continue;
     if (!best || rule.length > best.length || (rule.length === best.length && rule.allow)) best = rule;
   }
   return best ? best.allow : true;
@@ -51,7 +71,7 @@ export function robotsAllows(robotsTxt, path) {
 // Returns get(url) -> { url, contentType, text }, with bytes in place of text for a PDF, or throws with the reason (and `status` and the final `url` for HTTP errors).
 // State (robots cache, per-host timing, hosts that asked us to back off) lasts for the fetcher's lifetime.
 // timeoutMs bounds each request; Save Page Now needs longer than a page (scripts/archive-evidence.mjs).
-export function createFetcher({ fetch = globalThis.fetch, now = Date.now, sleep = (ms) => new Promise((r) => setTimeout(r, ms)), timeoutMs = TIMEOUT_MS } = {}) {
+export function createFetcher({ fetch = globalThis.fetch, now = Date.now, sleep = (ms) => new Promise((r) => setTimeout(r, ms)), timeoutMs = TIMEOUT_MS, maxBodyBytes = MAX_BODY_BYTES } = {}) {
   const lastRequest = new Map();
   const robots = new Map();
   const backedOff = new Set();
@@ -104,7 +124,8 @@ export function createFetcher({ fetch = globalThis.fetch, now = Date.now, sleep 
       let entry = { txt: "" };
       try {
         const { res } = await follow(`${origin}/robots.txt`);
-        if (res.ok) entry = { txt: await res.text() };
+        // Read with the same cap as a page, so a robots.txt that inflates without end is refused (and so disallows).
+        if (res.ok) entry = { txt: new TextDecoder().decode(await readBody(res, `${origin}/robots.txt`)) };
         else {
           await res.body?.cancel();
           if (res.status === 429 || res.status >= 500) entry = { unreachable: `HTTP ${res.status}` };
@@ -119,6 +140,18 @@ export function createFetcher({ fetch = globalThis.fetch, now = Date.now, sleep 
     if (!robotsAllows(entry.txt, pathname + search)) throw new Error(`robots.txt disallows ${url}`);
   }
 
+  // The body's bytes, up to maxBodyBytes as fetch hands them over (decompressed); past that the read stops.
+  async function readBody(res, url) {
+    const chunks = [];
+    let size = 0;
+    for await (const chunk of res.body ?? []) {
+      size += chunk.byteLength;
+      if (size > maxBodyBytes) throw new Error(`the page at ${url} is over ${maxBodyBytes} bytes`);
+      chunks.push(chunk);
+    }
+    return Buffer.concat(chunks);
+  }
+
   // Only a 200 is the page: other 2xx codes include bot challenges such as a 202 from a web application firewall.
   return async function get(url) {
     const { url: finalUrl, res } = await follow(url, checkRobots);
@@ -127,7 +160,8 @@ export function createFetcher({ fetch = globalThis.fetch, now = Date.now, sleep 
       throw Object.assign(new Error(`HTTP ${res.status} for ${finalUrl}`), { status: res.status, url: finalUrl });
     }
     const contentType = (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
-    if (contentType === "application/pdf") return { url: finalUrl, contentType, bytes: new Uint8Array(await res.arrayBuffer()) };
-    return { url: finalUrl, contentType, text: await res.text() };
+    const body = await readBody(res, finalUrl);
+    if (contentType === "application/pdf") return { url: finalUrl, contentType, bytes: new Uint8Array(body) };
+    return { url: finalUrl, contentType, text: new TextDecoder().decode(body) };
   };
 }

@@ -56,6 +56,28 @@ export function htmlToText(html) {
   return decodeEntities(stripped);
 }
 
+// The page without what a reader never sees: comments, and script, style, noscript and template elements with their
+// content. The parsers read pages through it (candidates.mjs), so a row in a comment is never a candidate. As in a
+// browser, an unclosed comment or element hides the rest of the page. It scans once, left to right; htmlToText keeps
+// its own expressions, so every page's text and hash stay as they were.
+// Not "<!-->" or "<!--->", which are whole empty comments, nor a custom element such as <template-row>.
+const HIDDEN_START = /<!--(?!-?>)|<(script|style|noscript|template)(?=[\s/>])/gi;
+export function stripHidden(html) {
+  let out = "";
+  let at = 0;
+  HIDDEN_START.lastIndex = 0;
+  for (let start = HIDDEN_START.exec(html); start; start = HIDDEN_START.exec(html)) {
+    // A comment ends at "-->" or "--!>", an element at its end tag, attributes and all, as the HTML standard reads them.
+    const end = start[1] ? new RegExp(`</${start[1]}(?=[\\s/>])[^>]*>`, "gi") : /--!?>/g;
+    end.lastIndex = start.index + start[0].length;
+    const close = end.exec(html);
+    out += html.slice(at, start.index) + (start[1] ? " " : "");
+    at = close ? close.index + close[0].length : html.length;
+    HIDDEN_START.lastIndex = at;
+  }
+  return out + html.slice(at);
+}
+
 export { normalise };
 
 // One page's text in reading order: items on the same baseline form a line, read left to right, and lines run top to

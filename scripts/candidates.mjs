@@ -15,7 +15,7 @@ import { parseArgs } from "node:util";
 import YAML from "yaml";
 import { createFetcher } from "./polite-fetch.mjs";
 import { listYamlFiles, validateDevices, validateSources } from "./validate-data.mjs";
-import { YAML_OUT, normalise, pageText, samePage } from "./verify-evidence.mjs";
+import { YAML_OUT, normalise, pageText, samePage, stripHidden } from "./verify-evidence.mjs";
 import * as asus from "./parsers/asus.mjs";
 import * as ezvizEol from "./parsers/ezviz-eol.mjs";
 import * as glInet from "./parsers/gl-inet.mjs";
@@ -34,7 +34,8 @@ const field = (record, name) => (name in record.support ? record.support[name] :
 const DATE = /\d{4}-\d{2}-\d{2}/g;
 const DEFAULT_LIMIT = 60;
 
-// A new record in the style of the hand-written ones: regions in flow style, dates and quotes double-quoted.
+// A record, new or rewritten, in the style of the hand-written ones: regions in flow style, dates and quotes
+// double-quoted.
 export function recordYaml(record) {
   const doc = new YAML.Document(record);
   doc.get("regions").flow = true;
@@ -84,6 +85,13 @@ export function matchBrand({ urls, brand_slug, profile, candidates, skipped, fla
   const pagesOf = (items) => [...new Set(items.map((item) => item.url))].filter((url) => url in reports);
   const report = (items, list, entry) => pagesOf(items).forEach((url) => reports[url][list].push(entry));
   const out = [];
+  // A candidate with an item that is not in its page's text can't stand as a record, so it fails the gate, whether it
+  // is a new row or would replace a recorded one.
+  const missingItem = (candidate) => candidate.evidence.find((item) => !onPage(item));
+  const unquotable = (candidate, missing) => {
+    report(candidate.evidence, "unquotable", { id: candidate.id, url: missing.url, quote: missing.quote });
+    out.push(`unquotable: ${candidate.id}: ${JSON.stringify(missing.quote)} is not on ${missing.url}`);
+  };
   // A parser's conflict is settled once exception records carry the model (a D33 or D39 split already recorded).
   const exceptionModels = new Set(records.filter((r) => exceptions.has(r.id)).map((r) => normalise(r.model)));
   for (const flag of flags) {
@@ -120,14 +128,22 @@ export function matchBrand({ urls, brand_slug, profile, candidates, skipped, fla
     pagesOf(items).forEach((url) => reports[url].cited++);
     const gone = items.filter((item) => !onPage(item));
     if (gone.length) {
-      // The record's row has changed: the parser's row for the model, if there is one, replaces it (B4).
-      const [candidate] = naming(record).filter((c) => !matched.has(c));
+      // The record's row has changed: the parser's row with the record's own id and model, if there is one, replaces
+      // it (B4). A row that names the record under another model or id is a rename: a rewrite would keep the old model
+      // and id, which the next run's gate refuses, so that row is left to a person.
+      const named = naming(record).filter((c) => !matched.has(c));
+      const [candidate] = named.filter((c) => c.id === record.id && c.model === record.model);
+      const row = candidate ?? named[0];
       const withdrawn = gone[0].quote == null;
-      report(gone, "changed", { id: record.id, ...(withdrawn ? { withdrawn: true } : { quote: gone[0].quote }), ...(candidate ? { parser: candidate.evidence[0].quote } : {}) });
-      if (!candidate) out.push(`changed: ${record.id}: ${withdrawn ? "it has no quote (withdrawn)" : `its quote ${JSON.stringify(gone[0].quote)} is no longer on ${gone[0].url}`} and no row names the model now`);
-      else if (exceptions.has(record.id)) out.push(`changed: ${record.id} is a parser exception, so its changed row ${JSON.stringify(candidate.evidence[0].quote)} is not written`);
+      const was = withdrawn ? "it has no quote (withdrawn)" : `its quote ${JSON.stringify(gone[0].quote)} is no longer on ${gone[0].url}`;
+      report(gone, "changed", { id: record.id, ...(withdrawn ? { withdrawn: true } : { quote: gone[0].quote }), ...(row ? { parser: row.evidence[0].quote } : {}) });
+      const missing = candidate && missingItem(candidate);
+      if (!row) out.push(`changed: ${record.id}: ${was} and no row names the model now`);
+      else if (exceptions.has(record.id)) out.push(`changed: ${record.id} is a parser exception, so its changed row ${JSON.stringify(row.evidence[0].quote)} is not written`);
+      else if (!candidate) out.push(`changed: ${record.id}: ${was}, and the row that names it now gives the model ${JSON.stringify(row.model)} (id ${row.id}): a rename for a person (RUNBOOKS O9)`);
+      else if (missing) unquotable(candidate, missing);
       else proposals.push({ record, candidate, quote: withdrawn ? null : gone[0].quote });
-      if (candidate) matched.add(candidate);
+      if (row) matched.add(row);
       continue;
     }
     const pinned = [...new Set(items.flatMap((item) => (index.get(key(item.url, item.quote))?.length === 1 ? index.get(key(item.url, item.quote)) : [])))];
@@ -147,9 +163,13 @@ export function matchBrand({ urls, brand_slug, profile, candidates, skipped, fla
     if (differences.length && differences.every((d) => d.field === "notes")) {
       // The row is unchanged and only the templated notes have moved on (Google's dated note once a minimum passes):
       // a proposal to regenerate the record, not a parser mismatch.
-      report(items, "changed", { id: record.id, quote: items[0].quote, parser: candidate.evidence[0].quote, notes: true });
-      out.push(`changed: ${record.id}: only the notes differ (record ${JSON.stringify(record.notes ?? null)}, parser ${JSON.stringify(candidate.notes ?? null)})`);
-      proposals.push({ record, candidate, quote: items[0].quote });
+      const missing = missingItem(candidate);
+      if (missing) unquotable(candidate, missing);
+      else {
+        report(items, "changed", { id: record.id, quote: items[0].quote, parser: candidate.evidence[0].quote, notes: true });
+        out.push(`changed: ${record.id}: only the notes differ (record ${JSON.stringify(record.notes ?? null)}, parser ${JSON.stringify(candidate.notes ?? null)})`);
+        proposals.push({ record, candidate, quote: items[0].quote });
+      }
     } else if (differences.length) report(items, "differ", { id: record.id, differences });
     else report(items, "reproduced", record.id);
     if (candidate.id !== record.id) report(items, "idDiffers", { id: record.id, parser: candidate.id });
@@ -163,11 +183,9 @@ export function matchBrand({ urls, brand_slug, profile, candidates, skipped, fla
   for (const candidate of unique) {
     if (matched.has(candidate) || ambiguous.has(candidate.id)) continue;
     const quote = candidate.evidence[0].quote;
-    const missing = candidate.evidence.find((item) => !onPage(item));
-    if (missing) {
-      report(candidate.evidence, "unquotable", { id: candidate.id, url: missing.url, quote: missing.quote });
-      out.push(`unquotable: ${candidate.id}: ${JSON.stringify(missing.quote)} is not on ${missing.url}`);
-    } else if (ids.has(candidate.id) || names(candidate).some((name) => known.has(name))) {
+    const missing = missingItem(candidate);
+    if (missing) unquotable(candidate, missing);
+    else if (ids.has(candidate.id) || names(candidate).some((name) => known.has(name))) {
       report(candidate.evidence, "changed", { id: candidate.id, quote, parser: true });
       out.push(`changed: a second row names the existing record ${candidate.id}: ${JSON.stringify(quote)}`);
     } else {
@@ -194,7 +212,8 @@ export async function runCandidates(devicesDir, { brands = [], sources, parsers 
       pages.set(url, get(url).then(async (fetched) => {
         if (!samePage(url, fetched.url)) throw new Error(`redirected to ${fetched.url}`);
         if (fetched.contentType !== "text/html") throw new Error(`not an HTML page (${fetched.contentType})`);
-        return { html: fetched.text, text: normalise(await pageText({ ...fetched, url })) };
+        // The parsers read the page as the verifier does: a row inside a comment or a script is not on the page.
+        return { html: stripHidden(fetched.text), text: normalise(await pageText({ ...fetched, url })) };
       }));
     }
     return pages.get(url);
@@ -280,7 +299,7 @@ export function format(report) {
     `  parser exceptions, quote on the page: ${report.exceptions.length}`,
     `  fields differ: ${report.differ.length}`,
     `  not reproduced (quote on the page, no candidate matches it): ${report.notReproduced.length}`,
-    `  changed rows (quote no longer on the page, or a second row for an existing record): ${report.changed.length}`,
+    `  changed rows (quote no longer on the page or withdrawn, only the notes differ, or a second row for an existing record): ${report.changed.length}`,
     `  id differs: ${report.idDiffers.length}`,
     `  ambiguous (two rows for one id): ${report.ambiguous.length}`,
     `  candidates with a quote not on its page: ${report.unquotable.length}`,
@@ -307,7 +326,7 @@ export function reportJson({ today, reports, written, flags }) {
   return { today, pages: reports.map(counts), written, flags };
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (import.meta.main) {
   let options;
   try {
     const { values, positionals } = parseArgs({ allowPositionals: true, options: { check: { type: "boolean" }, limit: { type: "string" }, report: { type: "string" } } });

@@ -1,17 +1,19 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import YAML from "yaml";
 import { format, gateDifferences, mismatches, recordYaml, reportJson, rewritten, runCandidates } from "../scripts/candidates.mjs";
+import { htmlToText, stripHidden } from "../scripts/verify-evidence.mjs";
 import { validateDevices, validateSources } from "../scripts/validate-data.mjs";
 import { withdrawRecord } from "../scripts/withdraw-record.mjs";
 import * as asus from "../scripts/parsers/asus.mjs";
 import * as ezviz from "../scripts/parsers/ezviz-eol.mjs";
 import * as glInet from "../scripts/parsers/gl-inet.mjs";
 import * as google from "../scripts/parsers/google.mjs";
+import * as kyocera from "../scripts/parsers/kyocera.mjs";
 import * as tpLink from "../scripts/parsers/tp-link-au.mjs";
 import { EZVIZ_POLICY as POLICY, FIXTURES, GOOGLE_AU, PAGES, RING, fixtureSources } from "./fixtures/parsers/profiles.mjs";
 
@@ -256,7 +258,7 @@ test("a brand whose candidates cite several pages is matched once and counted on
 test("a conflict that exception records already settle is not flagged, and one new row per page counts once in the writes", async () => {
   const { dir, get, read, file } = setup();
   // Record Chime Z's two dates as a D33 split: a UK record and a US one, both parser exceptions.
-  const uk = read("ring", "ring-alarm-keypad-z").replace(/Alarm Keypad Z/g, "Chime Z").replace("ring-alarm-keypad-z", "ring-chime-z").replace("category: other", "category: other").replace('end_date: "2030-12-31"', 'end_date: "2029-12-31"').replace("31 December 2030", "31 December 2029");
+  const uk = read("ring", "ring-alarm-keypad-z").replace(/Alarm Keypad Z/g, "Chime Z").replace("ring-alarm-keypad-z", "ring-chime-z").replace('end_date: "2030-12-31"', 'end_date: "2029-12-31"').replace("31 December 2030", "31 December 2029");
   writeFileSync(file("ring", "ring-chime-z"), uk);
   const us = uk.replace("ring-chime-z", "ring-chime-z-us").replace("regions: [UK]", "regions: [US]").replace('end_date: "2029-12-31"', 'end_date: "2030-12-31"').replace("31 December 2029", "31 December 2030").replaceAll(RING.GB, RING.US).replace("quote: Ring Chime Z 31 December 2030", "quote: Chime Z 31 December 2030");
   writeFileSync(file("ring", "ring-chime-z-us"), us);
@@ -359,4 +361,105 @@ test("gateDifferences compares the seven gate fields, rewritten keeps the record
   assert.deepEqual(rewritten(full, candidate), { id: "x-a", brand: "X", brand_slug: "x", model: "A", aliases: ["XA"], category: "other", regions: ["EU", "UK"], support: candidate.support, evidence: candidate.evidence, verification: { status: "unverified" } });
   const yaml = recordYaml({ id: "x-a", brand: "X", brand_slug: "x", model: "A: B", category: "other", regions: ["EU", "UK"], support: { rule: "years_after_launch", end_date: "2029-06-01", years: 5, anchor_date: "2024-06-01", at_least: true, conditions: null }, evidence: [{ url: "https://x.example/", quote: "A: B June 2029 #1", retrieved: TODAY, regime: "vendor_policy" }], verification: { status: "unverified" }, notes: "Product line: Hubs." });
   assert.equal(yaml, `id: x-a\nbrand: X\nbrand_slug: x\nmodel: "A: B"\ncategory: other\nregions: [EU, UK]\nsupport:\n  rule: years_after_launch\n  end_date: "2029-06-01"\n  years: 5\n  anchor_date: "2024-06-01"\n  at_least: true\n  conditions: null\nevidence:\n  - url: https://x.example/\n    quote: "A: B June 2029 #1"\n    retrieved: "${TODAY}"\n    regime: vendor_policy\nverification:\n  status: unverified\nnotes: "Product line: Hubs."\n`);
+});
+
+test("a changed row whose parser quotes are no longer on the page fails the gate, as a new row does, and nothing is written", async () => {
+  const { dir, get } = setup();
+  await run(dir, { get, brands: ["kyocera"] });
+  // Kyocera drops the sentence that makes every date a minimum, which the parser still quotes.
+  const page = PAGES[kyocera.PAGE].replace(/<p>At no point shall[^<]*<\/p>/, "");
+  assert.notEqual(page, PAGES[kyocera.PAGE]);
+  const { get: getEdited } = setup({ ...PAGES, [kyocera.PAGE]: page });
+  const { reports, written, flags } = await run(dir, { get: getEdited, brands: ["kyocera"] });
+  assert.deepEqual(written, []);
+  assert.ok(reports[0].unquotable.length > 0 && mismatches(reports[0]) > 0, format(reports[0]).join("\n"));
+  assert.ok(flags.some((f) => f.startsWith("unquotable: kyocera-") && f.includes("At no point shall")), flags.join("\n"));
+});
+
+test("a row that names a record under another model is left to a person, so no write fails the next run's gate", async () => {
+  // GL.iNet renames the Velox; the id comes from the model code, so the new row has the record's id.
+  const pages = { ...PAGES, [glInet.PSTI]: PAGES[glInet.PSTI].replace(">Velox (GL-Z200)<", ">Velox Pro (GL-Z200)<") };
+  assert.notEqual(pages[glInet.PSTI], PAGES[glInet.PSTI]);
+  const { dir, get, read } = setup(pages);
+  const before = read("gl-inet", "gl-inet-gl-z200");
+  const { written, flags } = await run(dir, { get, brands: ["gl-inet"] });
+  assert.ok(!written.some((w) => w.id === "gl-inet-gl-z200"), written.map((w) => w.id).join(", "));
+  assert.equal(read("gl-inet", "gl-inet-gl-z200"), before);
+  assert.ok(flags.some((f) => f.startsWith("changed: gl-inet-gl-z200: its quote") && f.endsWith('the row that names it now gives the model "Velox Pro (GL-Z200)" (id gl-inet-gl-z200): a rename for a person (RUNBOOKS O9)')), flags.join("\n"));
+  assert.ok(!flags.some((f) => f.includes("no row names the model now") || f.startsWith("changed: a second row names")), flags.join("\n"));
+  const next = await run(dir, { get, brands: ["gl-inet"], check: true });
+  assert.equal(next.reports.reduce((n, r) => n + mismatches(r), 0), 0);
+});
+
+test("a row in an HTML comment or a script is not read, as the verifier does not read it, so it fails no run", async () => {
+  const row = (model) => `<tr><td><p class="paragraph">Wi-Fi 7 Router</p></td><td><p class="paragraph">${model}</p></td><td><p class="paragraph">31/12/2030 or later*</p></td></tr>`;
+  const hidden = `<!-- ${row("Archer ZX77 V1")} --><script type="text/x-template">${row("Archer ZX78 V1")}</script><template>${row("Archer ZX79 V1")}</template>`;
+  const page = PAGES[tpLink.PAGE].replace("</table>", `${hidden}</table>`);
+  assert.notEqual(page, PAGES[tpLink.PAGE]);
+  const { dir, get } = setup({ ...PAGES, [tpLink.PAGE]: page });
+  const { reports, flags } = await run(dir, { get, brands: ["tp-link"], check: true });
+  assert.equal(mismatches(reports[0]), 0, format(reports[0]).join("\n"));
+  assert.ok(!JSON.stringify({ reports, flags }).match(/ZX7[789]/));
+  // The same row in plain sight is read.
+  const { get: getShown } = setup({ ...PAGES, [tpLink.PAGE]: PAGES[tpLink.PAGE].replace("</table>", `${row("Archer ZX77 V1")}</table>`) });
+  const shown = await run(dir, { get: getShown, brands: ["tp-link"], check: true });
+  assert.ok(shown.reports[0].newRows.some((c) => c.model === "Archer ZX77 (V1)"));
+});
+
+test("after a rename on the open PR's branch, deleting the PR's own record lets the refresh write the renamed row", async () => {
+  // RUNBOOKS O9: the weekly run wrote the renamed model as a record of its own; the owner adds the renames entry.
+  const RENAME = "Video Doorbell 9 Plus (2027 release)";
+  const before = SOURCES.map((s) => (s.brand_slug === "ring" ? { ...s, renames: s.renames.filter((r) => r.from !== RENAME) } : s));
+  const { dir, get, file } = setup();
+  const weekly = await runCandidates(dir, { sources: before, today: TODAY, get, brands: ["ring"], limit: 10 });
+  assert.ok(weekly.written.some((w) => w.id === "ring-video-doorbell-9-plus-2027-release"));
+  // Refreshed as it stands, the PR's own row is a record the parser must reproduce, and the gate fails.
+  const stuck = await run(dir, { get, brands: ["ring"], limit: 10, check: true });
+  assert.ok(stuck.reports.reduce((n, r) => n + mismatches(r), 0) > 0);
+  // With that record deleted first, the refresh writes the row under its renamed model.
+  rmSync(file("ring", "ring-video-doorbell-9-plus-2027-release"));
+  const refresh = await run(dir, { get, brands: ["ring"], limit: 10 });
+  assert.equal(refresh.reports.reduce((n, r) => n + mismatches(r), 0), 0);
+  assert.ok(refresh.written.some((w) => w.id === "ring-video-doorbell-9-plus"), refresh.written.map((w) => w.id).join(", "));
+});
+
+const SENTENCE = "Security updates will address critical issues known to Google Nest that are able to be resolved with a remote software update.";
+
+test("a notes-only regeneration whose parser quote is not on the page fails the gate and writes nothing", async () => {
+  // No new row on the table page, so only the notes path is in play. The records no longer cite the sentence the page
+  // rewords, and their 5-year minimum has passed by the run date, so only their notes differ.
+  const page = PAGES[google.TABLE].replace(/<tr>\s*<td>Google Home Orb<\/td>[\s\S]*?<\/tr>/, "").replace(SENTENCE, "Security updates address critical issues that Google can fix remotely.");
+  const { dir, get, file } = setup({ ...PAGES, [google.TABLE]: page });
+  for (const id of ["google-nest-doorbell-ultra-2nd-gen", "google-chromecast-z", "google-nest-cam-ultra"]) {
+    const text = readFileSync(file("google", id), "utf8");
+    const item = `  - url: ${google.TABLE}\n    quote: "${SENTENCE}"\n`;
+    const at = text.indexOf(item);
+    assert.ok(at > 0, id);
+    writeFileSync(file("google", id), text.slice(0, at) + text.slice(text.indexOf("  - url:", at + item.length)));
+  }
+  const { reports, written } = await runCandidates(dir, { sources: SOURCES, today: "2030-10-02", get, brands: ["google"] });
+  assert.deepEqual(written, []);
+  assert.ok(reports.some((r) => r.unquotable.some((u) => u.id === "google-nest-doorbell-ultra-2nd-gen" && u.quote === SENTENCE)));
+});
+
+test("a withdrawn record whose id the parser does not give is not rewritten when its row is back", async () => {
+  const { dir, get, file } = setup();
+  const text = readFileSync(file("tp-link", "tp-link-archer-zx90-v2"), "utf8").replace("id: tp-link-archer-zx90-v2", "id: tp-link-archer-zx90-v2-au");
+  rmSync(file("tp-link", "tp-link-archer-zx90-v2"));
+  writeFileSync(file("tp-link", "tp-link-archer-zx90-v2-au"), text);
+  withdrawRecord(dir, "tp-link-archer-zx90-v2-au", "a test", { today: TODAY });
+  const before = readFileSync(file("tp-link", "tp-link-archer-zx90-v2-au"), "utf8");
+  const { written } = await run(dir, { get, brands: ["tp-link"], limit: 60 });
+  assert.ok(!written.some((w) => w.id === "tp-link-archer-zx90-v2-au"), written.map((w) => w.id).join(", "));
+  assert.equal(readFileSync(file("tp-link", "tp-link-archer-zx90-v2-au"), "utf8"), before);
+  const next = await run(dir, { get, brands: ["tp-link"], check: true });
+  assert.equal(next.reports.reduce((n, r) => n + mismatches(r), 0), 0);
+});
+
+test("markup a browser shows in full does not hide the rows from the parsers", () => {
+  const table = "<table><tr><td>Archer ZX90 V2</td></tr></table>";
+  for (const before of ["<!-->", "<!--->", "<template-row>", "<style-scope>", "<script-loader>"]) {
+    assert.ok(htmlToText(before + table).includes("Archer"), `verifier, ${before}`);
+    assert.ok(htmlToText(stripHidden(before + table)).includes("Archer"), `parsers, ${before}`);
+  }
 });

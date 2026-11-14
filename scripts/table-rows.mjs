@@ -37,7 +37,8 @@ export function tableRows(html) {
 }
 
 // The rows whose quote the verifier would not find in the page's own text: a cell with a <sup> marker reads fused in
-// the page text, so no quote made of its cells can be verified. Such a row is reported, never recorded.
+// the page text, so no quote made of its cells can be verified. candidates.mjs refuses a candidate made from such a
+// row as unquotable, whether it is a new row or would replace a record.
 export async function rowQuoteProblems(rows, html, url = "page") {
   const text = await pageText({ url, contentType: "text/html", text: html });
   return rows.filter((row) => row.quote && !quoteMatches(row.quote, text)).map((row) => ({ quote: row.quote, reason: "quote not found in the page text" }));

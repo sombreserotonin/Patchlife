@@ -39,7 +39,7 @@ function printRows(rows, indent = "") {
   for (const [key, value] of rows) console.log(`${indent}${key.padEnd(width)}  ${value}`);
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (import.meta.main) {
   const dir = resolve(process.argv[2] ?? join(ROOT, "data/devices"));
   if (!existsSync(dir)) {
     console.error(`${dir}: directory not found`);
