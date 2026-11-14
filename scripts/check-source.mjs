@@ -7,8 +7,6 @@
 // to another page, dates only inside scripts, or content the verifier can't read), with one line saying why; 2 on
 // bad arguments. Reads with the polite fetcher, on a GitHub runner or your own machine.
 // Usage: node scripts/check-source.mjs <url>   (add --use-env-proxy behind an HTTP proxy, D16)
-import { resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { createFetcher } from "./polite-fetch.mjs";
 import { unquotedIn } from "./unquoted-dates.mjs";
 import { CHALLENGE, normalise, pageText, samePage } from "./verify-evidence.mjs";
@@ -79,7 +77,7 @@ export function report(result) {
   return lines;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (import.meta.main) {
   const url = process.argv[2];
   if (process.argv.length !== 3 || !/^https?:\/\//.test(url)) {
     console.error(`Give one http(s) URL.\n${USAGE}`);

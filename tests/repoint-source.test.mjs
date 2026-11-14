@@ -119,3 +119,25 @@ test("the CLI exits 2 with a usage line on bad arguments and 1 when nothing cite
   assert.equal(status, 1);
   assert.equal(stdout, "No evidence item cites https://example.invalid/old\n");
 });
+
+test("a moved record whose new page could not be read is set to unverified, not left with the old page's check", async () => {
+  // acme-router-2 cites the old page and the end-of-life page; the new page answers 503.
+  const { dir, get, read, edit } = setup();
+  edit("acme-router-2", "status: unverified", 'status: verified\n  checked: "2026-09-01"');
+  const down = async (url) => (url === NEW ? Promise.reject(Object.assign(new Error(`HTTP 503 for ${url}`), { status: 503, url })) : get(url));
+  const { results } = await repointSource(dir, OLD, NEW, { get: down, today: TODAY });
+  assert.deepEqual(results.find((r) => r.id === "acme-router-2"), { id: "acme-router-2", outcome: "error", reason: `HTTP 503 for ${NEW}` });
+  const after = read("acme-router-2");
+  assert.match(after, new RegExp(`url: ${NEW}\n`));
+  assert.match(after, /verification:\n  status: unverified\n/);
+  assert.doesNotMatch(after, /checked: "2026-09-01"/);
+  assert.deepEqual(validateDevices(dir, { today: TODAY, sources: SOURCES }).errors, []);
+});
+
+test("the CLI stops before fetching when the registry keys a profile setting by the old URL", () => {
+  const page = "https://www.kyoceradocumentsolutions.co.uk/en/support/product-security.html";
+  const { status, stdout, stderr } = spawnSync(process.execPath, [SCRIPT, "--dry-run", page, `${page}?moved`], { encoding: "utf8" });
+  assert.equal(status, 2, stdout + stderr);
+  assert.match(stderr, /^The source registry keys these settings by the old URL: kyocera regions_by_url, kyocera conditions, kyocera notes, kyocera min_rows\. Key them by the new URL/);
+  assert.equal(stdout, "");
+});

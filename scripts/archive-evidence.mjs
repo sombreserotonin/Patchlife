@@ -61,7 +61,7 @@ export async function archiveEvidence(devicesDir, { urls = [], limit = Infinity,
   return results;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (import.meta.main) {
   let options;
   try {
     const { values, positionals } = parseArgs({ allowPositionals: true, options: { limit: { type: "string" } } });

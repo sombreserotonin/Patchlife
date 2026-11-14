@@ -65,7 +65,7 @@ export function sampleLines(devicesDir, ids) {
   });
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (import.meta.main) {
   const [pr, ...named] = process.argv.slice(2);
   if (!/^\d+$/.test(pr ?? "")) {
     console.error(`Give the PR number first.\n${USAGE}`);
