@@ -371,3 +371,10 @@ test("Grandstream: only the date forms the validator finds in a quote are read",
   assert.deepEqual(candidates.map((c) => c.support.end_date), ["2028-12-31", "2031-01-23"]);
   for (const c of candidates) assert.ok(mentionsDate(c.evidence[0].quote, c.support.end_date), c.evidence[0].quote);
 });
+
+test("ASUS: a row dated 1th December is skipped, though the note's 31th December holds the same letters", () => {
+  const html = "<table><tr><td><p>RT-ZQ77</p></td><td>4 years (until 1th December 2030)</td></tr></table>";
+  const { candidates, skipped } = asus.parse({ html, profile: profile("asus"), today: TODAY });
+  assert.deepEqual(candidates.map((c) => c.model), []);
+  assert.equal(skipped.length, 1);
+});

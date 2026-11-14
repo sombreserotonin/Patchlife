@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import YAML from "yaml";
 import { format, gateDifferences, mismatches, recordYaml, reportJson, rewritten, runCandidates } from "../scripts/candidates.mjs";
+import { htmlToText, stripHidden } from "../scripts/verify-evidence.mjs";
 import { validateDevices, validateSources } from "../scripts/validate-data.mjs";
 import { withdrawRecord } from "../scripts/withdraw-record.mjs";
 import * as asus from "../scripts/parsers/asus.mjs";
@@ -384,8 +385,8 @@ test("a row that names a record under another model is left to a person, so no w
   const { written, flags } = await run(dir, { get, brands: ["gl-inet"] });
   assert.ok(!written.some((w) => w.id === "gl-inet-gl-z200"), written.map((w) => w.id).join(", "));
   assert.equal(read("gl-inet", "gl-inet-gl-z200"), before);
-  assert.ok(flags.some((f) => f.startsWith("changed: gl-inet-gl-z200: its quote") && f.endsWith("no row names the model now")), flags.join("\n"));
-  assert.ok(flags.some((f) => f.startsWith("changed: a second row names the existing record gl-inet-gl-z200: ")), flags.join("\n"));
+  assert.ok(flags.some((f) => f.startsWith("changed: gl-inet-gl-z200: its quote") && f.endsWith('the row that names it now gives the model "Velox Pro (GL-Z200)" (id gl-inet-gl-z200): a rename for a person (RUNBOOKS O9)')), flags.join("\n"));
+  assert.ok(!flags.some((f) => f.includes("no row names the model now") || f.startsWith("changed: a second row names")), flags.join("\n"));
   const next = await run(dir, { get, brands: ["gl-inet"], check: true });
   assert.equal(next.reports.reduce((n, r) => n + mismatches(r), 0), 0);
 });
@@ -420,4 +421,45 @@ test("after a rename on the open PR's branch, deleting the PR's own record lets 
   const refresh = await run(dir, { get, brands: ["ring"], limit: 10 });
   assert.equal(refresh.reports.reduce((n, r) => n + mismatches(r), 0), 0);
   assert.ok(refresh.written.some((w) => w.id === "ring-video-doorbell-9-plus"), refresh.written.map((w) => w.id).join(", "));
+});
+
+const SENTENCE = "Security updates will address critical issues known to Google Nest that are able to be resolved with a remote software update.";
+
+test("a notes-only regeneration whose parser quote is not on the page fails the gate and writes nothing", async () => {
+  // No new row on the table page, so only the notes path is in play. The records no longer cite the sentence the page
+  // rewords, and their 5-year minimum has passed by the run date, so only their notes differ.
+  const page = PAGES[google.TABLE].replace(/<tr>\s*<td>Google Home Orb<\/td>[\s\S]*?<\/tr>/, "").replace(SENTENCE, "Security updates address critical issues that Google can fix remotely.");
+  const { dir, get, file } = setup({ ...PAGES, [google.TABLE]: page });
+  for (const id of ["google-nest-doorbell-ultra-2nd-gen", "google-chromecast-z", "google-nest-cam-ultra"]) {
+    const text = readFileSync(file("google", id), "utf8");
+    const item = `  - url: ${google.TABLE}\n    quote: "${SENTENCE}"\n`;
+    const at = text.indexOf(item);
+    assert.ok(at > 0, id);
+    writeFileSync(file("google", id), text.slice(0, at) + text.slice(text.indexOf("  - url:", at + item.length)));
+  }
+  const { reports, written } = await runCandidates(dir, { sources: SOURCES, today: "2030-10-02", get, brands: ["google"] });
+  assert.deepEqual(written, []);
+  assert.ok(reports.some((r) => r.unquotable.some((u) => u.id === "google-nest-doorbell-ultra-2nd-gen" && u.quote === SENTENCE)));
+});
+
+test("a withdrawn record whose id the parser does not give is not rewritten when its row is back", async () => {
+  const { dir, get, file } = setup();
+  const text = readFileSync(file("tp-link", "tp-link-archer-zx90-v2"), "utf8").replace("id: tp-link-archer-zx90-v2", "id: tp-link-archer-zx90-v2-au");
+  rmSync(file("tp-link", "tp-link-archer-zx90-v2"));
+  writeFileSync(file("tp-link", "tp-link-archer-zx90-v2-au"), text);
+  withdrawRecord(dir, "tp-link-archer-zx90-v2-au", "a test", { today: TODAY });
+  const before = readFileSync(file("tp-link", "tp-link-archer-zx90-v2-au"), "utf8");
+  const { written } = await run(dir, { get, brands: ["tp-link"], limit: 60 });
+  assert.ok(!written.some((w) => w.id === "tp-link-archer-zx90-v2-au"), written.map((w) => w.id).join(", "));
+  assert.equal(readFileSync(file("tp-link", "tp-link-archer-zx90-v2-au"), "utf8"), before);
+  const next = await run(dir, { get, brands: ["tp-link"], check: true });
+  assert.equal(next.reports.reduce((n, r) => n + mismatches(r), 0), 0);
+});
+
+test("markup a browser shows in full does not hide the rows from the parsers", () => {
+  const table = "<table><tr><td>Archer ZX90 V2</td></tr></table>";
+  for (const before of ["<!-->", "<!--->", "<template-row>", "<style-scope>", "<script-loader>"]) {
+    assert.ok(htmlToText(before + table).includes("Archer"), `verifier, ${before}`);
+    assert.ok(htmlToText(stripHidden(before + table)).includes("Archer"), `parsers, ${before}`);
+  }
 });

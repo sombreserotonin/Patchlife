@@ -130,16 +130,20 @@ export function matchBrand({ urls, brand_slug, profile, candidates, skipped, fla
     if (gone.length) {
       // The record's row has changed: the parser's row with the record's own id and model, if there is one, replaces
       // it (B4). A row that names the record under another model or id is a rename: a rewrite would keep the old model
-      // and id, which the next run's gate refuses, so that row is left to a person as a second row for the record.
-      const [candidate] = naming(record).filter((c) => !matched.has(c) && c.id === record.id && c.model === record.model);
+      // and id, which the next run's gate refuses, so that row is left to a person.
+      const named = naming(record).filter((c) => !matched.has(c));
+      const [candidate] = named.filter((c) => c.id === record.id && c.model === record.model);
+      const row = candidate ?? named[0];
       const withdrawn = gone[0].quote == null;
-      report(gone, "changed", { id: record.id, ...(withdrawn ? { withdrawn: true } : { quote: gone[0].quote }), ...(candidate ? { parser: candidate.evidence[0].quote } : {}) });
+      const was = withdrawn ? "it has no quote (withdrawn)" : `its quote ${JSON.stringify(gone[0].quote)} is no longer on ${gone[0].url}`;
+      report(gone, "changed", { id: record.id, ...(withdrawn ? { withdrawn: true } : { quote: gone[0].quote }), ...(row ? { parser: row.evidence[0].quote } : {}) });
       const missing = candidate && missingItem(candidate);
-      if (!candidate) out.push(`changed: ${record.id}: ${withdrawn ? "it has no quote (withdrawn)" : `its quote ${JSON.stringify(gone[0].quote)} is no longer on ${gone[0].url}`} and no row names the model now`);
-      else if (exceptions.has(record.id)) out.push(`changed: ${record.id} is a parser exception, so its changed row ${JSON.stringify(candidate.evidence[0].quote)} is not written`);
+      if (!row) out.push(`changed: ${record.id}: ${was} and no row names the model now`);
+      else if (exceptions.has(record.id)) out.push(`changed: ${record.id} is a parser exception, so its changed row ${JSON.stringify(row.evidence[0].quote)} is not written`);
+      else if (!candidate) out.push(`changed: ${record.id}: ${was}, and the row that names it now gives the model ${JSON.stringify(row.model)} (id ${row.id}): a rename for a person (RUNBOOKS O9)`);
       else if (missing) unquotable(candidate, missing);
       else proposals.push({ record, candidate, quote: withdrawn ? null : gone[0].quote });
-      if (candidate) matched.add(candidate);
+      if (row) matched.add(row);
       continue;
     }
     const pinned = [...new Set(items.flatMap((item) => (index.get(key(item.url, item.quote))?.length === 1 ? index.get(key(item.url, item.quote)) : [])))];

@@ -60,7 +60,8 @@ export function htmlToText(html) {
 // content. The parsers read pages through it (candidates.mjs), so a row in a comment is never a candidate. As in a
 // browser, an unclosed comment or element hides the rest of the page. It scans once, left to right; htmlToText keeps
 // its own expressions, so every page's text and hash stay as they were.
-const HIDDEN_START = /<!--|<(script|style|noscript|template)\b/gi;
+// Not "<!-->" or "<!--->", which are whole empty comments, nor a custom element such as <template-row>.
+const HIDDEN_START = /<!--(?!-?>)|<(script|style|noscript|template)(?=[\s/>])/gi;
 export function stripHidden(html) {
   let out = "";
   let at = 0;

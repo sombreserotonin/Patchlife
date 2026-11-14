@@ -34,7 +34,8 @@ export function parse({ html, url = PAGE, profile, today = new Date().toISOStrin
     // The profile's last note says how the page writes the date, and only its year is filled in, so a row that writes
     // another day or month is skipped rather than given a note that misstates it.
     const writtenAs = fill(dateNote, { year: date[4] });
-    if (!writtenAs.includes(date[1])) {
+    // With the space, "1th December 2030" is not found inside "31th December 2030".
+    if (!writtenAs.includes(` ${date[1]}`)) {
       skipped.push({ quote: row.quote, reason: `"${date[1]}" is not the date the profile's note describes ("${writtenAs}")` });
       continue;
     }
