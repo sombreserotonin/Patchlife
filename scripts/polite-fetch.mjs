@@ -73,6 +73,7 @@ export function robotsAllows(robotsTxt, path) {
 // timeoutMs bounds each request; Save Page Now needs longer than a page (scripts/archive-evidence.mjs).
 export function createFetcher({ fetch = globalThis.fetch, now = Date.now, sleep = (ms) => new Promise((r) => setTimeout(r, ms)), timeoutMs = TIMEOUT_MS, maxBodyBytes = MAX_BODY_BYTES } = {}) {
   const lastRequest = new Map();
+  const turns = new Map();
   const robots = new Map();
   const backedOff = new Set();
 
@@ -88,9 +89,19 @@ export function createFetcher({ fetch = globalThis.fetch, now = Date.now, sleep 
     const host = new URL(url).host;
     if (backedOff.has(host)) throw new Error(`${host} asked us to back off`);
     for (let attempt = 1; ; attempt++) {
-      const wait = (lastRequest.get(host) ?? -Infinity) + MIN_GAP_MS - now();
-      if (wait > 0) await sleep(wait);
-      lastRequest.set(host, now());
+      // Requests to one host take turns: each waits until the one before it is sent, then a second from then, so
+      // calls made at once are spaced as calls made one after another (audit 2026-11-14, fetchers L1).
+      const previous = turns.get(host);
+      let sent;
+      turns.set(host, new Promise((resolve) => (sent = resolve)));
+      try {
+        await previous;
+        const wait = (lastRequest.get(host) ?? -Infinity) + MIN_GAP_MS - now();
+        if (wait > 0) await sleep(wait);
+        lastRequest.set(host, now());
+      } finally {
+        sent();
+      }
       const res = await fetch(url, { headers: { "user-agent": USER_AGENT }, redirect: "manual", signal: AbortSignal.timeout(timeoutMs) });
       if (res.status !== 429 && res.status !== 503) return res;
       const seconds = retrySeconds(res, attempt);

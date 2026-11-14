@@ -118,6 +118,26 @@ test("robots.txt is fetched once per origin and requests to one host are a secon
   ]);
 });
 
+// Audit 2026-11-14, fetchers L1: calls made at once for one host computed the same wait and went out together. These
+// timers run side by side, as real ones do: each sleep ends at the time it started plus its length.
+test("requests started at once for one host still go out a second apart", async () => {
+  let t = 0;
+  const at = [];
+  const fetch = async (url) => {
+    at.push(t);
+    return url.endsWith("/robots.txt") ? new Response("", { status: 404 }) : new Response("ok", { headers: { "content-type": "text/html" } });
+  };
+  const sleep = (ms) => {
+    const end = t + ms;
+    return new Promise((resolve) => setTimeout(() => { t = Math.max(t, end); resolve(); }, 0));
+  };
+  const get = createFetcher({ fetch, now: () => t, sleep });
+  await get("https://a.test/0");
+  const pages = await Promise.all([get("https://a.test/1"), get("https://a.test/2"), get("https://a.test/3")]);
+  assert.deepEqual(pages.map((page) => page.text), ["ok", "ok", "ok"]);
+  for (let i = 1; i < at.length; i++) assert.ok(at[i] - at[i - 1] >= 1000, `requests at ${at.join(", ")} ms`);
+});
+
 test("429 and 503 are retried after Retry-After, or 5 then 10 seconds", async () => {
   const { get, sleeps } = setup({
     "https://a.test/p": [reply("", 429, { "retry-after": "2" }), reply("", 503), reply("ok")],

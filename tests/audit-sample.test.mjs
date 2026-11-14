@@ -60,10 +60,11 @@ test("with no ids, the records are those changed since the branch left main, not
   assert.deepEqual(changedIds(git("diff", "--name-only", "main", "--", "data/devices").split("\n")), ["acme-cam-1", "acme-cam-2", "acme-cam-3"]);
 });
 
-test("each line gives the id, brand and model, end date or rule, and the first quote highlighted on its page", () => {
+test("each line gives the id, brand and model, end date or rule, and each cited page with its quotes highlighted", () => {
   assert.deepEqual(sampleLines(VALID, ["acme-cam-1", "acme-plug-3", "acme-hub-4", "acme-nope"]), [
     "acme-cam-1\tAcme Cam 1\t2029-06-30\thttps://example.com/acme/security#:~:text=Acme%20Cam%201%2030%20June%202029",
-    "acme-plug-3\tAcme Plug 3\tyears_after_eol\thttps://example.com/acme/psti#:~:text=The%20defined%20support%20period%20will%20end%203%20years%20after%20the%20product's%20end%2Dof%2Dlife%20date.",
+    // Both of the record's quotes from the page are highlighted, the period and the sentence naming the model.
+    "acme-plug-3\tAcme Plug 3\tyears_after_eol\thttps://example.com/acme/psti#:~:text=The%20defined%20support%20period%20will%20end%203%20years%20after%20the%20product's%20end%2Dof%2Dlife%20date.&text=This%20statement%20covers%20Acme%20Plug%203.",
     // A none_published record has no quote to highlight, so its page is linked plain.
     "acme-hub-4\tAcme Hub 4\tnone_published\thttps://example.com/acme/hub-4",
     "acme-nope\tno record with this id",

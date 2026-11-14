@@ -318,11 +318,24 @@ export function pickSample(records, seed, n = 5) {
     .map(({ record }) => record);
 }
 
-// The page with the quote highlighted (a text fragment). "-", "," and "&" split a text directive into its parts, so
-// they are escaped; so are brackets, which would end a Markdown link.
-export function highlightLink(url, quote) {
-  const text = encodeURIComponent(quote).replace(/[-()]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
-  return `${url}${url.includes("#") ? "" : "#"}:~:text=${text}`;
+// The page with each quote highlighted (text fragments: one text directive per quote, joined by "&"). "-", "," and
+// "&" split a text directive into its parts, so they are escaped; so are brackets, which would end a Markdown link.
+export function highlightLink(url, ...quotes) {
+  const escape = (quote) => encodeURIComponent(quote).replace(/[-()]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
+  return `${url}${url.includes("#") ? "" : "#"}:~:${quotes.map((quote) => `text=${escape(quote)}`).join("&")}`;
+}
+
+// One link per page a record cites, in the order of its evidence, each highlighting every quote cited from that
+// page, so the "at least" sentence and every region's row are shown too (audit 2026-11-14, ops-scripts L6). A page
+// cited with no quote is linked plain.
+export function highlightLinks(evidence) {
+  const pages = new Map();
+  for (const item of evidence) {
+    const quotes = pages.get(item.url) ?? [];
+    if (item.quote && !quotes.includes(item.quote)) quotes.push(item.quote);
+    pages.set(item.url, quotes);
+  }
+  return [...pages].map(([url, quotes]) => (quotes.length ? highlightLink(url, ...quotes) : url));
 }
 
 const markdown = (text) => text.replace(/[\\`*_[\]<>|]/g, "\\$&");
@@ -347,8 +360,9 @@ export function summaryText(state, dataReportLines, sample) {
   lines.push("", "Measures, from `node scripts/data-report.mjs`:", "```", ...dataReportLines, "```", "");
   lines.push("Spot check: compare each record with the highlighted words on the maker's page.");
   for (const record of sample) {
-    const { url, quote } = record.evidence[0];
-    lines.push(`- [${markdown(`${record.brand} ${record.model}`)}](${site}devices/${record.id}/): [maker's page](${highlightLink(url, quote)})`);
+    // Each target in angle brackets, so a ")" in a cited URL can't end the link and leave the rest as text.
+    const links = highlightLinks(record.evidence).map((link, i) => `[${i ? `page ${i + 1}` : "maker's page"}](<${link}>)`);
+    lines.push(`- [${markdown(`${record.brand} ${record.model}`)}](${site}devices/${record.id}/): ${links.join(", ")}`);
   }
   return lines.join("\n");
 }
