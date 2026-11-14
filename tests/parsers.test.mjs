@@ -193,7 +193,12 @@ test("the Ring parser merges a model's rows across the three pages, in page orde
   assert.equal(candidates.find((c) => c.id === "ring-beacon-z").category, "other");
   // Different dates on different pages are a D33 split: flagged with the model, both rows skipped, nothing recorded.
   assert.ok(!candidates.some((c) => c.model === "Chime Z"));
-  assert.deepEqual(flags, [{ model: "Chime Z", text: "conflict: Ring's pages give different dates for Chime Z (UK 2029-12-31, US 2030-12-31), a D33 split for a person to record" }]);
+  assert.deepEqual(flags, [{
+    model: "Chime Z",
+    // Each page's row, so candidates.mjs can tell a split already recorded from a later row (audit record-writers L1).
+    sides: [{ url: RING.GB, quote: "Ring Chime Z 31 December 2029" }, { url: RING.US, quote: "Chime Z 31 December 2030" }],
+    text: "conflict: Ring's pages give different dates for Chime Z (UK 2029-12-31, US 2030-12-31), a D33 split for a person to record",
+  }]);
   assert.deepEqual(skipped, [
     { url: RING.GB, quote: "Chime Q TBC", reason: '"TBC" is not a day, month and year' },
     { url: RING.US, quote: "Ring Widget Z 31 December 2030", reason: 'no category_map entry matches "Widget Z"' },
@@ -291,7 +296,14 @@ test("the GL.iNet parser reads the PSTI minimums and the firmware table's Mainte
     notes: "GL.iNet's firmware versions table (columns Status, EOL Date, Supported Until; page names no region) gives EOL date Oct 10th, 2024 and Supported Until Oct 10th, 2026, recorded as GLOBAL (D24).",
   });
   assert.equal(candidates.length, 3);
-  assert.deepEqual(flags, [{ model: "Ferret (GL-Z100)", text: "conflict: GL.iNet's pages both list Ferret (GL-Z100): the PSTI table gives 2027-06-11 or later, the firmware table Supported Until 2028-06-08, a D39 case for a person to record" }]);
+  assert.deepEqual(flags, [{
+    model: "Ferret (GL-Z100)",
+    sides: [
+      { url: glInet.PSTI, quote: "Ferret (GL-Z100) June 11, 2027 or later*" },
+      { url: glInet.ENDED, quote: "GL-Z100 4.3.25 Native OpenWrt 22.03.4 Maintenance June 9, 2026 June 8, 2028" },
+    ],
+    text: "conflict: GL.iNet's pages both list Ferret (GL-Z100): the PSTI table gives 2027-06-11 or later, the firmware table Supported Until 2028-06-08, a D39 case for a person to record",
+  }]);
   assert.deepEqual(skipped.map((s) => s.reason), [
     '"TBC" does not end with the profile\'s at-least phrase',
     '"Feb 30, 2028 or later*" does not start with a month, day and year',

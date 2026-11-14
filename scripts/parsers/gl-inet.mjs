@@ -132,7 +132,8 @@ export function parse({ pages: read, profile, today = new Date().toISOString().s
   for (const id of onBoth) {
     const a = psti.candidates.find((c) => c.id === id);
     const b = ended.candidates.find((c) => c.id === id);
-    flags.push({ model: a.model, text: `conflict: GL.iNet's pages both list ${a.model}: the PSTI table gives ${a.support.end_date} or later, the firmware table Supported Until ${b.support.end_date}, a D39 case for a person to record` });
+    const sides = [a, b].map((c) => ({ url: c.evidence[0].url, quote: c.evidence[0].quote }));
+    flags.push({ model: a.model, sides, text: `conflict: GL.iNet's pages both list ${a.model}: the PSTI table gives ${a.support.end_date} or later, the firmware table Supported Until ${b.support.end_date}, a D39 case for a person to record` });
   }
   return { candidates, skipped, flags, rows };
 }

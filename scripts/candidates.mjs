@@ -92,11 +92,18 @@ export function matchBrand({ urls, brand_slug, profile, candidates, skipped, fla
     report(candidate.evidence, "unquotable", { id: candidate.id, url: missing.url, quote: missing.quote });
     out.push(`unquotable: ${candidate.id}: ${JSON.stringify(missing.quote)} is not on ${missing.url}`);
   };
-  // A parser's conflict is settled once exception records carry the model (a D33 or D39 split already recorded).
-  const exceptionModels = new Set(records.filter((r) => exceptions.has(r.id)).map((r) => normalise(r.model)));
+  // A parser's conflict is settled once exception records quote every side of it: each page's row contains a quote
+  // an exception record cites from that page (a D33 or D39 split already recorded). What a record cites from a table
+  // page is a dated row or a whole sentence, so a row that appears later with another date contains none of them, and
+  // its conflict shows even for a model whose record is an exception for its notes alone. A flag without sides shows.
+  const exceptionQuotes = new Map();
+  for (const r of records.filter((record) => exceptions.has(record.id))) {
+    for (const item of r.evidence) if (item.quote && normalise(item.quote)) exceptionQuotes.set(item.url, [...(exceptionQuotes.get(item.url) ?? []), normalise(item.quote)]);
+  }
+  const settled = (flag) => Array.isArray(flag.sides) && flag.sides.length > 0 && flag.sides.every((side) => (exceptionQuotes.get(side.url) ?? []).some((quote) => normalise(side.quote).includes(quote)));
   for (const flag of flags) {
     if (typeof flag === "string") out.push(flag);
-    else if (!exceptionModels.has(normalise(flag.model))) out.push(flag.text);
+    else if (!settled(flag)) out.push(flag.text);
   }
 
   // Identical rows (a page may list a model twice) collapse into one candidate. Two different rows for one id are
@@ -142,7 +149,12 @@ export function matchBrand({ urls, brand_slug, profile, candidates, skipped, fla
       else if (exceptions.has(record.id)) out.push(`changed: ${record.id} is a parser exception, so its changed row ${JSON.stringify(row.evidence[0].quote)} is not written`);
       else if (!candidate) out.push(`changed: ${record.id}: ${was}, and the row that names it now gives the model ${JSON.stringify(row.model)} (id ${row.id}): a rename for a person (RUNBOOKS O9)`);
       else if (missing) unquotable(candidate, missing);
-      else proposals.push({ record, candidate, quote: withdrawn ? null : gone[0].quote });
+      else {
+        // The PR's change table shows dates and conditions, not regions, so a rewrite that loses one says so here.
+        const dropped = record.regions.filter((region) => !candidate.regions.includes(region));
+        if (dropped.length) out.push(`changed: ${record.id}: the rewrite drops the region(s) ${dropped.join(", ")}, where no row names ${record.model} now: check the record against the pages (RUNBOOKS O9)`);
+        proposals.push({ record, candidate, quote: withdrawn ? null : gone[0].quote });
+      }
       if (row) matched.add(row);
       continue;
     }

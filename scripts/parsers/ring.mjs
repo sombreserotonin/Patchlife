@@ -95,8 +95,8 @@ function renameItems(profile, model, parsed, today) {
 }
 
 // Candidate records merged across the pages (regions and evidence in page order), the rows skipped, the flags for a
-// person (a D33 conflict carries its model, so candidates.mjs can drop one that exception records already settle) and
-// the data rows read per page.
+// person (a D33 conflict carries its model and each page's row, so candidates.mjs can drop one that exception records
+// already settle) and the data rows read per page.
 export function parse({ pages: read, profile, today = new Date().toISOString().slice(0, 10) }) {
   const parsed = read.map((p) => p.url);
   const perPage = read.map(({ url, html }) => parsePage({ html, url, profile, today }));
@@ -110,7 +110,8 @@ export function parse({ pages: read, profile, today = new Date().toISOString().s
     const dates = new Set(parts.map((c) => c.support.end_date));
     if (dates.size > 1) {
       const where = parts.map((c) => `${c.regions.join("/")} ${c.support.end_date}`).join(", ");
-      flags.push({ model, text: `conflict: Ring's pages give different dates for ${model} (${where}), a D33 split for a person to record` });
+      const sides = parts.map((c) => ({ url: c.evidence[0].url, quote: c.evidence[0].quote }));
+      flags.push({ model, sides, text: `conflict: Ring's pages give different dates for ${model} (${where}), a D33 split for a person to record` });
       for (const c of parts) skipped.push({ url: c.evidence[0].url, quote: c.evidence[0].quote, reason: `different dates on different pages for ${model} (D33)` });
       continue;
     }
