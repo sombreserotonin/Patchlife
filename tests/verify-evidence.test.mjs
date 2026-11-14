@@ -486,7 +486,6 @@ test("the CLI rejects a missing or too large option value with one line and exit
   }
 });
 
-<<<<<<< HEAD
 test("stripHidden removes comments and hidden elements, an unclosed one to the end, and changes no page's text", () => {
   assert.equal(stripHidden("a<!-- b -->c<script>d</script>e<TEMPLATE><tr><td>f</td></tr></Template >g"), "ac e g");
   assert.equal(stripHidden("a<!-- b"), "a");
@@ -499,7 +498,8 @@ test("stripHidden removes comments and hidden elements, an unclosed one to the e
     const html = readFileSync(join(dir, name), "utf8");
     assert.equal(htmlToText(stripHidden(html)), htmlToText(html), name);
   }
-=======
+});
+
 // A web application firewall can answer 200 with a challenge page. acme-cam-1 is verified, and its quote is not on the
 // wall, so reading the wall as the page would mark it, and every record citing the page, stale.
 test("verifyDevices leaves a verified record unchanged when its page is a bot wall served as a 200", async () => {
@@ -524,5 +524,4 @@ test("a page that only mentions a challenge phrase still verifies when its quote
   const { results } = await verifyDevices(dir, { get: noisy, today: TODAY, ids: ["acme-leap-5"] });
   assert.deepEqual(results, [{ id: "acme-leap-5", outcome: "verified" }]);
   assert.match(read("acme-leap-5"), /status: verified/);
->>>>>>> origin/main
 });
