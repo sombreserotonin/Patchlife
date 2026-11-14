@@ -46,9 +46,17 @@ function decodeEntities(text) {
 const INLINE_TAGS = /<\/?(?:a|abbr|b|cite|code|em|font|i|mark|q|s|small|strong|sub|sup|time|u|wbr)(?=[\s/>])[^>]*>/gi;
 
 // What a reader never sees: comments, and the content of script, style, noscript and template elements. The parsers
-// read the page with these removed too (candidates.mjs), so a row in a comment is never a candidate.
+// read the page with these removed too (candidates.mjs), so a row in a comment is never a candidate. Removing one can
+// join the text around it into another ("<!-<!-- -->- x -->"), so it repeats until nothing changes; a real page
+// needs one round.
 export function stripHidden(html) {
-  return html.replace(/<!--[\s\S]*?-->/g, "").replace(/<(script|style|noscript|template)\b[\s\S]*?<\/\1\s*>/gi, " ");
+  let text = html;
+  let previous;
+  do {
+    previous = text;
+    text = text.replace(/<!--[\s\S]*?-->/g, "").replace(/<(script|style|noscript|template)\b[\s\S]*?<\/\1\s*>/gi, " ");
+  } while (text !== previous);
+  return text;
 }
 
 export function htmlToText(html) {

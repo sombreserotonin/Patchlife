@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { htmlToText, normalise, pageReport, pageText, pdfToText, quoteMatches, selectRecords, verifyDevices, verifyRecord } from "../scripts/verify-evidence.mjs";
+import { htmlToText, normalise, pageReport, pageText, pdfToText, quoteMatches, selectRecords, stripHidden, verifyDevices, verifyRecord } from "../scripts/verify-evidence.mjs";
 import { validateDevices, validateSources } from "../scripts/validate-data.mjs";
 
 // The registry the valid fixtures follow: the alias AC-1 of acme-cam-1 comes from its rename table (rule R1).
@@ -484,4 +484,10 @@ test("the CLI rejects a missing or too large option value with one line and exit
     assert.equal(run.status, 2, run.stderr);
     assert.match(run.stderr, /^[^\n]*--due[^\n]*\n$/);
   }
+});
+
+test("stripHidden removes comments and hidden elements, also where removing one forms another", () => {
+  assert.equal(stripHidden("a<!-- b -->c<script>d</script>e<template><tr><td>f</td></tr></template>g"), "ac e g");
+  assert.equal(stripHidden("a<!-<!-- -->- b -->c"), "ac");
+  assert.equal(htmlToText("<p>a</p><!-- <p>b</p> --><p>c</p>"), " a  c ");
 });
