@@ -197,7 +197,7 @@ All of it lands by 4 Nov, because Max ends on 19 Nov (D46) and the shadow fortni
     - opens the measures PR when `date -u +%d` is `01`;
     - posts the summary when `date -u +%u` is `7`.
   - **`reverify.yml`:**
-    - mints the App token and passes it to `actions/checkout` as `token:`, because a push made with `GITHUB_TOKEN` triggers no CI;
+    - mints the App token for the push, because a push made with `GITHUB_TOKEN` triggers no CI (since 14 Nov 2026 the checkout keeps no token, and only the push command gets it);
     - opens its own PR through `gh api`;
     - gains `due` and `limit` inputs, with a default of `--limit 1000`;
     - turns "Flag records that could not be checked" into a `::warning::`, keeping the step name "Push verification changes" and the annotation title "Records not checked", which the watchdog reads;
@@ -308,7 +308,7 @@ All of it lands by 4 Nov, because Max ends on 19 Nov (D46) and the shadow fortni
 - **P3 (protected, after B4 and B5). First part merged 27 Oct (#140: `owner-tools.yml` and the CLAUDE.md lines for the owner's scripts); the second part, below, merged 2 Nov (#165):**
   - **A new `data-refresh.yml`:**
     - its weekly schedule (`17 16 * * 0`) acts only when the variable `DATA_REFRESH` is `on`, which you switch on in Stage 2. So it never doubles up with the nightly `Crawl` task, which hits the same hosts at 14:17 UTC;
-    - mints the App token for checkout, push and PR;
+    - mints the App token for the push and the PR (the checkout keeps none since 14 Nov 2026);
     - restores `page-hashes.json` before committing, so it never conflicts with re-verify;
     - skips while the last candidate PR is open. The exception is a dispatch with `refresh_open_pr: true`, which re-runs the parsers on that PR's branch and pushes a new commit, never a force-push;
     - writes a PR body with a change table, flags, highlight links and the `unquoted-dates.mjs` output.
