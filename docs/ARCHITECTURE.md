@@ -7,6 +7,7 @@
 
 ## Decided later (recorded in [`DECISIONS.md`](DECISIONS.md))
 - Static site generator and hosting (M2). Decided 21 Oct 2026 (P2, D28): a plain Node ESM build script (`scripts/build-site.mjs`, no new dependency) and GitHub Pages deployed from Actions (no account, token or secret), with a hand-written search over a JSON index and Lighthouse for the exit checks. Paid services (M6) are hosted off Pages, on the owner's Unraid server behind the owner's Pangolin VPS (D40). Astro and Eleventy were checked on 21 Oct 2026 and rejected as more than the build needs (260 and 114 packages, against none for the build script). The `lighthouse` dev dependency for the exit checks adds 114 packages of its own, used only in CI.
+- The site's look (redesigned 14 Nov 2026) is one stylesheet inside `scripts/build-site.mjs`, written into every page's head: a light and a dark palette as custom properties, the reader's own system fonts (a serif stack for headings, a monospace stack for quotes), and no font, image or stylesheet file. The mark in the header and the browser icon are one inline SVG. Each text colour is at least 6.3:1 against every background it sits on, and the search box's edge at least 3:1, in both palettes; the pull request's Lighthouse check scores the result.
 - Extension tooling (M5). Settled 27 Oct 2026 (D46): no extension; M5 is `?q=` search links in `site/search.js` (#132).
 
 ## Automation loops

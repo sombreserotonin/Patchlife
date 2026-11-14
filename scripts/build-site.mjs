@@ -249,47 +249,89 @@ const statusBadge = (entry) => html`<span class="status ${statusKey(entry)}">${s
 const inSentence = (label) => (/^[A-Z][a-z]/.test(label) ? label[0].toLowerCase() + label.slice(1) : label);
 
 // ---------- Layout ----------
+// The mark is a dial: a ring with the part of a life that is left drawn over it. The header draws it in the accent
+// colour; the icon is the same drawing as a data URL, with its own colours for a light and a dark browser.
+const DIAL = html`<circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-opacity=".28" stroke-width="3"/><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="38 53.4" transform="rotate(-90 12 12)"/>`;
+const MARK = html`<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">${DIAL}</svg>`;
+const ICON = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><style>svg{color:#002fa7}@media (prefers-color-scheme:dark){svg{color:#9db2ff}}</style>${DIAL}</svg>`)}`;
+// The whole look. Two palettes as custom properties: paper and ink by default, the dark one when the reader's system
+// asks for it, and plain ink for print. A colour used for text must keep 4.5:1 against --bg, --surface and the glow at
+// the top of the page in its palette, and --edge 3:1 (WCAG 1.4.3 and 1.4.11); ARCHITECTURE has the figures. A status
+// is drawn as a light and its name, so it never depends on colour alone. Fonts are the reader's own: nothing is loaded.
 const CSS = html`<style>
-:root{color:#1b1b1b;background:#fff;font:1rem/1.55 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-body{max-width:46rem;margin:0 auto;padding:0 1rem}
-a{color:#0b57d0}
-a:focus-visible,input:focus-visible{outline:3px solid #1b1b1b;outline-offset:2px}
+:root{color-scheme:light dark;--bg:#f6f4ee;--surface:#fdfcf9;--text:#16181d;--muted:#555a64;--line:#dcd8ce;--edge:#868a92;--accent:#002fa7;--glow:#fffdfa;--ring:rgba(0,47,167,.2);--find:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23555a64' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.6-3.6'/%3E%3C/svg%3E");--ok:#0a6638;--soon:#854700;--min:#5632bd;--end:#ab231b;--serif:"Iowan Old Style","Palatino Linotype",Palatino,"URW Palladio L",P052,Charter,"Bitstream Charter",serif;--mono:ui-monospace,"Cascadia Code","SF Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace}
+@media (prefers-color-scheme:dark){:root{--bg:#0c0e12;--surface:#13161c;--text:#e9e6df;--muted:#a3a9b3;--line:#262b34;--edge:#666d79;--accent:#9db2ff;--glow:rgba(120,146,255,.14);--ring:rgba(157,178,255,.28);--find:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a3a9b3' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.6-3.6'/%3E%3C/svg%3E");--ok:#74e0a2;--soon:#ffc266;--min:#b9a6ff;--end:#ff9189}}
+html{background:var(--bg) radial-gradient(ellipse 60rem 24rem at 50% -8rem,var(--glow),transparent) no-repeat;color:var(--text);font:1rem/1.6 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%}
+body{max-width:46rem;margin:0 auto;padding:0 1.25rem}
+::selection{background:var(--accent);color:var(--bg)}
+a{color:inherit;text-decoration:underline;text-decoration-color:var(--accent);text-decoration-thickness:.09em;text-underline-offset:.22em;transition:color .15s,text-decoration-color .15s}
+a:hover{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
 .skip{position:absolute;left:-10000px}
-.skip:focus{position:static}
-header{padding:.75rem 0;border-bottom:1px solid #c4c4c4}
-.site-name{font-weight:700;font-size:1.15rem;text-decoration:none}
-h1{font-size:1.75rem;line-height:1.25;margin:1.25rem 0 .75rem}
-h2{font-size:1.25rem;margin:1.75rem 0 .5rem}
-.crumbs{list-style:none;padding:0;margin:1rem 0 0;font-size:.9rem}
+.skip:focus{left:50%;top:.75rem;transform:translateX(-50%);z-index:1;padding:.5rem .9rem;border-radius:.5rem;background:var(--text);color:var(--bg)}
+header{padding:1.5rem 0 1rem}
+.site-name{display:inline-flex;align-items:center;gap:.5rem;font:400 1.4rem/1 var(--serif);letter-spacing:-.01em;text-decoration:none}
+.site-name svg{color:var(--accent)}
+h1{font:400 clamp(2.1rem,1.25rem + 4vw,3.5rem)/1.08 var(--serif);letter-spacing:-.02em;margin:1.5rem 0 1.1rem;text-wrap:balance}
+h1 em{color:var(--accent)}
+h2{font:400 1.6rem/1.2 var(--serif);letter-spacing:-.01em;margin:3.25rem 0 .9rem;text-wrap:balance}
+ul,ol{padding-left:1.25rem}
+li{margin:.3rem 0}
+li::marker{color:var(--muted)}
+.crumbs{list-style:none;padding:0;margin:.5rem 0 0;font-size:.82rem;color:var(--muted)}
 .crumbs li{display:inline}
-.crumbs li+li::before{content:" / ";color:#555}
-.answer{font-size:1.2rem;margin-bottom:.25rem}
-.regions{margin-top:0}
-.disclaimer{font-size:.9rem;color:#444}
-.status{display:inline-block;padding:0 .45em;border-radius:.25em;font-weight:600}
-.supported{background:#e3f2e6;color:#0b4f1f}
-.ending_soon{background:#fdf0db;color:#6a3700}
-.minimum_passed{background:#ece6f5;color:#46297d}
-.ended{background:#fbe5e3;color:#8a1c17}
-.unknown{background:#eceff1;color:#36454f}
-dt{font-weight:600}
-dd{margin:0 0 .75rem}
-table{border-collapse:collapse;margin:0 0 1.25rem}
-caption{text-align:left;font-weight:600;padding:0 0 .25rem}
-th,td{text-align:left;vertical-align:top;padding:.1rem 1.25rem .1rem 0}
+.crumbs li+li::before{content:"/";margin:0 .55em;opacity:.55}
+.lead,.answer{font-size:1.25rem;line-height:1.5;text-wrap:pretty}
+.lead{color:var(--muted)}
+.answer{margin:0 0 .4rem}
+.regions{margin-top:0;color:var(--muted)}
+.disclaimer{font-size:.85rem;color:var(--muted)}
+.status{display:inline-flex;align-items:center;gap:.45em;padding:.1em .7em .1em .55em;border:1px solid;border-color:color-mix(in srgb,currentColor 38%,transparent);border-radius:99px;font-size:.8em;font-weight:600;letter-spacing:.02em;white-space:nowrap;vertical-align:.1em}
+.status::before{content:"";width:.5em;height:.5em;border-radius:50%;background:currentColor;box-shadow:0 0 .55em currentColor}
+.supported{color:var(--ok)}
+.ending_soon{color:var(--soon)}
+.minimum_passed{color:var(--min)}
+.ended{color:var(--end)}
+.unknown{color:var(--muted)}
+dl{display:grid;grid-template-columns:minmax(9rem,max-content) 1fr;margin:2rem 0 0;border-bottom:1px solid var(--line)}
+dt,dd{margin:0;padding:.85rem 0;border-top:1px solid var(--line)}
+dt,label,caption{font-size:.72rem;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+dt{padding:1.1rem 2rem 0 0}
+@media (max-width:34rem){dl{grid-template-columns:1fr}dt{padding-bottom:0}dd{border-top:0;padding-top:.15rem}}
+table{border-collapse:collapse;width:100%;margin:2.25rem 0 0}
+caption{text-align:left;padding:0 0 .6rem}
+th,td{text-align:left;vertical-align:top;padding:.6rem 0;border-top:1px solid var(--line)}
 th[scope=row]{font-weight:400}
-blockquote{margin:0;padding:.5rem 1rem;border-left:4px solid #6b6b6b;background:#f5f5f5}
+td{text-align:right;padding-left:1.5rem;font-variant-numeric:tabular-nums}
+figure{margin:0 0 1.75rem}
+blockquote{margin:0;padding:1.05rem 1.25rem;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:.5rem;background:var(--surface);font:.92rem/1.65 var(--mono);overflow-wrap:anywhere}
 blockquote p{margin:0}
-figure{margin:0 0 1.25rem}
-figcaption{font-size:.9rem;margin-top:.35rem}
+figcaption{font-size:.82rem;color:var(--muted);margin-top:.6rem}
 .url{overflow-wrap:anywhere}
-.devices li{margin-bottom:.6rem}
-.muted{color:#555}
-input[type=search]{font:inherit;box-sizing:border-box;width:100%;max-width:32rem;padding:.5rem;border:1px solid #6b6b6b;border-radius:.25rem}
-label{display:block;font-weight:600;margin-bottom:.25rem}
-footer{margin-top:3rem;padding:1rem 0 2rem;border-top:1px solid #c4c4c4;font-size:.9rem;color:#444}
-footer ul{padding:0;list-style:none}
-footer li{display:inline;margin-right:1rem}
+.devices,.index,#search-results{list-style:none;padding:0}
+.devices li,#search-results li{margin:0;padding:1rem 0;border-top:1px solid var(--line);font-size:.95rem}
+.devices a,#search-results a{font-size:1.1rem;font-weight:600;text-decoration-color:transparent}
+.devices a:hover,#search-results a:hover,.index a:hover{text-decoration-color:var(--accent)}
+.devices .status,#search-results .status{margin:.45rem .2rem 0 0}
+#search-results a{display:block}
+.sep{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.index{display:grid;grid-template-columns:repeat(auto-fill,minmax(16rem,1fr));column-gap:2.5rem}
+.index li{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;margin:0;padding:.65rem 0;border-top:1px solid var(--line)}
+.index a{font-weight:500;text-decoration-color:transparent}
+.index span,.muted,#search-count{color:var(--muted)}
+.index span{font-size:.85rem;font-variant-numeric:tabular-nums;white-space:nowrap}
+form{margin:2.25rem 0 1rem}
+label{display:block;margin-bottom:.55rem}
+input[type=search]{font:inherit;font-size:1.2rem;box-sizing:border-box;width:100%;padding:.85rem 1.1rem .85rem 3rem;border:1px solid var(--edge);border-radius:.75rem;background:var(--surface) var(--find) no-repeat 1rem 50%/1.25rem;color:inherit;transition:border-color .15s,box-shadow .15s}
+input[type=search]:hover{border-color:var(--muted)}
+input[type=search]:focus-visible{outline:0;border-color:var(--accent);box-shadow:0 0 0 4px var(--ring)}
+footer{margin-top:5rem;padding:1.5rem 0 3rem;border-top:1px solid var(--line);font-size:.82rem;color:var(--muted)}
+footer ul{display:flex;flex-wrap:wrap;gap:0 1.4rem;padding:0;margin:1rem 0 0;list-style:none}
+footer li{margin:0}
+footer li a{display:inline-block;padding:.3rem 0}
+@media (min-width:48rem){html{font-size:106.25%}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media print{:root{--bg:#fff;--surface:#fff;--text:#000;--muted:#333;--line:#bbb;--accent:#000;--glow:transparent;--ok:#000;--soon:#000;--min:#000;--end:#000}form,footer nav{display:none}}
 </style>`;
 
 // Loads search.js and the index only once the search box is used, so the home page stays light.
@@ -364,13 +406,16 @@ function layout(ctx, { path, title, description, body, head, feeds = [] }) {
 ${ctx.noindex ? html`<meta name="robots" content="noindex">` : ""}
 <link rel="canonical" href="${absolute(ctx, path)}">
 ${feeds.map((feed) => html`<link rel="alternate" type="application/atom+xml" href="${absolute(ctx, feed.path)}" title="${feed.title}">
-`)}<link rel="icon" href="data:,">
+`)}<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f6f4ee" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0c0e12" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="${ICON}">
 ${CSS}
 ${head}
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
-<header><a class="site-name" href="${link(ctx, "/")}">Patchlife</a></header>
+<header><a class="site-name" href="${link(ctx, "/")}">${MARK}Patchlife</a></header>
 <main id="main">
 ${body}
 </main>
@@ -487,8 +532,8 @@ function homePage(ctx, { items, brands, categories, coverage }) {
     title: "Patchlife: when smart devices stop getting security updates",
     feeds: STATUS_FEEDS,
     description: "Look up when a smart device stops getting security updates, with the manufacturer's own words as evidence.",
-    body: html`<h1>When does your smart device stop getting security updates?</h1>
-<p>Patchlife looks up when smart devices stop getting security updates, and quotes the manufacturer's own words as evidence. So far it covers ${plural(items.length, "device")}: ${coverage}.</p>
+    body: html`<h1>When does your smart device <em>stop getting security updates?</em></h1>
+<p class="lead">Patchlife looks up when smart devices stop getting security updates, and quotes the manufacturer's own words as evidence.</p>
 <form id="search" role="search" data-base="${ctx.base}">
 <label for="q">Search by brand, model or model number</label>
 <input id="q" type="search" autocomplete="off" spellcheck="false" enterkeyhint="search">
@@ -497,10 +542,11 @@ function homePage(ctx, { items, brands, categories, coverage }) {
 ${disclaimerNote(ctx)}
 <p id="search-count" aria-live="polite"></p>
 <ul id="search-results"></ul>
+<p class="muted">So far it covers ${plural(items.length, "device")}: ${coverage}.</p>
 <h2>Browse by brand</h2>
-<ul>${brands.map((b) => html`<li><a href="${link(ctx, `/brands/${b.slug}/`)}">${b.name}</a> (${plural(b.items.length, "model")})</li>`)}</ul>
+<ul class="index">${brands.map((b) => html`<li><a href="${link(ctx, `/brands/${b.slug}/`)}">${b.name}</a> <span>${plural(b.items.length, "model")}</span></li>`)}</ul>
 <h2>Browse by category</h2>
-<ul>${categories.map((c) => html`<li><a href="${link(ctx, `/categories/${c.slug}/`)}">${CATEGORY_LABELS[c.slug]}</a> (${plural(c.items.length, "model")})</li>`)}</ul>
+<ul class="index">${categories.map((c) => html`<li><a href="${link(ctx, `/categories/${c.slug}/`)}">${CATEGORY_LABELS[c.slug]}</a> <span>${plural(c.items.length, "model")}</span></li>`)}</ul>
 <h2>How it works</h2>
 <p>Every date quotes the manufacturer's statement and links to it. Nothing is estimated: when a manufacturer gives a rule such as "3 years after end of life" without the date, the page says so. <a href="${link(ctx, "/methodology/")}">Read the methodology</a>.</p>
 ${SEARCH_LOADER}`,

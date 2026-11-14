@@ -1098,3 +1098,30 @@ test("the stats page counts records by status, brand, category and verification 
   assert.match(page, /<th scope="row"><a href="\/categories\/camera\/">Cameras<\/a><\/th>/);
   assert.equal(page.match(/<script/g), null, "the stats page has no JavaScript");
 });
+
+test("every page carries a light and a dark palette in its own head and loads nothing for its look", (t) => {
+  const site = build(t);
+  for (const file of htmlFiles(site.outDir)) {
+    const page = site.read(file);
+    assert.match(page, /<meta name="color-scheme" content="light dark">/, file);
+    const css = page.match(/<style>([\s\S]*?)<\/style>/)[1];
+    assert.match(css, /:root\{color-scheme:light dark;--bg:/, file);
+    assert.match(css, /@media \(prefers-color-scheme:dark\)\{:root\{--bg:/, file);
+    // ARCHITECTURE, "Controls on the site": no stylesheet, font or image comes from a file, here or elsewhere.
+    assert.doesNotMatch(page, /<link rel="stylesheet"|@import|@font-face/, file);
+    for (const [, target] of css.matchAll(/url\(([^)]*)\)/g)) assert.match(target, /^"data:image\/svg\+xml,/, file);
+    assert.match(page, /<link rel="icon" href="data:image\/svg\+xml,[^"]+">/, file);
+  }
+});
+
+test("a search result shows the same status light as the lists and still reads as one sentence", (t) => {
+  const index = build(t).json("search-index.json").devices;
+  const dom = fakeDom(t);
+  attachSearch({ ...dom, devices: index, base: "" });
+  dom.type("cam 1");
+  const [row] = dom.list.children;
+  assert.deepEqual(row.children.map((node) => (typeof node === "string" ? "text" : (node.className ?? "link"))), ["link", "sep", "status supported", "sep", "text"]);
+  assert.match(dom.lines()[0], /^Acme Cam 1: Supported\. Security updates until at least 30 June 2029, /);
+  // The list on a brand page marks the status the same way, so one style rule draws both.
+  assert.match(build(t).read("brands/acme/index.html"), /<span class="status supported">Supported<\/span>/);
+});
