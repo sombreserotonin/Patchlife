@@ -149,12 +149,7 @@ export function matchBrand({ urls, brand_slug, profile, candidates, skipped, fla
       else if (exceptions.has(record.id)) out.push(`changed: ${record.id} is a parser exception, so its changed row ${JSON.stringify(row.evidence[0].quote)} is not written`);
       else if (!candidate) out.push(`changed: ${record.id}: ${was}, and the row that names it now gives the model ${JSON.stringify(row.model)} (id ${row.id}): a rename for a person (RUNBOOKS O9)`);
       else if (missing) unquotable(candidate, missing);
-      else {
-        // The PR's change table shows dates and conditions, not regions, so a rewrite that loses one says so here.
-        const dropped = record.regions.filter((region) => !candidate.regions.includes(region));
-        if (dropped.length) out.push(`changed: ${record.id}: the rewrite drops the region(s) ${dropped.join(", ")}, where no row names ${record.model} now: check the record against the pages (RUNBOOKS O9)`);
-        proposals.push({ record, candidate, quote: withdrawn ? null : gone[0].quote });
-      }
+      else proposals.push({ record, candidate, quote: withdrawn ? null : gone[0].quote });
       if (row) matched.add(row);
       continue;
     }
@@ -274,6 +269,10 @@ export async function runCandidates(devicesDir, { brands = [], sources, parsers 
       restore.set(file, readFileSync(file, "utf8"));
       writeFileSync(file, recordYaml(rewritten(record, candidate)));
       written.push({ id: record.id, file, kind: "changed", before: row(record, quote), after: row(candidate, candidate.evidence[0].quote) });
+      // The PR's change table shows dates and conditions, not regions, so a rewrite that loses one says so (audit
+      // 2026-11-14, record-writers L2). A row the parser skipped, as for a date it could not read, counts as none.
+      const dropped = record.regions.filter((region) => !candidate.regions.includes(region));
+      if (dropped.length) flags.push(`changed: ${record.id}: the rewrite drops the region(s) ${dropped.join(", ")}, where the parsers read no row for ${record.model} this run (a skipped row counts as none): check the record against the pages (RUNBOOKS O9)`);
     }
   }
   for (const { newRows } of results) {

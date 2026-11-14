@@ -498,12 +498,29 @@ test("a D39 case recorded as one exception that quotes both pages' rows stays se
   const { get: getMoved } = setup(moved);
   const again = await runCandidates(dir, { sources, today: TODAY, get: getMoved, brands: ["gl-inet"], check: true });
   assert.equal(conflict(again.flags).length, 1);
+  // A second row for the model, with another date, on either page shows the conflict too, wherever the row sits.
+  const firmwareRow = `<tr><td>GL-Z100</td><td>4.3.26</td><td>Native OpenWrt</td><td>22.03.4</td><td class="td-status">Maintenance</td><td>June 9, 2026</td><td>June 8, 2030</td></tr>`;
+  const pstiRow = "<tr><td>Ferret (GL-Z100)</td><td>June 11, 2029 or later*</td></tr>";
+  for (const pages of [
+    { ...PAGES, [glInet.ENDED]: PAGES[glInet.ENDED].replace("</table>", `${firmwareRow}\n</table>`) },
+    { ...PAGES, [glInet.PSTI]: PAGES[glInet.PSTI].replace("</tbody>", `${pstiRow}\n</tbody>`) },
+  ]) {
+    const { get: getSecond } = setup(pages);
+    const second = await runCandidates(dir, { sources, today: TODAY, get: getSecond, brands: ["gl-inet"], check: true });
+    assert.equal(conflict(second.flags).length, 1, second.flags.join("\n"));
+    assert.match(conflict(second.flags)[0], / and /);
+  }
 });
 
 // Audit 2026-11-14, record-writers L2: the PR's change table shows dates and conditions, not regions. A rewrite that keeps
 // every region adds no such flag (the B4 test above lists its flags in full).
-test("a rewrite that drops a region the record had is flagged for a person", async () => {
-  const { dir, get } = setup({ ...PAGES, [RING.AU]: PAGES[RING.AU].replace("Ring Chime Z Pro (2nd Generation)", "Ring Chime Z Pro (2nd Generation) - Black") });
+test("a rewrite that drops a region the record had is flagged for a person, when it is written", async () => {
+  const pages = { ...PAGES, [RING.AU]: PAGES[RING.AU].replace("Ring Chime Z Pro (2nd Generation)", "Ring Chime Z Pro (2nd Generation) - Black") };
+  const { dir, get } = setup(pages);
   const { flags } = await runCandidates(dir, { sources: SOURCES, today: TODAY, get, brands: ["ring"] });
   assert.ok(flags.some((f) => f.startsWith("changed: ring-chime-z-pro-2nd-gen: the rewrite drops the region(s) AU")), flags.join("\n"));
+  // A rewrite the limit leaves for a later run is not flagged in this one.
+  const { dir: later, get: getLater } = setup(pages);
+  const limited = await runCandidates(later, { sources: SOURCES, today: TODAY, get: getLater, brands: ["ring"], limit: 0 });
+  assert.ok(!limited.flags.some((f) => f.includes("the rewrite drops")), limited.flags.join("\n"));
 });

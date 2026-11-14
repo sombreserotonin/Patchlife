@@ -107,7 +107,8 @@ test("random tag soup reads the same rows, cells and footnotes as the expression
 
 // record-writers L4: the row expression rescanned the rest of the page from every opening tag never closed.
 test("a page of unclosed rows, cells or footnotes is read in linear time", () => {
-  // A footnote's opening tag is ended here: a page of bare "<" is htmlToText's own cost (fetchers F2, left as it is).
+  // These time the row reader's own scan. A cell full of tags that never end still costs quadratic time, in the
+  // htmlToText that reads each cell's text (fetchers F2, open), so a footnote's opening tag is ended here.
   const cases = {
     "rows never closed": `<table><tr><td>A</td></tr>${"<tr>".repeat(200000)}`,
     "rows whose tag never ends": `<table><tr><td>A</td></tr>${"<tr".repeat(200000)}`,
