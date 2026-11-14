@@ -102,7 +102,10 @@ function readingOrder(items) {
 // The text of a PDF in reading order, its pages joined by newlines. Throws when the bytes are not a readable PDF.
 // pdf.js detaches the bytes' buffer, so they can be read only once.
 export async function pdfToText(bytes) {
-  const pdf = await getDocumentProxy(bytes, { verbosity: 0 });
+  // PDF.js would compile a PDF's PostScript functions to WebAssembly; with useWasm off it interprets them, so no code
+  // is built from a page in a job that holds the App's token (D63). Text extraction decodes no images, so the text is
+  // the same either way.
+  const pdf = await getDocumentProxy(bytes, { verbosity: 0, useWasm: false });
   return (await extractTextItems(pdf)).items.map(readingOrder).join("\n");
 }
 

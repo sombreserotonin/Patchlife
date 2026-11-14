@@ -567,11 +567,14 @@ test("the weekly summary is a fixed template", () => {
       "```",
       "",
       "Spot check: compare each record with the highlighted words on the maker's page.",
-      "- [EZVIZ CS-BC1-B3(4MP,W1)](https://patchlife.tech/devices/ezviz-cs-bc1/): [maker's page](https://support.ezviz.com/eol#:~:text=CS%2DBC1%2DB3%284MP%2CW1%29%20Europe%202029%2F12%2F31)",
-      "- [Acme Cam\\_1 \\[Pro\\]](https://patchlife.tech/devices/acme-cam-1/): [maker's page](https://example.com/acme#:~:text=Acme%20Cam%201%2030%20June%202029), [page 2](https://example.com/b#:~:text=other)",
+      "- [EZVIZ CS-BC1-B3(4MP,W1)](https://patchlife.tech/devices/ezviz-cs-bc1/): [maker's page](<https://support.ezviz.com/eol#:~:text=CS%2DBC1%2DB3%284MP%2CW1%29%20Europe%202029%2F12%2F31>)",
+      "- [Acme Cam\\_1 \\[Pro\\]](https://patchlife.tech/devices/acme-cam-1/): [maker's page](<https://example.com/acme#:~:text=Acme%20Cam%201%2030%20June%202029>), [page 2](<https://example.com/b#:~:text=other>)",
     ].join("\n"),
   );
   assert.match(summaryText({ ...state, pulls: [] }, MEASURES, sample), /^PRs for you to merge \(`needs-human-merge`\): none\.$/m);
+  // A ")" in a cited URL stays inside its link: the summary is public, and the rest of the URL must not render as text.
+  const odd = [{ id: "acme-cam-2", brand: "Acme", model: "Cam 2", evidence: [{ url: "https://example.com/a_(b)@ghost", quote: "Cam 2 2030" }] }];
+  assert.match(summaryText(state, MEASURES, odd), /^- \[Acme Cam 2\]\(https:\/\/patchlife\.tech\/devices\/acme-cam-2\/\): \[maker's page\]\(<https:\/\/example\.com\/a_\(b\)@ghost#:~:text=Cam%202%202030>\)$/m);
   const unread = summaryText({ at: state.at }, MEASURES, []);
   assert.match(unread, /^PRs for you to merge: the watchdog could not read them\.$/m);
   assert.match(unread, /^Open issues: the watchdog could not read them\.$/m);
@@ -756,7 +759,7 @@ test("the CLI reads with the token and API version, opens the issue, posts the s
   const summary = cli.requests.find((request) => request.path === `${R}/issues/27/comments`).body.body;
   assert.match(summary, /^Weekly summary for \d{4}-\d{2}-\d{2}\.$/m);
   assert.match(summary, /^Verified records +\d+$/m);
-  assert.equal(summary.match(/^- \[.+\]\(.+\/site\/devices\/[a-z0-9-]+\/\): \[maker's page\]\(https:\/\/.+#:~:text=.+\)$/gm).length, 5);
+  assert.equal(summary.match(/^- \[.+\]\(.+\/site\/devices\/[a-z0-9-]+\/\): \[maker's page\]\(<https:\/\/.+#:~:text=.+>\)$/gm).length, 5);
 });
 
 test("the CLI's dry run reads the same but writes nothing, and prints the summary", async (t) => {

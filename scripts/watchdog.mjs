@@ -360,7 +360,8 @@ export function summaryText(state, dataReportLines, sample) {
   lines.push("", "Measures, from `node scripts/data-report.mjs`:", "```", ...dataReportLines, "```", "");
   lines.push("Spot check: compare each record with the highlighted words on the maker's page.");
   for (const record of sample) {
-    const links = highlightLinks(record.evidence).map((link, i) => `[${i ? `page ${i + 1}` : "maker's page"}](${link})`);
+    // Each target in angle brackets, so a ")" in a cited URL can't end the link and leave the rest as text.
+    const links = highlightLinks(record.evidence).map((link, i) => `[${i ? `page ${i + 1}` : "maker's page"}](<${link}>)`);
     lines.push(`- [${markdown(`${record.brand} ${record.model}`)}](${site}devices/${record.id}/): ${links.join(", ")}`);
   }
   return lines.join("\n");

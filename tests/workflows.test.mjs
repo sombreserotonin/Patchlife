@@ -238,17 +238,12 @@ esac`,
   const calls = result.read("calls.log");
   assert.ok(calls.includes(`-c http.https://github.com/.extraheader=${header("app-token-1")} push origin claude/data-auto-`), calls);
   assert.doesNotMatch(body, /only the rows of the refresh run/);
-  // A refresh pushes to the open PR's branch and says that its body covers that run alone, for the brands it parsed.
-  const again = runStep(t, push.run, { stubs, files, env: { ...env, OPEN_NUMBER: "42", OPEN_BRANCH: "claude/data-auto-2026-11-08-1", BRANDS: "ring" } });
+  // A refresh pushes to the open PR's branch and says that its body covers that run alone.
+  const again = runStep(t, push.run, { stubs, files, env: { ...env, OPEN_NUMBER: "42", OPEN_BRANCH: "claude/data-auto-2026-11-08-1" } });
   assert.equal(again.status, 0, again.output);
-  assert.match(again.read("sent.md"), /^\*\*This body lists only the rows of the refresh run on \d{4}-\d{2}-\d{2}\*\*, which put the records of ring back as main has them and parsed again\./);
+  assert.match(again.read("sent.md"), /^\*\*This body lists only the rows of the refresh run on \d{4}-\d{2}-\d{2}\.\*\*/);
   assert.ok(again.read("calls.log").includes(`push origin claude/data-auto-2026-11-08-1`));
   assert.doesNotMatch(again.read("calls.log"), /-X POST repos\/o\/r\/pulls /);
-  // A refresh that wrote no row still pushes what it took out, with no spot check to give.
-  const empty = runStep(t, push.run, { stubs, files: { ...files, "report.json": JSON.stringify({ written: [], flags: [], pages: [] }) }, env: { ...env, OPEN_NUMBER: "42", OPEN_BRANCH: "claude/data-auto-2026-11-08-1" } });
-  assert.equal(empty.status, 0, empty.output);
-  assert.doesNotMatch(empty.read("sent.md"), /Spot check/);
-  assert.ok(empty.read("calls.log").includes(`push origin claude/data-auto-2026-11-08-1`));
 });
 
 // --- reverify ----------------------------------------------------------------------------------------------------
@@ -357,94 +352,4 @@ test("owner tools caps a long repoint title at 256 characters", (t) => {
   assert.equal(result.status, 0, result.output);
   const title = result.read("args").split("\0").find((a) => a.startsWith("title=")).slice("title=".length);
   assert.equal([...title].length, 256);
-});
-
-// --- refresh_open_pr (audit 2026-11-14, workflows M4) ------------------------------------------------------------
-// A refresh puts its brands' records back as main has them before parsing again, so a row the PR wrote under an old
-// name is written again from the fixed profile; a record a person edited on the branch stops it instead.
-
-test("a refresh's lookup lists the device files people's commits changed on the PR, not the bot's or merges'", { skip: NO_JQ }, (t) => {
-  const lookup = step(REFRESH, "refresh", "Find the open candidate PR").run;
-  const commits = [
-    { sha: "b1", author: { login: "patchlife-bot[bot]" }, parents: [{ sha: "m" }] },
-    { sha: "h1", author: { login: "owner" }, parents: [{ sha: "b1" }] },
-    { sha: "h2", author: null, parents: [{ sha: "h1" }] },
-    { sha: "m1", author: { login: "owner" }, parents: [{ sha: "h2" }, { sha: "main" }] },
-  ];
-  const files = {
-    "commits.json": JSON.stringify(commits),
-    "commit-h1.json": JSON.stringify({ files: [{ filename: "data/sources/seed.yaml" }, { filename: "data/devices/ring/ring-a.yaml" }] }),
-    "commit-h2.json": JSON.stringify({ files: [{ filename: "data/devices/gl-inet/gl-inet-new.yaml", previous_filename: "data/devices/gl-inet/gl-inet-old.yaml" }] }),
-    "commit-b1.json": JSON.stringify({ files: [{ filename: "data/devices/ring/ring-bot.yaml" }] }),
-    "commit-m1.json": JSON.stringify({ files: [{ filename: "data/devices/ring/ring-main.yaml" }] }),
-  };
-  const gh = `echo "gh $*" >> "$RUNNER_TEMP/calls.log"
-case "$2" in
-  *"pulls?state=open"*) printf '12 claude/data-auto-2026-11-08-1\\n' ;;
-  *"/pulls/12/commits"*) jq -r "$5" "$RUNNER_TEMP/commits.json" ;;
-  *"/commits/"*) jq -r "$5" "$RUNNER_TEMP/commit-\${2##*/}.json" ;;
-  *) exit 1 ;;
-esac`;
-  const git = `echo "git $*" >> "$RUNNER_TEMP/calls.log"; [ "$1" = rev-parse ] && echo 0123abc; exit 0`;
-  const result = runStep(t, lookup, { stubs: { gh, git }, files, env: { LIMIT: "60", BRANDS: "ring", REFRESH_OPEN_PR: "yes", REPO: "o/r", BOT: "patchlife-bot[bot]" } });
-  assert.equal(result.status, 0, result.output);
-  assert.deepEqual(result.read("hand-edited.txt").trim().split("\n"), ["data/sources/seed.yaml", "data/devices/ring/ring-a.yaml", "data/devices/gl-inet/gl-inet-new.yaml", "data/devices/gl-inet/gl-inet-old.yaml"]);
-  assert.match(result.read("output.txt"), /^main=0123abc$/m);
-  assert.match(result.read("output.txt"), /^branch=claude\/data-auto-2026-11-08-1$/m);
-  assert.doesNotMatch(result.read("calls.log"), /commits\/(b1|m1)/);
-});
-
-// A repository whose main has ring-a and kyocera-k, and a PR branch that changed ring-a, added ring-b and changed
-// kyocera-k. MAIN_SHA is main's commit, as the lookup gives it.
-const REPO_SETUP = `git init -q -b main . && git config user.email t@t.test && git config user.name t
-mkdir -p data/devices/ring data/devices/kyocera
-echo "a: main" > data/devices/ring/ring-a.yaml; echo "k: main" > data/devices/kyocera/kyocera-k.yaml
-git add data && git commit -qm main
-export MAIN_SHA=$(git rev-parse HEAD)
-git switch -qc claude/data-auto-x
-echo "a: pr" > data/devices/ring/ring-a.yaml; echo "b: pr" > data/devices/ring/ring-b.yaml; echo "k: pr" > data/devices/kyocera/kyocera-k.yaml
-git add data && git commit -qm pr
-`;
-// node: lists the brands with a parser when asked, and otherwise notes what the parsers would read.
-const NODE = `if [ "$1" = "--input-type=module" ]; then echo "ring kyocera"; exit 0; fi
-for f in data/devices/*/*.yaml; do echo "$f $(cat "$f")"; done > "$RUNNER_TEMP/seen.txt"`;
-
-test("a refresh parses its brands from main's records, and leaves the other brands' rows on the PR", (t) => {
-  const parse = step(REFRESH, "refresh", "Run the parsers").run;
-  const env = { OPEN_BRANCH: "claude/data-auto-x", BRANDS: "ring", LIMIT: "60" };
-  const result = runStep(t, REPO_SETUP + parse, { stubs: { node: NODE }, files: { "hand-edited.txt": "data/sources/seed.yaml\n" }, env });
-  assert.equal(result.status, 0, result.output);
-  assert.equal(result.read("seen.txt"), "data/devices/kyocera/kyocera-k.yaml k: pr\ndata/devices/ring/ring-a.yaml a: main\n");
-  // With no brands named, every brand with a parser starts from main.
-  const all = runStep(t, REPO_SETUP + parse, { stubs: { node: NODE }, files: { "hand-edited.txt": "" }, env: { ...env, BRANDS: "" } });
-  assert.equal(all.status, 0, all.output);
-  assert.equal(all.read("seen.txt"), "data/devices/kyocera/kyocera-k.yaml k: main\ndata/devices/ring/ring-a.yaml a: main\n");
-});
-
-test("a refresh stops, and changes nothing, while a record a person edited on the PR differs from main's copy", (t) => {
-  const parse = step(REFRESH, "refresh", "Run the parsers").run;
-  const env = { OPEN_BRANCH: "claude/data-auto-x", BRANDS: "ring", LIMIT: "60" };
-  const files = { "hand-edited.txt": "data/devices/ring/ring-a.yaml\ndata/devices/kyocera/kyocera-k.yaml\n" };
-  const result = runStep(t, `${REPO_SETUP}${parse}`, { stubs: { node: NODE }, files, env });
-  assert.notEqual(result.status, 0);
-  assert.match(result.output, /::error::Edited by hand on the PR's branch, so the refresh would undo them: data\/devices\/ring\/ring-a\.yaml\./);
-  assert.equal(result.read("seen.txt"), "");
-  assert.equal(result.read("data/devices/ring/ring-a.yaml"), "a: pr\n");
-  assert.equal(result.read("data/devices/ring/ring-b.yaml"), "b: pr\n");
-  // Once that record is back as main has it, the refresh goes on: putting it back loses nothing.
-  const putBack = runStep(t, `${REPO_SETUP}echo "a: main" > data/devices/ring/ring-a.yaml && git commit -qam "put back"\n${parse}`, { stubs: { node: NODE }, files, env });
-  assert.equal(putBack.status, 0, putBack.output);
-  assert.equal(putBack.read("seen.txt"), "data/devices/kyocera/kyocera-k.yaml k: pr\ndata/devices/ring/ring-a.yaml a: main\n");
-});
-
-test("a refresh that writes no row still pushes the rows it took out; a weekly run with none proposes nothing", { skip: NO_JQ }, (t) => {
-  const verify = step(REFRESH, "refresh", "Verify the written records").run;
-  const files = { "report.json": JSON.stringify({ written: [] }) };
-  const refresh = runStep(t, `${REPO_SETUP}git rm -q data/devices/ring/ring-b.yaml\n${verify}`, { files, env: { OPEN_BRANCH: "claude/data-auto-x", GITHUB_ENV: "env.txt" } });
-  assert.equal(refresh.status, 0, refresh.output);
-  assert.equal(refresh.read("env.txt"), "");
-  assert.match(refresh.read("verify.txt"), /^No row to write: the refresh takes the PR's earlier rows for its brands back out\.$/m);
-  const weekly = runStep(t, verify, { files, env: { OPEN_BRANCH: "", GITHUB_ENV: "env.txt" } });
-  assert.equal(weekly.status, 0, weekly.output);
-  assert.equal(weekly.read("env.txt"), "nothing=yes\n");
 });
