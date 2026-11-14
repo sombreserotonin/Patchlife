@@ -16,7 +16,8 @@ const collapse = (text) => text.replace(/\s+/g, " ").trim();
 // Yields { start, end, attrs, inner }: the element's span, its opening tag's attributes and the text between.
 function* elements(html, names) {
   const open = new RegExp(`<(${names.join("|")})\\b`, "gi");
-  const closing = new Map();
+  // Built from the names given, never from the page: a closing tag is looked up by the name the opening tag matched.
+  const closing = new Map(names.map((name) => [name, new RegExp(`</${name}\\s*>`, "gi")]));
   const unclosedFrom = new Map();
   let gt = -1;
   for (let match; (match = open.exec(html)); ) {
@@ -25,7 +26,6 @@ function* elements(html, names) {
     if (gt < attrsAt) gt = html.indexOf(">", attrsAt);
     if (gt === -1) return;
     const innerAt = gt + 1;
-    if (!closing.has(name)) closing.set(name, new RegExp(`</${name}\\s*>`, "gi"));
     const close = closing.get(name);
     close.lastIndex = innerAt;
     const end = innerAt >= (unclosedFrom.get(name) ?? Infinity) ? null : close.exec(html);
