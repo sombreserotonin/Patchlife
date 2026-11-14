@@ -57,7 +57,7 @@ export async function unquotedDates(devicesDir, { urls = [], get = createFetcher
   return results;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (import.meta.main) {
   for (const { url, dates, error } of await unquotedDates(join(ROOT, "data/devices"), { urls: process.argv.slice(2) })) {
     if (error) {
       console.log(`${url}: error (${error})`);

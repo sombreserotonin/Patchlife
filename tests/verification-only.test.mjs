@@ -179,3 +179,48 @@ test("a record replaced by a symbolic link is refused, even when the link leads 
   assert.equal(readFileSync(r.file("acme-cam-1"), "utf8"), readFileSync(join(r.dir, "elsewhere.yaml"), "utf8"));
   assert.deepEqual(r.problems(), ["data/devices/acme/acme-cam-1.yaml: not a regular file"]);
 });
+
+test("the page hash file must be a regular file too", (t) => {
+  const r = repo(t);
+  writeFileSync(join(r.dir, "hashes.json"), "{}\n");
+  try {
+    symlinkSync(join("..", "..", "hashes.json"), join(r.dir, "data", "sources", "page-hashes.json"));
+  } catch {
+    return t.skip("symbolic links can't be made here");
+  }
+  assert.deepEqual(r.problems(), ["data/sources/page-hashes.json: not a regular file"]);
+});
+
+test("within the verification block, only what the verifier does: a disputed record stays as it is, and a check date never moves back", (t) => {
+  const r = repo(t);
+  const commit = (message) => r.git("-c", "user.name=t", "-c", "user.email=t@example.invalid", "commit", "-qam", message);
+  // A person disputes a record (RUNBOOKS O10): that alone is still a verification change.
+  r.edit("acme-hub-4", "status: unverified", "status: disputed");
+  assert.deepEqual(r.problems(), []);
+  commit("dispute");
+  // Settling it is not.
+  r.edit("acme-hub-4", "status: disputed", 'status: verified\n  checked: "2026-10-20"');
+  assert.deepEqual(r.problems(), ["data/devices/acme/acme-hub-4.yaml: changes the verification of a disputed record"]);
+  r.git("checkout", "-q", "--", ".");
+  // A later check date is what the verifier writes; an earlier one is not.
+  r.edit("acme-cam-1", 'checked: "2026-10-02"', 'checked: "2026-11-01"');
+  assert.deepEqual(r.problems(), []);
+  r.git("checkout", "-q", "--", ".");
+  r.edit("acme-cam-1", 'checked: "2026-10-02"', 'checked: "2026-09-01"');
+  assert.deepEqual(r.problems(), ["data/devices/acme/acme-cam-1.yaml: moves verification.checked back from 2026-10-02 to 2026-09-01"]);
+});
+
+test("the CLI judges the tree when it is started through a symbolic link, rather than doing nothing", (t) => {
+  const r = repo(t);
+  const link = join(r.dir, "linked-scripts");
+  try {
+    symlinkSync(dirname(SCRIPT), link);
+  } catch {
+    return t.skip("symbolic links can't be made here");
+  }
+  r.edit("acme-cam-1", "quote: Acme Cam 1 30 June 2029", "quote: Acme Cam 1 until 30 June 2029");
+  const run = spawnSync(process.execPath, [join(link, "verification-only.mjs")], { cwd: r.dir, encoding: "utf8" });
+  assert.equal(run.status, 1, run.stdout);
+  assert.match(run.stderr, /acme-cam-1\.yaml: changes more than the verification block/);
+});
+

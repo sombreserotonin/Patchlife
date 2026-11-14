@@ -45,6 +45,8 @@ jobs:
         env:
           LANGUAGE: ${{ matrix.language }}
         run: |
+          # pipefail: a SARIF file jq can't read fails the step, rather than reading as "No findings".
+          set -o pipefail
           found=$(jq -r '.runs[].results[]? | "\(.ruleId) \(.locations[0].physicalLocation.artifactLocation.uri // "?"):\(.locations[0].physicalLocation.region.startLine // "?") \(.message.text | gsub("\\s+"; " ") | .[0:160])"' sarif-results/*.sarif | sort | tr -d '\000-\011\013-\037\177' | sed -E 's/::/: :/g; s/##\[/# #[/g')
           {
             echo "## CodeQL: $LANGUAGE"

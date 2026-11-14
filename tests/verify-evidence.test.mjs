@@ -485,3 +485,29 @@ test("the CLI rejects a missing or too large option value with one line and exit
     assert.match(run.stderr, /^[^\n]*--due[^\n]*\n$/);
   }
 });
+
+// A web application firewall can answer 200 with a challenge page. acme-cam-1 is verified, and its quote is not on the
+// wall, so reading the wall as the page would mark it, and every record citing the page, stale.
+test("verifyDevices leaves a verified record unchanged when its page is a bot wall served as a 200", async () => {
+  const wall = "<html><head><title>Just a moment...</title></head><body><p>Checking your browser before accessing example.com.</p><noscript>Enable JavaScript and cookies to continue</noscript></body></html>";
+  const hashFile = join(mkdtempSync(join(tmpdir(), "patchlife-wall-")), "page-hashes.json");
+  writeFileSync(hashFile, `${JSON.stringify({ "https://example.com/acme/security": "stored" })}\n`);
+  const { dir, read } = setupDevices({ ...PAGES, "https://example.com/acme/security": wall });
+  const get = async (url) => ({ url, contentType: "text/html", text: url === "https://example.com/acme/security" ? wall : PAGES[url] });
+  const before = read("acme-cam-1");
+  const { results } = await verifyDevices(dir, { get, today: TODAY, ids: ["acme-cam-1"], hashFile });
+  assert.deepEqual(results, [{ id: "acme-cam-1", outcome: "error", reason: 'bot challenge (the page says "just a moment")' }]);
+  assert.equal(read("acme-cam-1"), before);
+  assert.equal(JSON.parse(readFileSync(hashFile, "utf8"))["https://example.com/acme/security"], "stored");
+});
+
+test("a page that only mentions a challenge phrase still verifies when its quotes are there", async () => {
+  const { dir, get, read } = setupDevices();
+  const noisy = async (url) => {
+    const page = await get(url);
+    return page.text === undefined ? page : { ...page, text: `${page.text}<p>Just a moment: our support team will reply soon.</p>` };
+  };
+  const { results } = await verifyDevices(dir, { get: noisy, today: TODAY, ids: ["acme-leap-5"] });
+  assert.deepEqual(results, [{ id: "acme-leap-5", outcome: "verified" }]);
+  assert.match(read("acme-leap-5"), /status: verified/);
+});

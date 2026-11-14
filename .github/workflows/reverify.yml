@@ -50,7 +50,9 @@ jobs:
           permission-pull-requests: write
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          token: ${{ steps.app-token.outputs.token || github.token }}
+          # No token is kept in the git configuration, so the steps that parse makers' pages can't read one there. The
+          # repository is public, so fetching needs none; the push step passes the token to that one command.
+          persist-credentials: false
       - name: Stop while an earlier re-verification is unmerged
         # Its records still look due on main, so this run would check them again and conflict with it.
         run: |
@@ -63,7 +65,8 @@ jobs:
         with:
           node-version: 26
           cache: npm
-      - run: npm ci
+      # No package runs an install script today; none may start to in a job that holds the App's token.
+      - run: npm ci --ignore-scripts
       - name: Re-verify the oldest due records
         # Exit 1 means a record was stale, failed or errored, which the steps below handle. Any other exit, or output
         # without the closing summary line, means the verifier itself broke (an uncaught error also exits 1).
@@ -99,6 +102,8 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+          # The App's token, or Actions' own while the App's variables are missing.
+          PUSH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
           REPO: ${{ github.repository }}
         run: |
           if [ -z "$(git status --porcelain -- data)" ]; then
@@ -120,7 +125,7 @@ jobs:
           git -c user.name="$name" -c user.email="$email" \
             commit -q -m "data: re-verify $date" -m "$(tail -n 1 "$RUNNER_TEMP/verify.txt")" -m "$(tail -n 1 "$RUNNER_TEMP/archive.txt")" \
             -m "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-          git push origin "$branch"
+          git -c http.https://github.com/.extraheader="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$PUSH_TOKEN" | base64 -w0)" push origin "$branch"
           echo "Pushed $branch" | tee -a "$GITHUB_STEP_SUMMARY"
           if [ -z "$GH_TOKEN" ]; then
             echo "No App token: no PR was opened. Open one from this branch (RUNBOOKS A9)." | tee -a "$GITHUB_STEP_SUMMARY"

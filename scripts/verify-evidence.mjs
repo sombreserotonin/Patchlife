@@ -13,6 +13,8 @@ import { createFetcher } from "./polite-fetch.mjs";
 import { listYamlFiles, normalise } from "./validate-data.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+// What a bot challenge page says, on normalised text: a 200 holding one of these is a wall, not the page (D18).
+export const CHALLENGE = /just a moment|checking your browser|verify(?:ing)? (?:that )?you are (?:a )?human|attention required|enable javascript and cookies to continue|pardon our interruption|complete the security check/;
 const TEXT_TYPES = new Set(["text/html", "application/xhtml+xml", "text/plain"]);
 // Keeps untouched lines byte-identical, such as `regions: [UK]` and long notes.
 export const YAML_OUT = { flowCollectionPadding: false, lineWidth: 0 };
@@ -170,7 +172,8 @@ export function samePage(cited, final) {
 }
 
 // Updates records in place: verified when every quote matches, stale when a verified record's quote no longer
-// matches or the cited page itself is gone (404 or 410). Any other fetch failure leaves the file unchanged.
+// matches or the cited page itself is gone (404 or 410). Any other fetch failure leaves the file unchanged, and so
+// does a bot wall served as a page: a quote missing from a wall says nothing about the maker's page.
 // With hashFile, it compares each page read with the hash stored for its URL, then stores the new hashes, keeping
 // those of pages it could not read and dropping those of URLs no record cites. Returns { results, pages }: one
 // { id, outcome, reason } per record checked, and one { url, change } per page read, where change is "changed",
@@ -179,12 +182,16 @@ export async function verifyDevices(devicesDir, { ids = [], due, limit, get = cr
   const stored = readPageHashes(hashFile);
   const hashes = new Map();
   const pages = new Map();
+  const walls = new Map();
   const page = (url) => {
     if (!pages.has(url)) {
       pages.set(url, get(url).then(async (fetched) => {
         if (!samePage(url, fetched.url)) throw new Error(`redirected to ${fetched.url}`);
         const text = await pageText({ ...fetched, url });
-        hashes.set(url, pageHash(text));
+        // A wall's hash is not the page's, so the stored one stays.
+        const wall = normalise(text).match(CHALLENGE)?.[0];
+        if (wall) walls.set(url, wall);
+        else hashes.set(url, pageHash(text));
         return text;
       }, (err) => {
         // An HTTP error from the page redirected to says nothing about the cited page, so it never marks a record stale.
@@ -228,9 +235,13 @@ export async function verifyDevices(devicesDir, { ids = [], due, limit, get = cr
       writeFileSync(file, doc.toString(YAML_OUT));
       results.push({ id, outcome: "verified" });
     } else if (record.verification.status === "verified") {
-      doc.setIn(["verification", "status"], "stale");
-      writeFileSync(file, doc.toString(YAML_OUT));
-      results.push({ id, outcome: "stale", reason: result.reason });
+      const wall = record.evidence.map((item) => walls.get(item.url)).find(Boolean);
+      if (wall) results.push({ id, outcome: "error", reason: `bot challenge (the page says "${wall}")` });
+      else {
+        doc.setIn(["verification", "status"], "stale");
+        writeFileSync(file, doc.toString(YAML_OUT));
+        results.push({ id, outcome: "stale", reason: result.reason });
+      }
     } else {
       results.push({ id, outcome: "failed", reason: result.reason });
     }
@@ -254,7 +265,7 @@ export async function verifyDevices(devicesDir, { ids = [], due, limit, get = cr
   return { results, pages: changes };
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (import.meta.main) {
   let options;
   try {
     const { values, positionals } = parseArgs({ allowPositionals: true, options: { due: { type: "string" }, limit: { type: "string" } } });

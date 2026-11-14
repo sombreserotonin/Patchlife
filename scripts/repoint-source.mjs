@@ -1,18 +1,20 @@
 // Moves every evidence item citing one page to its new URL, keeping each item's quote, then re-verifies the records
 // it touched with the verifier's own verifyDevices: RUNBOOKS A4 for a whole page at once, so a moved source is one PR
 // (docs/MIGRATION.md B5). A capture of the old page is not a capture of the new one, so each moved item's archive_url
-// is cleared for the nightly run to capture again (D43); the verification block is left to the verifier, which marks
-// a verified record stale when its quote is not on the new page. --dry-run lists the records that cite the old URL
-// and changes nothing. The re-verification reads the new page with the polite fetcher, so it needs a network that
-// reaches the maker's site: a GitHub runner or your own machine. Exits 1 when no record cites the old URL or a moved record did not verify, listing them; 2 on bad
-// arguments.
+// is cleared for the nightly run to capture again (D43). The verification block is the verifier's: it marks a verified
+// record stale when its quote is not on the new page, and a record whose pages could not be read is set to unverified,
+// since its old check was of another page. --dry-run lists the records that cite the old URL and changes nothing. The
+// re-verification reads the new page with the polite fetcher, so it needs a network that reaches the maker's site: a
+// GitHub runner or your own machine. A profile that keys settings by the old URL (regions_by_url, conditions, notes,
+// min_rows) must move to the new one first, in its own PR, or every moved record would fail validation. Exits 1 when
+// no record cites the old URL or a moved record did not verify, listing them; 2 on bad arguments or such a profile.
 // Usage: node --use-env-proxy scripts/repoint-source.mjs <old url> <new url> [--dry-run]
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import YAML from "yaml";
-import { listYamlFiles } from "./validate-data.mjs";
+import { listYamlFiles, validateSources } from "./validate-data.mjs";
 import { pageReport, verifyDevices, YAML_OUT } from "./verify-evidence.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -37,10 +39,24 @@ export async function repointSource(devicesDir, oldUrl, newUrl, { dryRun = false
     writeFileSync(file, doc.toString(YAML_OUT));
   }
   if (dryRun || !moved.length) return { moved, results: [], pages: [] };
-  return { moved, ...(await verifyDevices(devicesDir, { ids: moved.map((m) => m.id), get, today, hashFile })) };
+  const checked = await verifyDevices(devicesDir, { ids: moved.map((m) => m.id), get, today, hashFile });
+  // An error left the file as it was, with a check of the old page: no check of the new one has happened yet.
+  for (const { id } of checked.results.filter((r) => r.outcome === "error")) {
+    const { file } = moved.find((m) => m.id === id);
+    const doc = YAML.parseDocument(readFileSync(file, "utf8"));
+    if (doc.getIn(["verification", "status"]) === "disputed") continue;
+    doc.set("verification", { status: "unverified" });
+    writeFileSync(file, doc.toString(YAML_OUT));
+  }
+  return { moved, ...checked };
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+// The registry settings an entry keys by this exact URL, as "brand_slug field" strings.
+export function keyedBy(entries, url) {
+  return entries.flatMap((entry) => ["regions_by_url", "conditions", "notes", "min_rows"].filter((field) => Object.hasOwn(entry[field] ?? {}, url)).map((field) => `${entry.brand_slug} ${field}`));
+}
+
+if (import.meta.main) {
   let oldUrl;
   let newUrl;
   let dryRun;
@@ -55,7 +71,21 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     console.error(`${err.message}\n${USAGE}`);
     process.exit(2);
   }
-  const { moved, results, pages } = await repointSource(join(ROOT, "data/devices"), oldUrl, newUrl, { dryRun, hashFile: join(ROOT, "data/sources/page-hashes.json") });
+  // Checked before anything is written or fetched: the run would only fail at validation afterwards.
+  const { entries } = validateSources(join(ROOT, "data/sources"));
+  const stuck = keyedBy(entries, oldUrl).filter((key) => !keyedBy(entries, newUrl).includes(key));
+  if (stuck.length) {
+    console.error(`The source registry keys these settings by the old URL: ${stuck.join(", ")}. Key them by the new URL in data/sources/seed.yaml first, in a PR of its own (RUNBOOKS O8 step 3), then repoint.`);
+    process.exit(2);
+  }
+  let result;
+  try {
+    result = await repointSource(join(ROOT, "data/devices"), oldUrl, newUrl, { dryRun, hashFile: join(ROOT, "data/sources/page-hashes.json") });
+  } catch (err) {
+    console.error(err.message);
+    process.exit(1);
+  }
+  const { moved, results, pages } = result;
   if (!moved.length) {
     console.log(`No evidence item cites ${oldUrl}`);
     process.exit(1);

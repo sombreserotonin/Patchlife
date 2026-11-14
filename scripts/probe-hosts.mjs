@@ -39,7 +39,7 @@ export async function probe(url, get) {
   }
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (import.meta.main) {
   const dir = resolve(process.argv[2] ?? join(ROOT, "data/devices"));
   const records = listYamlFiles(dir).map((file) => YAML.parse(readFileSync(file, "utf8")));
   const get = createFetcher();
