@@ -6,8 +6,7 @@
 // their own (candidates.mjs matches rows by quote). Tables without the period column are not read, and a section is
 // read only when its name states a category this project has.
 import { tableRows } from "../table-rows.mjs";
-import { htmlToText } from "../verify-evidence.mjs";
-import { categoryFor, evidenceItem, fixedDate, isoDate, recordId } from "./common.mjs";
+import { categoryFor, cellNames, evidenceItem, fixedDate, isoDate, recordId, textOf } from "./common.mjs";
 
 export const PAGE = "https://www.grandstream.com/compliance";
 const REGIME = "vendor_policy";
@@ -17,7 +16,6 @@ const SECTIONS = { "Access Points": "access-point", "Gigabit Routers": "router",
 const PERIOD_COLUMN = "Defined Support Period";
 const TABLE = /<table\b[^>]*>[\s\S]*?<\/table\s*>/gi;
 const BUTTON = /<button\b[^>]*>([\s\S]*?)<\/button\s*>/gi;
-const NAME_BREAK = /<\/p>|<br\s*\/?>/i;
 // Year first, in the two forms the validator finds in a quote (2028-12-31, or 2031/1/23), alone or followed by the
 // profile's at-least phrase in either case. Any other form ("2027-6-30") would be written and then refused.
 const PERIOD = /^(\d{4})(?:-(\d{2})-(\d{2})|\/(\d{1,2})\/(\d{1,2}))(?:\s+(.+))?$/;
@@ -26,15 +24,13 @@ const PERIOD = /^(\d{4})(?:-(\d{2})-(\d{2})|\/(\d{1,2})\/(\d{1,2}))(?:\s+(.+))?$
 const CODE = /^[A-Z]{2,}[A-Z-]*\d{2,}[A-Z0-9-]*$/i;
 const MAX_QUOTE = 300;
 
-const collapse = (html) => htmlToText(html).replace(/\s+/g, " ").trim();
-
 // Candidate records for the rows that read without guessing, and the rows skipped with the reason.
 export function parse({ html, url = PAGE, profile, today = new Date().toISOString().slice(0, 10) }) {
   const candidates = [];
   const skipped = [];
   const [note] = profile.notes[url];
   const [atLeastPhrase] = profile.at_least;
-  const buttons = [...html.matchAll(BUTTON)].map((m) => ({ at: m.index, label: collapse(m[1]) }));
+  const buttons = [...html.matchAll(BUTTON)].map((m) => ({ at: m.index, label: textOf(m[1]) }));
   for (const table of html.matchAll(TABLE)) {
     const [header, ...rows] = tableRows(table[0]);
     if (!header || header.cells.at(-1)?.text !== PERIOD_COLUMN) continue;
@@ -67,7 +63,7 @@ export function parse({ html, url = PAGE, profile, today = new Date().toISOStrin
         skip(`the row is ${row.quote.length} characters, over ${MAX_QUOTE}`);
         continue;
       }
-      const names = row.cells[0].html.split(NAME_BREAK).map(collapse).filter(Boolean);
+      const names = cellNames(row.cells[0]);
       const rest = row.cells.slice(1).map((cell) => cell.text).filter(Boolean);
       for (const [i, model] of names.entries()) {
         const quote = [...names.slice(i), ...rest].join(" ");

@@ -1,6 +1,13 @@
 // What the per-source parsers share: the id rule, the profile's category lookup and the date check. A parser turns
 // one page's rows into candidate records in the exact shape of data/devices (MIGRATION B3); anything it can't read
 // without guessing is skipped with a reason, never recorded.
+import { htmlToText } from "../verify-evidence.mjs";
+
+// A piece of a page as its quote reads: htmlToText with each run of whitespace as one space.
+export const textOf = (html) => htmlToText(html).replace(/\s+/g, " ").trim();
+
+// The names a table cell lists one to a paragraph or a line (ASUS, Grandstream), as text, empty ones left out.
+export const cellNames = (cell) => cell.html.split(/<\/p>|<br\s*\/?>/i).map(textOf).filter(Boolean);
 
 // The id of every record on main is its brand_slug, then the model lowercased with each run of other characters as
 // one hyphen: "Tapo C200 (V5)" gives tp-link-tapo-c200-v5 and "CS-X5S-4W-B/1T" gives ezviz-cs-x5s-4w-b-1t.
