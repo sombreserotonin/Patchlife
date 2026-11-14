@@ -80,12 +80,15 @@ jobs:
           permission-pull-requests: write
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          token: ${{ steps.app-token.outputs.token || github.token }}
+          # No token is kept in the git configuration, so the steps that parse makers' pages can't read one there. The
+          # repository is public, so fetching needs none; the push step passes the token to that one command.
+          persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 26
           cache: npm
-      - run: npm ci
+      # No package runs an install script today; none may start to in a job that holds the App's token.
+      - run: npm ci --ignore-scripts
       - name: Read the page
         if: inputs.action == 'read-page'
         # The page as the verifier sees it (RUNBOOKS O11 step 3), in the job summary. Exit 1 (the page can't be read,
@@ -124,14 +127,18 @@ jobs:
       - name: Re-verify the records
         if: inputs.action == 'verify'
         # Exit 1 means a record was stale, failed or errored, which the PR shows; the gate below refuses anything but
-        # verification changes.
+        # verification changes. Any other exit, or output without the closing summary line, means the verifier itself
+        # broke (an uncaught error also exits 1), as in reverify.yml.
         run: |
           set +e
           npm run verify:evidence -- $IDS 2>&1 | tee "$RUNNER_TEMP/verify.txt" | sed -uE 's/::/: :/g; s/##\[/# #[/g'
           status=${PIPESTATUS[0]}
           set -e
           sed 's/^/    /' "$RUNNER_TEMP/verify.txt" >> "$GITHUB_STEP_SUMMARY"
-          if [ "$status" -gt 1 ]; then echo "::error::The verifier did not finish (exit $status)"; exit 1; fi
+          if [ "$status" -gt 1 ] || ! grep -Eq '^[0-9]+ record\(s\) checked, [0-9]+ problem\(s\)$' "$RUNNER_TEMP/verify.txt"; then
+            echo "::error::The verifier did not finish (exit $status)"
+            exit 1
+          fi
           node scripts/verification-only.mjs
       - name: Repoint the source
         if: inputs.action == 'repoint'
@@ -178,8 +185,9 @@ jobs:
           case "$ACTION" in
             verify)
               branch="claude/reverify-manual-$GITHUB_RUN_ID"
-              title="data: re-verify $date ($IDS)"
-              body="$(tail -n 1 "$RUNNER_TEMP/verify.txt")"$'\n\n'"Owner tools, verify, run $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. RUNBOOKS A9: the merge bot merges it." ;;
+              set -- $IDS
+              title="data: re-verify $date ($# record(s))"
+              body="$(tail -n 1 "$RUNNER_TEMP/verify.txt")"$'\n\n'"Records: $IDS"$'\n\n'"Owner tools, verify, run $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. RUNBOOKS A9: the merge bot merges it." ;;
             repoint)
               branch="claude/repoint-$GITHUB_RUN_ID"
               title="data: repoint $URL to $NEW_URL"
@@ -189,9 +197,12 @@ jobs:
               title="data: withdraw $IDS pending review"
               body="$(cat "$RUNNER_TEMP/withdraw.txt")"$'\n\n'"Owner tools, withdraw, run $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. Add \`audited\` and merge (RUNBOOKS O8); the site then shows no date for the record. Then open a data-correction issue for the proper fix." ;;
           esac
+          # The branch is pushed before the PR is opened, and GitHub refuses a title over 256 characters, which would
+          # leave the branch without a PR (a verify branch stops the nightly re-verify until it is merged).
+          title=${title:0:256}
           git switch -c "$branch"
           git add data
           git -c user.name="$name" -c user.email="$email" commit -q -m "$title" -m "$body"
-          git push origin "$branch"
+          git -c http.https://github.com/.extraheader="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)" push origin "$branch"
           url=$(gh api -X POST "repos/$REPO/pulls" -f title="$title" -f head="$branch" -f base=main -f body="$body" --jq .html_url)
           echo "Opened $url" | tee -a "$GITHUB_STEP_SUMMARY"

@@ -161,7 +161,7 @@ flowchart LR
 
 - **Re-verification.** Every night a workflow re-checks the records that are due, as `patchlife-bot`, and opens a pull request that changes nothing but verification results. The merge bot merges only that kind of PR, and the monthly measures.
 - **Weekly refresh.** Each maker with a parser has a profile in [`data/sources/seed.yaml`](data/sources/seed.yaml). The parsers must first reproduce every existing record; then changed rows and new rows are proposed as one candidate PR.
-- **The gate.** A PR that changes data beyond a re-verification merges only with the owner's own `audited` label, which every push removes. The check is judged with the base branch's scripts.
+- **The gate.** A PR that changes data beyond a re-verification merges only with the owner's own `audited` label, which every push removes. The check is judged with `main`'s scripts.
 - **Protected files.** CI labels any PR that changes the workflows, the rules, the dependency files, the bot's scripts, the source registry or the schemas with `needs-human-merge`, and only the owner merges it.
 - **The watchdog.** Each night it checks the workflows, the site, stale and unchecked records and anything waiting on the owner, keeps one `watchdog` issue, and turns its run red on a problem. On Sundays it posts a summary with five random records to spot-check.
 - **By hand.** The `Owner tools` workflow reads or triages a page, re-verifies records, moves records to a page that moved, or pulls a wrong date, all on a GitHub runner.

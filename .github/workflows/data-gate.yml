@@ -1,23 +1,26 @@
 name: Data gate
 
 # RUNBOOKS A9 as a required check (docs/MIGRATION.md decision 3). A PR may change data/ only in what a
-# re-verification changes: verification blocks, empty archive links filled with a capture of the item's own page, and
-# page-hashes.json. Anything more needs the `audited` label added by the repository owner (RUNBOOKS A8).
+# re-verification changes: verification blocks, empty archive links filled with a capture of the item's own page,
+# page-hashes.json, and the registry's `last_checked` dates. Anything more needs the `audited` label added by the
+# repository owner (RUNBOOKS A8).
 #
-# It runs on pull_request_target, so the copy of this file on the base branch is the one that runs, with the base
-# branch's scripts and dependencies: a PR can change neither this gate nor the label job below. That event's token can
-# write even on a fork's PR, so nothing here may run a file the PR brings: the PR's commit is fetched and checked out
-# beside the trusted copy, and only read.
+# It runs on pull_request_target for PRs into main, so main's copy of this file is the one that runs, with main's
+# scripts and dependencies: a PR can change neither this gate nor the label job below. That event's token can write
+# even on a fork's PR, so nothing here may run a file the PR brings: the PR's commit is fetched and checked out beside
+# the trusted copy, and only read.
 #
 # The owner's label is written down as a commit status named `audited`, on the commit that was the PR's head when the
 # label was added, with the base branch it was judged against. Only that status passes the audit, so a label can't
 # carry over to a later commit or to another base. Every push removes the label as well.
 #
 # The job must be named data-gate: scripts/merge-bot.mjs and the ruleset require a check run of that name on the head
-# commit.
+# commit. Its name says nothing about the base, so a PR into another branch must start no run: a fork's PR on the bot's
+# head commit, judged against an older branch, would otherwise leave a failing data-gate that holds the bot's PR.
 on:
   pull_request_target:
-    # edited: a PR pointed at another base branch is judged again against it.
+    branches: [main]
+    # edited: a PR pointed at main from another base branch is judged again against it.
     types: [opened, synchronize, reopened, edited, labeled, unlabeled]
 
 permissions:
@@ -38,7 +41,6 @@ jobs:
       pull-requests: write
       statuses: write
     env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       REPO: ${{ github.repository }}
       PR: ${{ github.event.pull_request.number }}
       OWNER: ${{ github.repository_owner }}
@@ -52,7 +54,9 @@ jobs:
         # The label is for people: it shows that the PR was reviewed as it stands. The audit itself is the commit
         # status below, which a push leaves behind on the old commit.
         if: github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'audited')
-        run: gh api -X DELETE "repos/$REPO/issues/$PR/labels/audited" > /dev/null || echo "The audited label was already gone."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh api -X DELETE "repos/$REPO/issues/$PR/labels/audited" > /dev/null || echo "The audited label could not be removed (already gone, or the call failed)."
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # The base branch, never the PR: this copy's scripts are the ones that run. Whole history, so the commit the
@@ -86,7 +90,9 @@ jobs:
           # read as a workflow command. The runner takes `##[name]` anywhere in a line and `::name::` after any kind
           # of space, a no-break space included (tried on a runner, 13 Nov 2026), so every `::` and `##[` is broken up.
           tr -d '\000-\011\013-\037\177' < "$RUNNER_TEMP/gate.txt" | sed -E 's/::/: :/g; s/##\[/# #[/g'
-          if [ "$status" -eq 0 ]; then
+          # Exit 0 alone is not enough: a script that never reached its checks would exit 0 too, printing nothing. With
+          # exit 0 there were no problems, so no line from the PR is in the output.
+          if [ "$status" -eq 0 ] && grep -qx 'Only verification changed' "$RUNNER_TEMP/gate.txt"; then
             echo "verified=yes" >> "$GITHUB_OUTPUT"
           else
             echo "verified=no" >> "$GITHUB_OUTPUT"
@@ -96,6 +102,8 @@ jobs:
         # The owner's label is recorded for this commit and this base branch, and removing the label takes it back.
         # Only this job has the permission to write a status, and only one it wrote is read.
         if: steps.gate.outputs.verified == 'no'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           record() { gh api -X POST "repos/$REPO/statuses/$HEAD_SHA" -f context=audited -f state="$1" -f description="$2" > /dev/null; }
           pass() { echo "The data changes go beyond a re-verification, and $OWNER added the audited label on this commit (RUNBOOKS A8)."; exit 0; }
@@ -115,11 +123,12 @@ jobs:
           refuse
 
   protected-paths:
-    # Labels PRs that change workflows, the rules and decisions files, dependencies, the scripts the bot and the gate
-    # run, the source registry (its profiles are binding, D49) or the schemas, so only the owner merges them. It runs
-    # here, from the base branch's copy, so a PR can't drop its own label, and it reads the PR's list of files, never
-    # the files.
-    if: contains(fromJSON('["opened", "synchronize", "reopened"]'), github.event.action)
+    # Labels PRs that change workflows, the rules and decisions files, dependencies and npm's settings, the scripts the
+    # bot and the gate run and every module they load (tests/workflows.test.mjs walks their imports), the source
+    # registry (its profiles are binding, D49) or the schemas, so only the owner merges them. It runs here, from main's
+    # copy, so a PR can't drop its own label, and it reads the PR's list of files, never the files. A PR pointed at main
+    # from another branch is read again, since its list of files changes with the base.
+    if: contains(fromJSON('["opened", "synchronize", "reopened"]'), github.event.action) || (github.event.action == 'edited' && github.event.changes.base)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -131,13 +140,16 @@ jobs:
     steps:
       - name: Label protected-path changes
         run: |
-          files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename')
-          protected=$(printf '%s\n' "$files" | grep -E '^(\.github/|\.claude/|\.agent/prompts/|CLAUDE\.md$|CONTRIBUTING\.md$|docs/DECISIONS\.md$|package(-lock)?\.json$|scripts/(merge-bot|watchdog|verification-only|validate-data)\.mjs$|data/sources/seed\.yaml$|data/schema/)' || true)
+          # A renamed file counts under its old name as well as its new one, so a protected file can't be moved out
+          # of its path unseen.
+          files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[] | .filename, (.previous_filename // empty)')
+          protected=$(printf '%s\n' "$files" | grep -E '^(\.github/|\.claude/|\.agent/prompts/|\.npmrc$|CLAUDE\.md$|CONTRIBUTING\.md$|docs/DECISIONS\.md$|package(-lock)?\.json$|scripts/(merge-bot|watchdog|verification-only|validate-data|polite-fetch|build-site|data-report|status|renewals)\.mjs$|site/search\.js$|data/sources/[^/]+\.yaml$|data/schema/)' || true)
           # A registry change that moves only `last_checked` dates is a revisit, not a profile change (the same
-          # exemption as the gate's, #146), so the nightly revisit PRs don't wait on a human. A missing patch counts
-          # as a change: GitHub leaves the patch out of a large diff, and the `+` keeps that line through the grep.
-          if [ "$protected" = "data/sources/seed.yaml" ]; then
-            other=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[] | select(.filename == "data/sources/seed.yaml") | .patch // "+no patch"' | grep -E '^[-+]' | grep -vE '^[-+]  last_checked: ' || true)
+          # exemption as the gate's, #146), so the nightly revisit PRs don't wait on a human. Only a modified file can
+          # be such a change, and a missing patch counts as a change: GitHub leaves the patch out of a large diff, and
+          # the `+` keeps that line through the grep.
+          if [ -n "$protected" ] && ! printf '%s\n' "$protected" | grep -qvE '^data/sources/[^/]+\.yaml$'; then
+            other=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[] | select(.filename | test("^data/sources/[^/]+\\.yaml$")) | if .status == "modified" then .patch // "+no patch" else "+\(.status)" end' | grep -E '^[-+]' | grep -vE '^[-+]  last_checked: ' || true)
             [ -z "$other" ] && protected=""
           fi
           # GitHub lists at most 3000 files of a PR, so a larger one may hold protected files this job never sees.

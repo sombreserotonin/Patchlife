@@ -52,7 +52,9 @@ jobs:
           permission-pull-requests: write
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          token: ${{ steps.app-token.outputs.token }}
+          # No token is kept in the git configuration, so the steps that parse makers' pages can't read one there. The
+          # repository is public, so fetching needs none; the push step passes the App's token to that one command.
+          persist-credentials: false
       - id: open-pr
         name: Find the open candidate PR
         # One candidate PR at a time, so the owner is never asked to review two. The step's `branch` output is empty
@@ -66,7 +68,10 @@ jobs:
           done
           # Only a branch in this repository counts. Anyone can open a PR from a fork's branch of the same name, and
           # that must neither stop the weekly run nor be fetched and pushed to.
-          open=$(gh api "repos/$REPO/pulls?state=open&per_page=100" --paginate --jq '.[] | select((.head.ref | startswith("claude/data-auto-")) and .head.repo.full_name == env.REPO) | "\(.number) \(.head.ref)"' | head -n 1)
+          # The list is read whole and its first line taken after, so a failed call fails the step instead of reading
+          # as "no PR open", which would open a second one.
+          all=$(gh api "repos/$REPO/pulls?state=open&per_page=100" --paginate --jq '.[] | select((.head.ref | startswith("claude/data-auto-")) and .head.repo.full_name == env.REPO) | "\(.number) \(.head.ref)"')
+          open=${all%%$'\n'*}
           if [ -n "$open" ] && [ -z "$REFRESH_OPEN_PR" ]; then
             echo "Skipped: candidate PR #${open%% *} (${open#* }) is still open. Review it (RUNBOOKS O9), or dispatch this workflow with refresh_open_pr to update it." | tee -a "$GITHUB_STEP_SUMMARY"
             echo "skip=yes" >> "$GITHUB_OUTPUT"
@@ -88,10 +93,12 @@ jobs:
           node-version: 26
           cache: npm
       - if: steps.open-pr.outputs.skip != 'yes'
-        run: npm ci
+        # No package runs an install script today; none may start to in a job that holds the App's token.
+        run: npm ci --ignore-scripts
       - name: Run the parsers
         if: steps.open-pr.outputs.skip != 'yes'
-        # Exit 1 is the parser gate or the min_rows gate: nothing was written, and the run goes red as the alarm.
+        # Exit 1 is the parser gate or the min_rows gate, a page that could not be read, or a registry that does not
+        # validate: nothing was written, and the run goes red as the alarm.
         run: |
           set +e
           # The log's copy is cleaned, here and in the next step, as in data-gate.yml: text from a maker's page must
@@ -130,11 +137,19 @@ jobs:
         run: |
           npm run validate
           npm test
+      - name: List the dates no record quotes yet
+        if: steps.open-pr.outputs.skip != 'yes' && env.nothing != 'yes'
+        # For the PR body. It fetches the parsed pages again, so it runs here, in a step without the App's token, and
+        # never stops the PR: a crash is written into the list.
+        run: |
+          if [ -z "$(git status --porcelain -- data)" ]; then exit 0; fi
+          node scripts/unquoted-dates.mjs $(jq -r '[.pages[].url] | unique | .[]' "$RUNNER_TEMP/report.json") > "$RUNNER_TEMP/unquoted.txt" 2>&1 \
+            || echo "unquoted-dates.mjs exited $?" >> "$RUNNER_TEMP/unquoted.txt"
       - name: Push and open the PR
         if: steps.open-pr.outputs.skip != 'yes' && env.nothing != 'yes'
         # A new branch and PR, or a new commit on the open PR's branch (never a force push). The body holds the change
         # table and the flags from the report, then the highlight links of the spot-check sample and the dates on the
-        # parsed pages that no record quotes yet, both capped so the body stays within GitHub's limit.
+        # parsed pages that no record quotes yet; only those last two are capped.
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
@@ -151,17 +166,21 @@ jobs:
           report="$RUNNER_TEMP/report.json"
           written=$(jq -r '.written | length' "$report")
           {
+            # A refresh replaces the body with its own rows, so it says so: the earlier runs' rows are still in the PR.
+            if [ -n "$OPEN_BRANCH" ]; then echo "**This body lists only the rows of the refresh run on $date.** The rows of the PR's earlier runs are in its earlier commits and in this description's edit history: review every record under Files changed (RUNBOOKS O9)."; echo; fi
             echo "Weekly data refresh of $date (docs/MIGRATION.md P3): $written record(s) proposed by \`scripts/candidates.mjs\`, changed rows first. Review it with RUNBOOKS O9, add \`audited\`, then squash and merge; or dispatch the workflow with \`refresh_open_pr\` after fixing a profile."
             echo
             echo "| Record | Change | Before | After |"
             echo "| --- | --- | --- | --- |"
             jq -r '.written[] | "| \(.id) | \(.kind) | \(if .before then "\(.before.end_date) \(if .before.at_least then "at least" else "" end) \(.before.conditions // "")" else "" end) | \(if .after then "\(.after.end_date) \(if .after.at_least then "at least" else "" end) \(.after.conditions // "")" else "new row" end) |"' "$report"
             echo
-            flags=$(jq -r '.flags[]?' "$report")
-            if [ -n "$flags" ]; then echo "**Flags for a person:**"; printf '%s\n' "$flags" | sed 's/^/- /'; echo; fi
+            # The flags quote makers' pages, so they go in a fence, one per line, as in the blocks below: GitHub
+            # links, notifies and closes nothing there. Every flag starts with a fixed word, so none can end the fence.
+            flags=$(jq -r '.flags[]? | gsub("\\s+"; " ")' "$report")
+            if [ -n "$flags" ]; then echo "**Flags for a person:**"; echo '```'; printf '%s\n' "$flags"; echo '```'; echo; fi
             echo "Per page:"
             echo '```'
-            grep -vE '^  (new|skipped): ' "$RUNNER_TEMP/candidates.txt"
+            grep -vE '^  (new|skipped): ' "$RUNNER_TEMP/candidates.txt" || true
             echo '```'
             echo
             echo "Verifier:"
@@ -178,7 +197,7 @@ jobs:
           fi
           git add data
           git -c user.name="$name" -c user.email="$email" commit -q -m "data: weekly refresh $date ($written records)" -m "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-          git push origin "$branch"
+          git -c http.https://github.com/.extraheader="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)" push origin "$branch"
           if [ -z "$number" ]; then
             number=$(gh api -X POST "repos/$REPO/pulls" -f title="data: weekly refresh $date" -f head="$branch" -f base=main -F body=@"$RUNNER_TEMP/body.md" --jq .number)
           fi
@@ -192,7 +211,7 @@ jobs:
             echo
             echo "**Dates on the parsed pages that no record quotes yet** (\`scripts/unquoted-dates.mjs\`, first 60 lines):"
             echo '```'
-            node scripts/unquoted-dates.mjs $(jq -r '[.pages[].url] | unique | .[]' "$report") 2>&1 | head -n 60
+            head -n 60 "$RUNNER_TEMP/unquoted.txt"
             echo '```'
             echo
             echo "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"

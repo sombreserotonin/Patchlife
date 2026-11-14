@@ -223,7 +223,7 @@ A data PR that changes more than a re-verification does (A9) merges only with th
 
 ### A9 What a re-verification may change, and who merges it
 A re-verification changes no data but `verification` blocks, empty `archive_url` fields it fills with a capture that holds the item's quote (D43), and `data/sources/page-hashes.json`. A registry entry's `last_checked` moving on its own counts the same. Such a PR needs no `audited` label:
-1. `data-gate` runs the base branch's `scripts/verification-only.mjs` against the PR and passes when it prints `Only verification changed`, or when you have added `audited` (A8). To check by hand, on the PR's branch: `node scripts/verification-only.mjs $(git merge-base origin/main HEAD)`.
+1. `data-gate` runs `main`'s `scripts/verification-only.mjs` against the PR and passes when it exits 0 with `Only verification changed` as its last line, or when you have added `audited` (A8). To check by hand, on the PR's branch: `node scripts/verification-only.mjs $(git merge-base origin/main HEAD)`.
 2. The `Re-verify evidence` workflow pushes `claude/reverify-<date>-<run id>` with the App's token and opens the PR itself, so CI runs at once. Housekeeping's merge bot merges it at 21:23 UTC while the repository variable `BOT_MERGE` is `on`, and deletes the branch (D47). The workflow stops at its guard while any such branch exists, so a branch whose PR was closed without merging blocks it until you delete the branch.
 3. A run lists the records it couldn't check in a warning annotation titled `Records not checked` (the run still passes; it fails only when the verifier itself broke). The watchdog reports ids that recur on three nights.
 4. Records it marked `stale` are yours: A4.

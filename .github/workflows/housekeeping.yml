@@ -44,7 +44,8 @@ jobs:
         with:
           node-version: 26
           cache: npm
-      - run: npm ci
+      # No package runs an install script today; none may start to in a job that holds the App's token.
+      - run: npm ci --ignore-scripts
       - id: day
         name: Work out the day this run stands for
         # A scheduled run has started 3 to 6 hours late, after midnight UTC, so the Sunday and first-of-month tests
