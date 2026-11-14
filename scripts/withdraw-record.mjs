@@ -41,7 +41,10 @@ export function withdrawRecord(devicesDir, id, reason, { today = new Date().toIS
     if (pages.some((page) => page.url === item.url)) continue;
     pages.push({ url: item.url, retrieved: item.retrieved, regime: item.regime });
   }
-  doc.set("evidence", pages);
+  // Dates are quoted strings (DATA-POLICY), as the rest of the record writes them.
+  const evidence = doc.createNode(pages);
+  for (const page of evidence.items) page.get("retrieved", true).type = "QUOTE_DOUBLE";
+  doc.set("evidence", evidence);
   doc.set("verification", { status: "unverified" });
   const notes = withdrawnNotes(record.notes, today, reason);
   doc.set("notes", notes);
@@ -49,7 +52,7 @@ export function withdrawRecord(devicesDir, id, reason, { today = new Date().toIS
   return { file, droppedNotes: Boolean(record.notes) && !notes.includes(record.notes) };
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (import.meta.main) {
   const [id, reason] = process.argv.slice(2);
   if (process.argv.length !== 4 || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(id) || !reason.trim()) {
     console.error(USAGE);

@@ -49,6 +49,14 @@ test("withdrawing a record leaves none_published, no quotes, unverified and the 
   assert.throws(() => withdrawRecord(dir, "acme-cam-1", "again", { today: TODAY }), /already none_published/);
 });
 
+test("a withdrawn record keeps its pages' retrieval dates as quoted strings, as records write dates", () => {
+  const dir = copy();
+  withdrawRecord(dir, "acme-cam-1", "the page now gives 30 June 2027", { today: TODAY });
+  const text = readFileSync(join(dir, "acme", "acme-cam-1.yaml"), "utf8");
+  assert.match(text, /\n    retrieved: "\d{4}-\d{2}-\d{2}"\n/);
+  assert.doesNotMatch(text, /retrieved: \d/);
+});
+
 test("an unknown id throws, and the notes keep the schema's limit", () => {
   assert.throws(() => withdrawRecord(copy(), "acme-cam-9", "gone", { today: TODAY }), /No record has the id "acme-cam-9"/);
   assert.equal(withdrawnNotes(null, TODAY, "a reason."), "Withdrawn pending review (2026-10-27): a reason.");

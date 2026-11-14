@@ -5,8 +5,6 @@
 // full output, where the URL line is line 1. Reads with the polite fetcher, on a GitHub runner or your own machine.
 // Exits 1 when the page can't be read or --grep matches nothing, 2 on bad arguments.
 // Usage: node --use-env-proxy scripts/page-text.mjs [--grep <text>] <url>
-import { resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { createFetcher } from "./polite-fetch.mjs";
 import { pageText } from "./verify-evidence.mjs";
@@ -42,7 +40,7 @@ export function grepLines(lines, text, first = 1) {
   return lines.flatMap((line, i) => (line.toLowerCase().includes(wanted) ? [`${i + first}:${line}`] : []));
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (import.meta.main) {
   let url;
   let grep;
   try {

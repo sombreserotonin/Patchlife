@@ -254,7 +254,7 @@ export async function verifyDevices(devicesDir, { ids = [], due, limit, get = cr
   return { results, pages: changes };
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (import.meta.main) {
   let options;
   try {
     const { values, positionals } = parseArgs({ allowPositionals: true, options: { due: { type: "string" }, limit: { type: "string" } } });

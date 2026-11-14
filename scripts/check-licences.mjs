@@ -70,7 +70,7 @@ export function checkLicences(lock) {
   return { checked: packages.length, problems };
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (import.meta.main) {
   const file = resolve(process.argv[2] ?? join(ROOT, "package-lock.json"));
   let result;
   try {
