@@ -8,7 +8,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildSite, loadRecords } from "../scripts/build-site.mjs";
 import { USER_AGENT } from "../scripts/polite-fetch.mjs";
-import { checkState, gatherState, gitStaleSince, highlightLink, issueBody, pickSample, publish, siteDate, summaryText } from "../scripts/watchdog.mjs";
+import { PUSH_STEP, UNCHECKED_TITLE, checkState, forLog, gatherState, gitStaleSince, highlightLink, issueBody, pickSample, publish, siteDate, summaryText } from "../scripts/watchdog.mjs";
 
 const SCRIPT = fileURLToPath(new URL("../scripts/watchdog.mjs", import.meta.url));
 const FIXTURES = fileURLToPath(new URL("./fixtures/", import.meta.url));
@@ -126,7 +126,7 @@ test("cancelled runs: any crawl-group run cancelled in the last 48 hours", () =>
   );
 });
 
-test("re-verify branches: one over 36 hours old, or one whose PRs were all closed without merging", () => {
+test("re-verify branches: one over 36 hours old, one whose PRs were all closed without merging, or one that outlived its merged PR", () => {
   const branch = (name, [hours, minutes], prs = []) => ({ name, committed_at: ago(hours, minutes), prs });
   const pr = (number, state, merged_at = null) => ({ number, state, merged_at });
   assert.deepEqual(
@@ -143,6 +143,7 @@ test("re-verify branches: one over 36 hours old, or one whose PRs were all close
     [
       "Re-verify branches: claude/reverify-2026-11-13-2 is 36 hours old and unmerged, so re-verification stops at its guard.",
       "Re-verify branches: claude/reverify-2026-11-15-3: its PR #8 was closed without merging. Delete the branch, or reopen the PR.",
+      "Re-verify branches: claude/reverify-2026-11-15-4: its PR #9 was merged, but the branch is still there, so re-verification stops at its guard. Delete the branch.",
       "Re-verify branches: claude/reverify-2026-11-15-5: its PRs #10, #11 were closed without merging. Delete the branch, or reopen the PR.",
     ],
   );
@@ -297,7 +298,11 @@ test("gatherState reads every check's data from the API, the site, git and the r
     [`GET ${R}/actions/workflows/pages.yml/runs?event=push&status=success&per_page=1`]: { workflow_runs: [ghRun(90, { event: "push", updated_at: ago(40) })] },
     [`GET ${R}/actions/workflows/pages.yml/runs?event=schedule&status=success&per_page=1`]: { workflow_runs: [] },
     [`GET ${R}/actions/workflows/pages.yml/runs?event=workflow_dispatch&status=success&per_page=1`]: { workflow_runs: [ghRun(91, { event: "workflow_dispatch", updated_at: ago(37) })] },
+    [`GET ${R}/actions/workflows/data-refresh.yml/runs?status=success&per_page=1`]: { workflow_runs: [ghRun(60, { updated_at: ago(29) })] },
     [`GET ${R}/actions/workflows/reverify.yml/runs?status=cancelled&per_page=20`]: { workflow_runs: [ghRun(40, { updated_at: ago(5) })] },
+    [`GET ${R}/actions/workflows/data-refresh.yml/runs?status=cancelled&per_page=20`]: { workflow_runs: [] },
+    [`GET ${R}/actions/workflows/probe-hosts.yml/runs?status=cancelled&per_page=20`]: { workflow_runs: [] },
+    [`GET ${R}/actions/workflows/owner-tools.yml/runs?status=cancelled&per_page=20`]: { workflow_runs: [] },
     [`GET ${R}/actions/workflows/probe-hosts.yml/runs?status=cancelled&per_page=20`]: { workflow_runs: [] },
     [`GET ${R}/git/matching-refs/heads/claude/reverify-`]: [{ ref: "refs/heads/claude/reverify-2026-11-13-77", object: { sha: "abc123", type: "commit" } }],
     [`GET ${R}/commits/abc123`]: { sha: "abc123", commit: { committer: { date: ago(50) } } },
@@ -342,6 +347,7 @@ test("gatherState reads every check's data from the API, the site, git and the r
     `GET ${R}/actions/workflows/pages.yml/runs?event=push&status=success&per_page=1`,
     `GET ${R}/actions/workflows/pages.yml/runs?event=schedule&status=success&per_page=1`,
     `GET ${R}/actions/workflows/pages.yml/runs?event=workflow_dispatch&status=success&per_page=1`,
+    `GET ${R}/actions/workflows/data-refresh.yml/runs?status=success&per_page=1`,
     `GET ${R}/actions/workflows/reverify.yml/runs?status=cancelled&per_page=20`,
     `GET ${R}/actions/workflows/data-refresh.yml/runs?status=cancelled&per_page=20`,
     `GET ${R}/actions/workflows/probe-hosts.yml/runs?status=cancelled&per_page=20`,
@@ -355,8 +361,8 @@ test("gatherState reads every check's data from the API, the site, git and the r
   ]);
   assert.deepEqual(fetched, ["https://patchlife.tech/"]);
   assert.deepEqual(asked, ["data/devices/acme/acme-2.yaml", "data/devices/acme/acme-3.yaml"]);
-  // data-refresh.yml and owner-tools.yml don't exist yet: their 404s are not errors.
   assert.deepEqual(state.errors, []);
+  assert.deepEqual(state.refreshRuns, [{ updated_at: ago(29), url: `${RUNS}/60` }]);
   assert.equal(state.at, "2026-11-15T21:23:00.000Z");
   assert.deepEqual(state.reverifyRuns[0], {
     url: `${RUNS}/41`,
@@ -421,28 +427,36 @@ test("a failed read is reported under its check, leaves nothing half-read, and t
     { check: "Workflows", message: "Could not read the workflow list: HTTP 500" },
     { check: "Re-verify", message: "Could not read the re-verify runs: HTTP 502" },
     { check: "Pages", message: `Could not read the Pages runs: GET ${R}/actions/workflows/pages.yml/runs?event=push&status=success&per_page=1: HTTP 404` },
+    { check: "Data refresh", message: `Could not read the data refresh runs: GET ${R}/actions/workflows/data-refresh.yml/runs?status=success&per_page=1: HTTP 404` },
+    { check: "Cancelled runs", message: `Could not read the cancelled runs: GET ${R}/actions/workflows/reverify.yml/runs?status=cancelled&per_page=20: HTTP 404` },
     { check: "Data health", message: "Could not read when the stale records went stale: not a git repository" },
   ]);
   assert.equal(state.workflows, undefined);
   assert.equal(state.reverifyRuns, undefined);
   assert.equal(state.records, undefined);
-  // Every cancelled-runs lookup was a 404, so no crawl workflow exists yet: nothing to report.
-  assert.deepEqual(state.cancelled, []);
+  assert.equal(state.cancelled, undefined);
   assert.deepEqual(state.site, { url: "https://patchlife.tech/", error: "getaddrinfo ENOTFOUND patchlife.tech" });
   assert.deepEqual(
     checkState(state, NOW).map(({ check }) => check),
-    ["Workflows", "Re-verify", "Pages", "Data health", "Site"],
+    ["Workflows", "Re-verify", "Pages", "Data refresh", "Cancelled runs", "Data health", "Site"],
   );
 });
 
-test("cancelled runs: a workflow that doesn't exist yet (404) is skipped quietly, but another error is reported", async () => {
+test("cancelled runs: every crawl workflow is read, and a missing one (404) or another error is reported", async () => {
   const cancelled = (file) => `GET ${R}/actions/workflows/${file}/runs?status=cancelled&per_page=20`;
   const gather = async (routes) =>
     gatherState({ api: fakeApi(routes).api, fetchSite: async () => ({ status: 200, text: "" }), now: NOW, repo: "o/r", devices: [], renewals: [], staleSince: () => null });
-  const found = await gather({ [cancelled("reverify.yml")]: { workflow_runs: [ghRun(5, { updated_at: ago(1) })] }, [cancelled("probe-hosts.yml")]: { workflow_runs: [] } });
+  const none = { workflow_runs: [] };
+  const all = { [cancelled("reverify.yml")]: { workflow_runs: [ghRun(5, { updated_at: ago(1) })] }, [cancelled("data-refresh.yml")]: none, [cancelled("probe-hosts.yml")]: none, [cancelled("owner-tools.yml")]: none };
+  const found = await gather(all);
   assert.deepEqual(found.cancelled, [{ workflow: "reverify.yml", updated_at: ago(1), url: `${RUNS}/5` }]);
   assert.ok(!found.errors.some((error) => error.check === "Cancelled runs"));
-  const failed = await gather({ [cancelled("probe-hosts.yml")]: httpError(500) });
+  // A renamed or removed crawl workflow answers 404, which is reported, not skipped.
+  const { [cancelled("owner-tools.yml")]: _, ...missing } = all;
+  const gone = await gather(missing);
+  assert.equal(gone.cancelled, undefined);
+  assert.deepEqual(gone.errors.filter((error) => error.check === "Cancelled runs"), [{ check: "Cancelled runs", message: `Could not read the cancelled runs: ${cancelled("owner-tools.yml")}: HTTP 404` }]);
+  const failed = await gather({ ...all, [cancelled("probe-hosts.yml")]: httpError(500) });
   assert.equal(failed.cancelled, undefined);
   assert.deepEqual(
     failed.errors.filter((error) => error.check === "Cancelled runs"),
@@ -666,8 +680,10 @@ async function runCli(t, args) {
       [`GET ${R}/actions/workflows/pages.yml/runs?event=schedule&status=success&per_page=1`]: runs([]),
       [`GET ${R}/actions/workflows/pages.yml/runs?event=workflow_dispatch&status=success&per_page=1`]: runs([]),
       [`POST ${R}/actions/workflows/pages.yml/dispatches`]: [204, ""],
+      [`GET ${R}/actions/workflows/data-refresh.yml/runs?status=success&per_page=1`]: runs([ghRun(3, { updated_at: hourAgo })]),
+      ...Object.fromEntries(["reverify.yml", "data-refresh.yml", "probe-hosts.yml", "owner-tools.yml"].map((file) => [`GET ${R}/actions/workflows/${file}/runs?status=cancelled&per_page=20`, runs([])])),
       [`GET ${R}/git/matching-refs/heads/claude/reverify-`]: [200, []],
-      [`GET ${R}/issues?state=open&per_page=100&page=1`]: [200, []],
+      [`GET ${R}/issues?state=open&per_page=100&page=1`]: [200, [{ number: 9, created_at: hourAgo, labels: [{ name: "##[error]boom ::warning::x" }] }]],
       [`GET ${R}/pulls?state=open&per_page=100&page=1`]: [200, []],
       [`GET ${R}/issues?state=open&labels=watchdog&per_page=100`]: [200, []],
       [`POST ${R}/labels`]: [201, { name: "watchdog" }],
@@ -733,6 +749,10 @@ test("the CLI's dry run reads the same but writes nothing, and prints the summar
   assert.ok(cli.lines.includes("Dry run: would open a watchdog issue."));
   assert.ok(cli.lines.includes("Dry run: would post the summary on #27."));
   assert.ok(cli.lines.some((line) => line.startsWith("Weekly summary for ")));
+  // The fake answers every read, so no check reports a failed read, and the label reaches the log cleaned.
+  assert.ok(!cli.lines.some((line) => line.includes("Could not read")), cli.stdout);
+  assert.ok(cli.lines.some((line) => line.includes("# #[error]boom : :warning: :x")), cli.stdout);
+  assert.doesNotMatch(cli.stdout, /##\[|::warning::/);
 });
 
 test("the CLI exits 2 without GH_TOKEN and GITHUB_REPOSITORY, or with an unknown argument", () => {
@@ -748,4 +768,39 @@ test("the CLI exits 2 without GH_TOKEN and GITHUB_REPOSITORY, or with an unknown
   assert.equal(odd.status, 2);
   assert.equal(odd.stderr, "Unknown argument --dryrun. Usage: node scripts/watchdog.mjs [--dry-run] [--summary]\n");
   assert.equal(odd.stdout, "");
+});
+
+test("data refresh: a line when no weekly refresh has succeeded for 8 days, none before", () => {
+  const run = (hours) => ({ refreshRuns: [{ updated_at: ago(hours), url: `${RUNS}/60` }] });
+  assert.deepEqual(messages(run(8 * 24 - 1)), []);
+  assert.deepEqual(messages(run(8 * 24)), [`Data refresh: The last successful data refresh run finished 8 days ago (${ago(8 * 24).slice(0, 10)} 21:23 UTC), so the weekly run has stopped or keeps failing: ${RUNS}/60`]);
+  assert.deepEqual(messages({ refreshRuns: [] }), ["Data refresh: No successful data refresh run found."]);
+});
+
+test("reverify.yml still has the step name and the annotation title the watchdog reads", () => {
+  const workflow = readFileSync(fileURLToPath(new URL("../.github/workflows/reverify.yml", import.meta.url)), "utf8");
+  assert.match(workflow, new RegExp(`^\\s+- name: ${PUSH_STEP}$`, "m"));
+  assert.ok(workflow.includes(`::warning title=${UNCHECKED_TITLE}::`));
+});
+
+test("gitStaleSince outside a git checkout fails on its first call, inside the read that reports it", async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), "patchlife-not-a-repo-"));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const staleSince = gitStaleSince(dir);
+  assert.throws(() => staleSince("data/devices/acme/acme-2.yaml"));
+  const state = await gatherState({ api: fakeApi({}).api, fetchSite: async () => ({ status: 200, text: "" }), now: NOW, repo: "o/r", devices: [record("acme-2", "stale")], renewals: [], staleSince });
+  assert.ok(state.errors.some((e) => e.check === "Data health" && e.message.startsWith("Could not read when the stale records went stale")));
+});
+
+test("the log's copy of the summary holds no workflow command from a model name", () => {
+  const state = { at: new Date(NOW).toISOString(), site: { url: "https://patchlife.tech/" }, pulls: [], issues: [] };
+  const sample = [{ id: "acme-cam-1", brand: "Acme", model: "Cam ::warning title=x::y ##[error]z", evidence: [{ url: "https://example.com/acme", quote: "Cam 1 2029" }] }];
+  const summary = summaryText(state, [], sample);
+  assert.match(summary, /Cam ::warning/);
+  assert.doesNotMatch(forLog(summary), /::warning|##\[/);
+});
+
+test("re-verify branches: a branch with a merged PR and a newer open one is not called left over", () => {
+  const problems = messages({ branches: [{ name: "claude/reverify-2026-11-15-7", committed_at: ago(2), prs: [{ number: 20, state: "closed", merged_at: ago(20) }, { number: 21, state: "open", merged_at: null }] }] });
+  assert.deepEqual(problems, []);
 });

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { USER_AGENT, createFetcher, robotsAllows } from "../scripts/polite-fetch.mjs";
+import { MAX_BODY_BYTES, USER_AGENT, createFetcher, robotsAllows, ruleMatches } from "../scripts/polite-fetch.mjs";
 
 const reply = (body, status = 200, headers = {}) => () => new Response(body, { status, headers: { "content-type": "text/html", ...headers } });
 
@@ -192,4 +192,64 @@ test("an error status throws with the status", async () => {
 test("an error status after a redirect throws with the final URL", async () => {
   const { get } = setup({ "https://a.test/old": reply("", 301, { location: "/gone" }) });
   await assert.rejects(get("https://a.test/old"), (err) => err.status === 404 && err.url === "https://a.test/gone" && err.message === "HTTP 404 for https://a.test/gone");
+});
+
+test("robots: a rule with many wildcards is matched at once, as RFC 9309 reads it", () => {
+  const path = "/en/support/product-security-and-end-of-life-statement/" + "a".repeat(40);
+  const started = Date.now();
+  assert.equal(robotsAllows("User-agent: *\nDisallow: /*******X\n", path), true);
+  assert.equal(robotsAllows(`User-agent: *\nDisallow: /${"*a".repeat(60)}X\n`, path), true);
+  assert.ok(Date.now() - started < 1000, `${Date.now() - started} ms`);
+  for (const [rule, yes, no] of [["/a*b", "/axxb/c", "/ac"], ["/a*b$", "/axxb", "/axxbc"], ["*.pdf$", "/x/y.pdf", "/x/y.pdf?z"], ["/a$b", "/a$b", "/ab"], ["/", "/anything", ""]]) {
+    assert.equal(ruleMatches(rule, yes), true, `${rule} ${yes}`);
+    assert.equal(ruleMatches(rule, no), false, `${rule} ${no}`);
+  }
+});
+
+test("a body over the limit is refused, not held in memory", async () => {
+  let t = 0;
+  const fetch = async (url) => new Response(url.endsWith("/robots.txt") ? "" : "x".repeat(2048), { status: 200, headers: { "content-type": "text/html" } });
+  const get = createFetcher({ fetch, now: () => t, sleep: async (ms) => { t += ms; }, maxBodyBytes: 1024 });
+  await assert.rejects(get("https://a.test/big"), /the page at https:\/\/a\.test\/big is over 1024 bytes/);
+  const small = createFetcher({ fetch, now: () => t, sleep: async (ms) => { t += ms; }, maxBodyBytes: 4096 });
+  assert.equal((await small("https://a.test/big")).text.length, 2048);
+});
+
+// A fake fetch whose page body arrives in the chunks given, so a character can straddle two chunks.
+function serve(chunks, contentType, robots = "") {
+  let t = 0;
+  const fetch = async (url) =>
+    url.endsWith("/robots.txt")
+      ? new Response(robots, { status: robots ? 200 : 404 })
+      : new Response(new ReadableStream({ start(c) { for (const chunk of chunks) c.enqueue(chunk); c.close(); } }), { status: 200, headers: { "content-type": contentType } });
+  return (options = {}) => createFetcher({ fetch, now: () => t, sleep: async (ms) => { t += ms; }, ...options });
+}
+
+test("a page's bytes are decoded as UTF-8, with one BOM dropped, whatever the chunks or the declared charset", async () => {
+  const text = "Acme Caméra, 2029年12月31日 ✓";
+  const bytes = new TextEncoder().encode(`\ufeff${text}`);
+  const cuts = [0, 9, 14, 21, 26, bytes.length];
+  const chunks = cuts.slice(1).map((end, i) => bytes.slice(cuts[i], end));
+  for (const contentType of ["text/html; charset=utf-8", "text/html; charset=iso-8859-1", "text/html"]) {
+    assert.equal((await serve(chunks, contentType)()("https://a.test/p")).text, text, contentType);
+  }
+  const bad = Uint8Array.from([0x41, 0xff, 0x42]);
+  assert.equal((await serve([bad], "text/html")()("https://a.test/p")).text, await new Response(bad).text());
+});
+
+test("the default limit takes a real-sized page and refuses one byte past 32 MiB, a PDF and a robots.txt included", async () => {
+  assert.equal(MAX_BODY_BYTES, 32 * 1024 * 1024);
+  const mib = new Uint8Array(1024 * 1024).fill(0x61);
+  assert.equal((await serve([mib, mib], "text/html")()("https://a.test/p")).text.length, 2 * 1024 * 1024);
+  const full = Array.from({ length: 32 }, () => mib);
+  assert.equal((await serve(full, "application/pdf")()("https://a.test/d.pdf")).bytes.length, MAX_BODY_BYTES);
+  await assert.rejects(serve([...full, Uint8Array.of(0x25)], "application/pdf")()("https://a.test/d.pdf"), /is over 33554432 bytes/);
+  // A robots.txt over the limit counts as unreachable, which disallows the host.
+  await assert.rejects(serve([mib], "text/html", "x".repeat(2048))({ maxBodyBytes: 1024 })("https://a.test/p"), /robots\.txt unreachable .* for https:\/\/a\.test/);
+});
+
+test("robots: a literal * in the path is matched by a wildcard too", () => {
+  assert.equal(ruleMatches("/*x", "/*ax"), true);
+  assert.equal(ruleMatches("/a*b$", "/a*b"), true);
+  assert.equal(ruleMatches("/*?q=*", "/s?q=*"), true);
 });
