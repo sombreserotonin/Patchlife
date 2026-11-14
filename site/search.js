@@ -140,7 +140,15 @@ export function attachSearch({ input, count, list, devices, base }) {
         const link = document.createElement("a");
         link.href = `${base}/devices/${encodeURIComponent(device.id)}/`;
         link.textContent = displayName(device.brand, device.model);
-        item.append(link, `: ${statusLabel(device)}. ${summaryText(device)}`);
+        // The same row as the lists: the name, then the status light and the answer. The colon and the full stop
+        // that make it one sentence are kept for screen readers and copying, and hidden from view.
+        const span = (className, text) => {
+          const node = document.createElement("span");
+          node.className = className;
+          node.textContent = text;
+          return node;
+        };
+        item.append(link, span("sep", ": "), span(`status ${statusKey(device)}`, statusLabel(device)), span("sep", ". "), summaryText(device));
         return item;
       }),
     );

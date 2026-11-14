@@ -33,6 +33,7 @@ Against today's date: `supported` (more than 12 months left), `ending_soon` (12 
 - Model page: end date or rule in words, time left, status, quote, source link, date checked, "Report a wrong date" link that opens the correction form with the device and page filled in.
 - Copy pattern: "Security updates until at least 31 December 2027, as published by Ring (checked 21 Oct 2026)."
 - Static output, client-side search, sitemap, structured data, WCAG 2.1 AA, fast on mobile.
+- Look: light or dark by the reader's system setting, with no switch to store a choice. One accent colour; a status is a small light and its name, never colour alone.
 - JSON: `/api/v1/devices.json` (all records) and `/api/v1/devices/<id>.json`. Every response includes `license: "ODbL-1.0"` and the attribution line from `data/NOTICE.md`.
 - Atom feeds and `/stats/`: section 7.
 - Footer on every page: links to the source code (AGPL-3.0-or-later), the data licence (ODbL) and the attribution line.
