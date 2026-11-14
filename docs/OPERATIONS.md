@@ -84,7 +84,7 @@ One open issue labelled `watchdog` (https://github.com/sombreserotonin/Patchlife
 | **Candidate PR:** `#N (claude/data-auto-...) has been open N days, so the weekly data refresh keeps skipping.` | The weekly PR has waited more than 14 days | Review it (RUNBOOKS O9) or close it |
 | **Site:** `https://patchlife.tech/ could not be reached: ...`, `... answered HTTP <status>.`, `... has no "Status as at" date in its footer.` or `... says "Status as at <date>", N days ago.` | The site is down, or its statuses are two or more days old | https://www.githubstatus.com, the Pages settings (custom domain and HTTPS), Cloudflare's DNS and proxy, then the last Pages run |
 | **Renewals:** `<name> is due on <date>, in N days (within 60 days).`, the same `(within 14 days)`, `<name> was due on <date>, N days ago.` or `<name>: the due date ... is not a YYYY-MM-DD date.` | Something in `ops/renewals.yml` falls due, or the file has a typo | Renew it (RUNBOOKS O12), then set the next `due` date in a PR |
-| **<check>:** `Could not read <what>: ...` | The GitHub API or the site did not answer that read, so that check was skipped this run | If it repeats: the App's permissions, then https://www.githubstatus.com |
+| **<check>:** `Could not read <what>: ...` | The GitHub API or the site did not answer that read, so that check was skipped this run | If it repeats: the App's permissions, then https://www.githubstatus.com. Under Cancelled runs or Data refresh, an `HTTP 404` for a workflow file means a crawl workflow was renamed or removed: put it back, or change `CRAWL_WORKFLOWS` in `scripts/watchdog.mjs` in a protected PR |
 
 ### The Sunday summary
 

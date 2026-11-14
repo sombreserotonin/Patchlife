@@ -680,8 +680,10 @@ async function runCli(t, args) {
       [`GET ${R}/actions/workflows/pages.yml/runs?event=schedule&status=success&per_page=1`]: runs([]),
       [`GET ${R}/actions/workflows/pages.yml/runs?event=workflow_dispatch&status=success&per_page=1`]: runs([]),
       [`POST ${R}/actions/workflows/pages.yml/dispatches`]: [204, ""],
+      [`GET ${R}/actions/workflows/data-refresh.yml/runs?status=success&per_page=1`]: runs([ghRun(3, { updated_at: hourAgo })]),
+      ...Object.fromEntries(["reverify.yml", "data-refresh.yml", "probe-hosts.yml", "owner-tools.yml"].map((file) => [`GET ${R}/actions/workflows/${file}/runs?status=cancelled&per_page=20`, runs([])])),
       [`GET ${R}/git/matching-refs/heads/claude/reverify-`]: [200, []],
-      [`GET ${R}/issues?state=open&per_page=100&page=1`]: [200, []],
+      [`GET ${R}/issues?state=open&per_page=100&page=1`]: [200, [{ number: 9, created_at: hourAgo, labels: [{ name: "##[error]boom ::warning::x" }] }]],
       [`GET ${R}/pulls?state=open&per_page=100&page=1`]: [200, []],
       [`GET ${R}/issues?state=open&labels=watchdog&per_page=100`]: [200, []],
       [`POST ${R}/labels`]: [201, { name: "watchdog" }],
@@ -747,6 +749,10 @@ test("the CLI's dry run reads the same but writes nothing, and prints the summar
   assert.ok(cli.lines.includes("Dry run: would open a watchdog issue."));
   assert.ok(cli.lines.includes("Dry run: would post the summary on #27."));
   assert.ok(cli.lines.some((line) => line.startsWith("Weekly summary for ")));
+  // The fake answers every read, so no check reports a failed read, and the label reaches the log cleaned.
+  assert.ok(!cli.lines.some((line) => line.includes("Could not read")), cli.stdout);
+  assert.ok(cli.lines.some((line) => line.includes("# #[error]boom : :warning: :x")), cli.stdout);
+  assert.doesNotMatch(cli.stdout, /##\[|::warning::/);
 });
 
 test("the CLI exits 2 without GH_TOKEN and GITHUB_REPOSITORY, or with an unknown argument", () => {
@@ -792,4 +798,9 @@ test("the log's copy of the summary holds no workflow command from a model name"
   const summary = summaryText(state, [], sample);
   assert.match(summary, /Cam ::warning/);
   assert.doesNotMatch(forLog(summary), /::warning|##\[/);
+});
+
+test("re-verify branches: a branch with a merged PR and a newer open one is not called left over", () => {
+  const problems = messages({ branches: [{ name: "claude/reverify-2026-11-15-7", committed_at: ago(2), prs: [{ number: 20, state: "closed", merged_at: ago(20) }, { number: 21, state: "open", merged_at: null }] }] });
+  assert.deepEqual(problems, []);
 });

@@ -124,7 +124,8 @@ export function createFetcher({ fetch = globalThis.fetch, now = Date.now, sleep 
       let entry = { txt: "" };
       try {
         const { res } = await follow(`${origin}/robots.txt`);
-        if (res.ok) entry = { txt: await res.text() };
+        // Read with the same cap as a page, so a robots.txt that inflates without end is refused (and so disallows).
+        if (res.ok) entry = { txt: new TextDecoder().decode(await readBody(res, `${origin}/robots.txt`)) };
         else {
           await res.body?.cancel();
           if (res.status === 429 || res.status >= 500) entry = { unreachable: `HTTP ${res.status}` };

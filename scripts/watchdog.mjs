@@ -224,7 +224,8 @@ export function checkState(state, now) {
   // Report, never delete (decision 8). While any of these exists, reverify.yml stops at its guard.
   for (const branch of state.branches ?? []) {
     const closed = branch.prs.length > 0 && branch.prs.every((pr) => pr.state === "closed" && !pr.merged_at);
-    const merged = branch.prs.find((pr) => pr.merged_at);
+    // A re-run can push a new commit to a branch whose first PR merged; while a PR on it is open, it is not left over.
+    const merged = !branch.prs.some((pr) => pr.state === "open") && branch.prs.find((pr) => pr.merged_at);
     const age = hoursSince(branch.committed_at, time);
     if (merged) {
       add("Re-verify branches", `${branch.name}: its PR #${merged.number} was merged, but the branch is still there, so re-verification stops at its guard. Delete the branch.`);
