@@ -116,9 +116,13 @@ The plan says this file gives the notification command once it has been tested. 
 The scan of 13 November listed ten findings (the run for #215; the session first wrote eleven, a miscount), which also appear as alerts at https://github.com/sombreserotonin/Patchlife/security/code-scanning. None needs a code change, and you dismissed all ten as "Won't fix" on 14 November (step 9 of "What is left for you"). They are listed here so a later finding can be told from them:
 - **`actions/untrusted-checkout` on `data-gate.yml` (1, rated high).** The gate runs on `pull_request_target` and checks out the PR's commit. That is the design: the copy sits beside the trusted one and is only read by the base branch's script, which runs no file of the PR and refuses links (the file's own comments say how).
 - **`js/incomplete-multi-character-sanitization` on `scripts/verify-evidence.mjs` (2).** `htmlToText` strips tags so a page's text can be compared with a quote and hashed. The text is never written into a page, so a leftover `<script` is not an injection. Changing the function would change every page's hash.
-- **Seven in `tests/`** (`js/bad-tag-filter`, `js/incomplete-multi-character-sanitization`, `js/incomplete-url-substring-sanitization`, `js/identity-replacement`). Test helpers that strip tags from a built page before asserting on its text, an assertion on a URL, and one replacement in `tests/candidates.test.mjs` that replaces `category: other` with itself (dead code, harmless).
+- **Seven in `tests/`** (`js/bad-tag-filter`, `js/incomplete-multi-character-sanitization`, `js/incomplete-url-substring-sanitization`, `js/identity-replacement`). Test helpers that strip tags from a built page before asserting on its text, an assertion on a URL, and one replacement in `tests/candidates.test.mjs` that replaced `category: other` with itself (dead code, removed on 14 November in #225, so that alert closes).
 
 A finding that is not one of these is new: read it, and fix it or dismiss it with a reason (RUNBOOKS O12). A run's summary keeps listing these ten, because a scan does not know that an alert was dismissed. If an edit to one of these files brings its finding back as a new alert, it is the same finding: dismiss it again.
+
+### Audits (14 November 2026)
+
+`docs/audits/` holds the codebase audit: one report per zone (`2026-11-14-<zone>.md`), with what was read, every candidate's verdict and the fixes (#223 to #231); `findings.jsonl`, one line per confirmed finding with the test that reproduces it; and `sweep-registry.md`, when each zone was last read. The findings left open have their reproductions in `tests/audit/open-findings.test.mjs`, which `npm test` does not run: `node --test tests/audit/open-findings.test.mjs` shows which still fail. A later audit starts from those files rather than from scratch.
 
 ## Backups
 
