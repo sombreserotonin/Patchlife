@@ -11,12 +11,10 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createFetcher } from "./polite-fetch.mjs";
 import { unquotedIn } from "./unquoted-dates.mjs";
-import { normalise, pageText, samePage } from "./verify-evidence.mjs";
+import { CHALLENGE, normalise, pageText, samePage } from "./verify-evidence.mjs";
 
 const SAMPLES = 5;
 const USAGE = "Usage: node --use-env-proxy scripts/check-source.mjs <url>";
-// What a bot challenge page says, on normalised text: a 200 holding one of these is a wall, not the page (D18).
-const CHALLENGE = /just a moment|checking your browser|verify(?:ing)? (?:that )?you are (?:a )?human|attention required|enable javascript and cookies to continue|pardon our interruption|complete the security check/;
 
 // Up to n items spread evenly over the list, so a table shows its start, middle and end.
 function spread(list, n) {

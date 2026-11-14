@@ -175,7 +175,7 @@ What `npm run verify:evidence` prints, on your machine (after `npm ci`, on Node 
 | `stale (...)` | A verified record's quote is gone, or the cited page itself returns 404 or 410 | A4 |
 | `error (robots.txt disallows <url>)` | The site asks bots not to fetch this page | Don't use the source (O11 step 8). If `<url>` has a different origin from the cited URL, the cited page redirected there: A4 first |
 | `error (robots.txt unreachable (...) for <origin>)` | An outage or a bot wall | Retry later; O11 step 8 if it stays unreachable. If `<origin>` differs from the cited URL's origin, the cited page redirected there: A4 first |
-| `error (HTTP 403 for <url>)` or a bot challenge | Bot wall | Don't use the source (O11 step 8) |
+| `error (HTTP 403 for <url>)` or `error (bot challenge (the page says "..."))` | Bot wall. The record is left as it was: a quote missing from a wall says nothing about the page | Once: nothing to do. When the watchdog reports the ids on three nights, don't use the source (O11 step 8) |
 | `error (HTTP 429 ...)`, `(HTTP 5xx ...)`, `(<host> asked us to back off)` | Temporary | Retry in a later run; change nothing |
 | `error (unsupported content type "<type>" ...)` | Not HTML, plain text or PDF | Don't use it as evidence; find the statement as a page or PDF |
 | `error (unreadable PDF at <url> (...))` | The file isn't a PDF pdf.js can read | Re-check the URL; if it is a real PDF, don't use it (O11 step 8) |
