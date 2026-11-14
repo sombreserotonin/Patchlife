@@ -21,6 +21,6 @@ evidence:
     regime: vendor_policy
 verification:
   status: verified
-  checked: "2026-10-21"
-  text_sha256: d4a2a892540293a95e870eacb5912b7eaea8fc635ec78c4e6ab7b67bfdb61aa5
+  checked: "2026-11-14"
+  text_sha256: ca0c2c65736d0453a34d0cf7605c18914148797e66d9e153dad1dd86a5542e76
 notes: "GL.iNet's firmware versions table (columns Status, EOL Date, Supported Until; page names no region) gives EOL date Oct 10th, 2024 and Supported Until Oct 10th, 2026, recorded as GLOBAL (D24). GL.iNet's two pages give different dates for this model: its UK PSTI support period table gives June 11, 2027 or later, recorded as gl-inet-gl-b2200 (D39)."

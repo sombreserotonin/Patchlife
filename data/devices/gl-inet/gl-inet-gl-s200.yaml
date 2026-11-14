@@ -24,6 +24,6 @@ evidence:
     regime: uk_psti
 verification:
   status: verified
-  checked: "2026-10-21"
-  text_sha256: 3541bb8b150773af7eaa338d4c5b0cbea4ebb35912af624873abe5b99b273ac4
+  checked: "2026-11-14"
+  text_sha256: 9039a43337cfe4b94d5ef6f68640746ffc790498aece82ad47845606a3eb4f76
 notes: "The page is GL.iNet's PSTI support period table and names no region; recorded as UK, the regime it is published under. The date is the pre-defined minimum, not a guaranteed end."
