@@ -45,13 +45,14 @@ function decodeEntities(text) {
 // "31st". Every other tag becomes a space, so table cells are joined by single spaces after normalising.
 const INLINE_TAGS = /<\/?(?:a|abbr|b|cite|code|em|font|i|mark|q|s|small|strong|sub|sup|time|u|wbr)(?=[\s/>])[^>]*>/gi;
 
+// What a reader never sees: comments, and the content of script, style, noscript and template elements. The parsers
+// read the page with these removed too (candidates.mjs), so a row in a comment is never a candidate.
+export function stripHidden(html) {
+  return html.replace(/<!--[\s\S]*?-->/g, "").replace(/<(script|style|noscript|template)\b[\s\S]*?<\/\1\s*>/gi, " ");
+}
+
 export function htmlToText(html) {
-  const stripped = html
-    .replace(/<!--[\s\S]*?-->/g, "")
-    .replace(/<(script|style|noscript|template)\b[\s\S]*?<\/\1\s*>/gi, " ")
-    .replace(INLINE_TAGS, "")
-    .replace(/<[^>]*>/g, " ");
-  return decodeEntities(stripped);
+  return decodeEntities(stripHidden(html).replace(INLINE_TAGS, "").replace(/<[^>]*>/g, " "));
 }
 
 export { normalise };

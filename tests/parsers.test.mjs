@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { validateSources } from "../scripts/validate-data.mjs";
+import { mentionsDate, validateSources } from "../scripts/validate-data.mjs";
 import { categoryFor, fill, isoDate, recordId } from "../scripts/parsers/common.mjs";
 import * as asus from "../scripts/parsers/asus.mjs";
 import * as ezviz from "../scripts/parsers/ezviz-eol.mjs";
@@ -352,4 +352,22 @@ test("the ASUS parser splits a group row's models on the markup, quotes from eac
     { quote: "RT-ZX1 Pro Max 4 years (until 31th December 2028)", reason: "the quote from RT-ZX1 Pro Max to the date is 489 characters, over 300" },
   ]);
   assert.equal(skipped.length, 15);
+});
+
+test("ASUS: a row that writes another day or month than the profile's note describes is skipped, not given that note", () => {
+  const html = "<table><tr><td><p>RT-ZQ77</p></td><td>4 years (until 30th June 2029)</td></tr><tr><td><p>RT-ZQ78</p></td><td>4 years (until 31th December 2029)</td></tr></table>";
+  const { candidates, skipped } = asus.parse({ html, profile: profile("asus"), today: TODAY });
+  assert.deepEqual(candidates.map((c) => c.model), ["RT-ZQ78"]);
+  assert.match(candidates[0].notes, /The page writes the date as 31th December 2029\.$/);
+  assert.match(skipped[0].reason, /^"30th June 2029" is not the date the profile's note describes/);
+});
+
+test("Grandstream: only the date forms the validator finds in a quote are read", () => {
+  const rows = ["2027-6-30 or Later", "2027-06/30", "2028-12-31 or Later", "2031/1/23 or later"].map((period, i) => `<tr><td>GWN76${i}0</td>${"<td>Yes</td>".repeat(7)}<td>${period}</td></tr>`).join("");
+  const header = `<tr><td>Product Name</td>${"<td>x</td>".repeat(7)}<td>Defined Support Period</td></tr>`;
+  const html = `<button>Access Points</button><table>${header}${rows}</table>`;
+  const { candidates, skipped } = grandstream.parse({ html, profile: profile("grandstream"), today: TODAY });
+  assert.deepEqual(skipped.map((s) => s.reason), ['"2027-6-30 or Later" in the support period cell is not a date', '"2027-06/30" in the support period cell is not a date']);
+  assert.deepEqual(candidates.map((c) => c.support.end_date), ["2028-12-31", "2031-01-23"]);
+  for (const c of candidates) assert.ok(mentionsDate(c.evidence[0].quote, c.support.end_date), c.evidence[0].quote);
 });

@@ -9,7 +9,7 @@ import { categoryFor, evidenceItem, fill, fixedDate, monthDate, recordId } from 
 export const PAGE = "https://www.asus.com/support/faq/1051929/";
 const REGIME = "uk_psti";
 const SENTENCE = "ASUS will offer security update support to the networking products complied with UK PSTI(Product Security and Telecommunications Infrastructure Act) until the date specified below. And extended support may be provided after the stated date.";
-const PERIOD = /^\d+ years \(until (\d{1,2})(?:st|nd|rd|th) ([A-Za-z]+) (\d{4})\)$/;
+const PERIOD = /^\d+ years \(until ((\d{1,2})(?:st|nd|rd|th) ([A-Za-z]+) (\d{4}))\)$/;
 const NAME_BREAK = /<\/p>|<br\s*\/?>/i;
 const MAX_QUOTE = 300;
 
@@ -26,9 +26,16 @@ export function parse({ html, url = PAGE, profile, today = new Date().toISOStrin
     const names = row.cells[0].html.split(NAME_BREAK).map(collapse).filter(Boolean);
     const period = row.cells[1].text;
     const date = period.match(PERIOD);
-    const endDate = date && monthDate(date[1], date[2], date[3]);
+    const endDate = date && monthDate(date[2], date[3], date[4]);
     if (!endDate) {
       skipped.push({ quote: row.quote, reason: `"${period}" gives no day, month and year` });
+      continue;
+    }
+    // The profile's last note says how the page writes the date, and only its year is filled in, so a row that writes
+    // another day or month is skipped rather than given a note that misstates it.
+    const writtenAs = fill(dateNote, { year: date[4] });
+    if (!writtenAs.includes(date[1])) {
+      skipped.push({ quote: row.quote, reason: `"${date[1]}" is not the date the profile's note describes ("${writtenAs}")` });
       continue;
     }
     names.forEach((model, i) => {
@@ -54,7 +61,7 @@ export function parse({ html, url = PAGE, profile, today = new Date().toISOStrin
         support: fixedDate(endDate, { atLeast: true, conditions }),
         evidence: [evidenceItem(url, quote, today, REGIME), evidenceItem(url, SENTENCE, today, REGIME)],
         verification: { status: "unverified" },
-        notes: `${pageNote} ${minimumNote} ${fill(dateNote, { year: date[3] })}`,
+        notes: `${pageNote} ${minimumNote} ${writtenAs}`,
       });
     });
   }
