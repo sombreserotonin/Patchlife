@@ -79,3 +79,17 @@ test("the CLI exits 2 with the usage line on bad arguments and 1 for an unknown 
   assert.match(unknown.stderr, /^No record has the id "nobody-cam-0"\n$/);
   assert.equal(dataStatus(), before, "the real data is untouched");
 });
+
+test("a withdrawn record of a brand whose categories come from its rows still validates (O8 on TP-Link and EZVIZ)", () => {
+  // Rule R7 maps these brands' categories from the quoted row, which a withdrawal removes; it leaves the record alone.
+  const repo = fileURLToPath(new URL("..", import.meta.url));
+  const sources = validateSources(join(repo, "data", "sources")).entries;
+  for (const [brand, id] of [["tp-link", "tp-link-ap7650-v1"], ["ezviz", "ezviz-cs-a1-32w"]]) {
+    const dir = mkdtempSync(join(tmpdir(), "patchlife-withdraw-"));
+    cpSync(join(repo, "data", "devices", brand, `${id}.yaml`), join(dir, brand, `${id}.yaml`));
+    assert.deepEqual(validateDevices(dir, { today: TODAY, sources }).errors, [], `${id} before`);
+    withdrawRecord(dir, id, "the page now gives another date", { today: TODAY });
+    assert.deepEqual(validateDevices(dir, { today: TODAY, sources }).errors, [], `${id} withdrawn`);
+  }
+});
+

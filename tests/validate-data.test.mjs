@@ -115,6 +115,59 @@ test("a record can't grow without limit: 20 aliases, 20 evidence items and 500 c
   assert.deepEqual(schemaErrors(() => {}), []);
 });
 
+// One Acme record (Acme's pages write numeric dates day first), written into a scratch devices folder and validated
+// against the fixture registry, or another one. Returns the error messages.
+function acmeErrors(t, { model = "Cam 1", aliases, brand = "Acme", end_date, quotes, url = "https://example.com/acme/security" }, sources = SOURCES) {
+  const dir = mkdtempSync(join(tmpdir(), "patchlife-validate-"));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  mkdirSync(join(dir, "acme"));
+  const record = {
+    id: "acme-cam-1", brand, brand_slug: "acme", model, ...(aliases ? { aliases } : {}), category: "camera", regions: ["AU"],
+    support: { rule: "fixed_date", end_date, years: null, anchor_date: null, at_least: false, conditions: null },
+    evidence: quotes.map((quote) => ({ url, quote, retrieved: "2026-10-01", regime: "vendor_policy" })),
+    verification: { status: "unverified" },
+  };
+  writeFileSync(join(dir, "acme", "acme-cam-1.yaml"), YAML.stringify(record));
+  return validateDevices(dir, { today: TODAY, sources }).errors.map((e) => e.message);
+}
+
+test("a model's own number or a footnote marker is never read as part of a date", (t) => {
+  // A table row "Cam 3 | December 2027" states the month (D38), not 3 December.
+  assert.deepEqual(acmeErrors(t, { model: "Cam 3", end_date: "2027-12", quotes: ["Acme Cam 3 December 2027"] }), []);
+  assert.ok(acmeErrors(t, { model: "Cam 3", end_date: "2027-12-03", quotes: ["Acme Cam 3 December 2027"] }).includes("end_date 2027-12-03 is not written in any evidence quote"));
+  // The same row with a full date still passes.
+  assert.deepEqual(acmeErrors(t, { model: "Cam 3", end_date: "2027-12-31", quotes: ["Acme Cam 3 31 December 2027"] }), []);
+  // A superscript marker after the year, quoted with its footnote (R5), leaves the date as written.
+  assert.deepEqual(acmeErrors(t, { end_date: "2029-06-30", quotes: ["Acme Cam 1 30 June 2029²", "² UK buyers only"] }), []);
+});
+
+test("a quote names a model or an alias only as a whole name, so a Cam 10 row does not vouch for Cam 1", (t) => {
+  assert.ok(acmeErrors(t, { end_date: "2027-12-31", quotes: ["Acme Cam 10 31 December 2027"] }).includes('neither model "Cam 1" nor an alias appears in any evidence quote'));
+  assert.ok(acmeErrors(t, { end_date: "2027-12-31", quotes: ["Acme Cam 1-Pro 31 December 2027"] }).includes('neither model "Cam 1" nor an alias appears in any evidence quote'));
+  assert.ok(acmeErrors(t, { end_date: "2027-12-31", aliases: ["Cam 1 Pro"], quotes: ["Acme Cam 1 Pro Max 31 December 2027"] }).includes('neither model "Cam 1" nor an alias appears in any evidence quote') === false);
+  assert.ok(acmeErrors(t, { end_date: "2027-12-31", aliases: ["AC-10"], quotes: ["Acme Cam 1 AC-100 31 December 2027"] }).some((m) => m.startsWith('R1: alias "AC-10"')));
+  // Punctuation and case around a name don't matter.
+  assert.deepEqual(acmeErrors(t, { end_date: "2027-12-31", quotes: ["ACME CAM 1, 31 December 2027"] }), []);
+  assert.deepEqual(acmeErrors(t, { end_date: "2027-12-31", quotes: ["Acme (Cam 1) 31 December 2027"] }), []);
+});
+
+test("a record's brand is the name its registry entry gives, which the site prints as the publisher", (t) => {
+  assert.ok(acmeErrors(t, { brand: "Globex", end_date: "2027-12-31", quotes: ["Acme Cam 1 31 December 2027"] }).includes('brand "Globex" must be the source registry\'s name for acme, "Acme"'));
+  assert.deepEqual(acmeErrors(t, { end_date: "2027-12-31", quotes: ["Acme Cam 1 31 December 2027"] }), []);
+});
+
+test("an evidence URL the schema accepts but no browser can open is reported, not thrown", (t) => {
+  const url = "https://example.com:99999/acme/security";
+  assert.ok(acmeErrors(t, { end_date: "2027-12-31", quotes: ["Acme Cam 1 31 December 2027"], url }).includes(`evidence URL ${url} is not an address a browser can open`));
+});
+
+test("only the record's own brand entry says how its pages write numeric dates", (t) => {
+  // Another brand's entry that lists a prefix of Acme's page, with the opposite order, no longer decides it.
+  const wayne = { brand: "Wayne", brand_slug: "wayne", kind: "unknown", urls: ["https://example.com/acme/"], date_order: "mdy", last_checked: null };
+  assert.deepEqual(acmeErrors(t, { end_date: "2027-04-03", quotes: ["Acme Cam 1 3/4/2027"] }, [wayne, ...SOURCES]), []);
+  assert.ok(acmeErrors(t, { end_date: "2027-03-04", quotes: ["Acme Cam 1 3/4/2027"] }, [wayne, ...SOURCES]).includes("end_date 2027-03-04 is not written in any evidence quote"));
+});
+
 test("a month-only end date passes when a quote states that month and no day in it (D38)", () => {
   const { files, errors } = run("month-only");
   assert.equal(files, 1);
@@ -206,6 +259,26 @@ test("page-hashes.json must be a sorted object of https URL to SHA-256 hex", () 
   ]);
   assert.match(messages(runSources("page-hashes-conflict").errors), /^page-hashes\.json: JSON parse error: /);
   assert.deepEqual(messages(runSources("page-hashes-array").errors), "page-hashes.json: must be a JSON object of evidence URL to hash");
+});
+
+test("a registry file or the page hash file that is a symbolic link is refused", (t) => {
+  const dir = mkdtempSync(join(tmpdir(), "patchlife-sources-"));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const sources = join(dir, "sources");
+  cpSync(join(FIXTURES, "sources", "valid"), sources, { recursive: true });
+  renameSync(join(sources, "more.yaml"), join(dir, "more.yaml"));
+  writeFileSync(join(dir, "hashes.json"), "{}\n");
+  try {
+    symlinkSync(join("..", "more.yaml"), join(sources, "more.yaml"));
+    symlinkSync(join("..", "hashes.json"), join(sources, "page-hashes.json"));
+  } catch {
+    return t.skip("symbolic links can't be made here");
+  }
+  const { errors } = validateSources(sources, { today: TODAY });
+  assert.deepEqual(errors, [
+    { file: "more.yaml", message: "a registry file must be a regular file, not a symbolic link" },
+    { file: "page-hashes.json", message: "must be a regular file, not a symbolic link" },
+  ]);
 });
 
 test("validateSources returns no entries from a file that fails the schema", () => {
