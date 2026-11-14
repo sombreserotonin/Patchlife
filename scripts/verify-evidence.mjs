@@ -45,22 +45,33 @@ function decodeEntities(text) {
 // "31st". Every other tag becomes a space, so table cells are joined by single spaces after normalising.
 const INLINE_TAGS = /<\/?(?:a|abbr|b|cite|code|em|font|i|mark|q|s|small|strong|sub|sup|time|u|wbr)(?=[\s/>])[^>]*>/gi;
 
-// What a reader never sees: comments, and the content of script, style, noscript and template elements. The parsers
-// read the page with these removed too (candidates.mjs), so a row in a comment is never a candidate. Removing one can
-// join the text around it into another ("<!-<!-- -->- x -->"), so it repeats until nothing changes; a real page
-// needs one round.
-export function stripHidden(html) {
-  let text = html;
-  let previous;
-  do {
-    previous = text;
-    text = text.replace(/<!--[\s\S]*?-->/g, "").replace(/<(script|style|noscript|template)\b[\s\S]*?<\/\1\s*>/gi, " ");
-  } while (text !== previous);
-  return text;
+export function htmlToText(html) {
+  const stripped = html
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/<(script|style|noscript|template)\b[\s\S]*?<\/\1\s*>/gi, " ")
+    .replace(INLINE_TAGS, "")
+    .replace(/<[^>]*>/g, " ");
+  return decodeEntities(stripped);
 }
 
-export function htmlToText(html) {
-  return decodeEntities(stripHidden(html).replace(INLINE_TAGS, "").replace(/<[^>]*>/g, " "));
+// The page without what a reader never sees: comments, and script, style, noscript and template elements with their
+// content. The parsers read pages through it (candidates.mjs), so a row in a comment is never a candidate. As in a
+// browser, an unclosed comment or element hides the rest of the page. It scans once, left to right; htmlToText keeps
+// its own expressions, so every page's text and hash stay as they were.
+const HIDDEN_START = /<!--|<(script|style|noscript|template)\b/gi;
+export function stripHidden(html) {
+  let out = "";
+  let at = 0;
+  HIDDEN_START.lastIndex = 0;
+  for (let start = HIDDEN_START.exec(html); start; start = HIDDEN_START.exec(html)) {
+    const end = start[1] ? new RegExp(`</${start[1]}\\s*>`, "gi") : /-->/g;
+    end.lastIndex = start.index + start[0].length;
+    const close = end.exec(html);
+    out += html.slice(at, start.index) + (start[1] ? " " : "");
+    at = close ? close.index + close[0].length : html.length;
+    HIDDEN_START.lastIndex = at;
+  }
+  return out + html.slice(at);
 }
 
 export { normalise };

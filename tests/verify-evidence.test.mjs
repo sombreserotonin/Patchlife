@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cpSync, existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
@@ -486,8 +486,15 @@ test("the CLI rejects a missing or too large option value with one line and exit
   }
 });
 
-test("stripHidden removes comments and hidden elements, also where removing one forms another", () => {
-  assert.equal(stripHidden("a<!-- b -->c<script>d</script>e<template><tr><td>f</td></tr></template>g"), "ac e g");
-  assert.equal(stripHidden("a<!-<!-- -->- b -->c"), "ac");
-  assert.equal(htmlToText("<p>a</p><!-- <p>b</p> --><p>c</p>"), " a  c ");
+test("stripHidden removes comments and hidden elements, an unclosed one to the end, and changes no page's text", () => {
+  assert.equal(stripHidden("a<!-- b -->c<script>d</script>e<TEMPLATE><tr><td>f</td></tr></Template >g"), "ac e g");
+  assert.equal(stripHidden("a<!-- b"), "a");
+  assert.equal(stripHidden("a<noscript>b<p>c"), "a ");
+  assert.equal(stripHidden("<p>No hidden markup</p>"), "<p>No hidden markup</p>");
+  // Every fixture page reads the same through it.
+  const dir = fileURLToPath(new URL("./fixtures/parsers/", import.meta.url));
+  for (const name of readdirSync(dir).filter((f) => f.endsWith(".html"))) {
+    const html = readFileSync(join(dir, name), "utf8");
+    assert.equal(htmlToText(stripHidden(html)), htmlToText(html), name);
+  }
 });
