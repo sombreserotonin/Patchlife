@@ -31,6 +31,6 @@ evidence:
     regime: uk_psti
 verification:
   status: verified
-  checked: "2026-10-21"
-  text_sha256: a70600544dcfe238a851be879f75f7c70d2a74e8e5d1522b1f06ced71d714983
+  checked: "2026-11-14"
+  text_sha256: 1ca788bb4f5f0a84dfe36bad488c20c0d5b608ec1d5d7cbfc8a6ab1ea238264b
 notes: "GL.iNet's firmware versions table (columns Status, EOL Date, Supported Until; page names no region) gives EOL date June 9, 2026 and Supported Until June 8, 2028, recorded as GLOBAL. The UK PSTI support period table still lists a pre-defined minimum of June 11, 2027 or later, which this date is consistent with, so UK is kept."
