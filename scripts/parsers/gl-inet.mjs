@@ -130,9 +130,12 @@ export function parse({ pages: read, profile, today = new Date().toISOString().s
     skipped.push({ url: c.evidence[0].url, quote: c.evidence[0].quote, reason: `both pages list ${c.model} (D39)` });
   }
   for (const id of onBoth) {
-    const a = psti.candidates.find((c) => c.id === id);
-    const b = ended.candidates.find((c) => c.id === id);
-    flags.push({ model: a.model, text: `conflict: GL.iNet's pages both list ${a.model}: the PSTI table gives ${a.support.end_date} or later, the firmware table Supported Until ${b.support.end_date}, a D39 case for a person to record` });
+    // Every row each page gives the model is a side, so a second row with another date can't hide behind the first.
+    const rows = (page) => [...new Map(page.candidates.filter((c) => c.id === id).map((c) => [c.evidence[0].quote, c])).values()];
+    const [a, b] = [rows(psti), rows(ended)];
+    const sides = [...a, ...b].map((c) => ({ url: c.evidence[0].url, quote: c.evidence[0].quote }));
+    const model = a[0].model;
+    flags.push({ model, sides, text: `conflict: GL.iNet's pages both list ${model}: the PSTI table gives ${a.map((c) => `${c.support.end_date} or later`).join(" and ")}, the firmware table Supported Until ${b.map((c) => c.support.end_date).join(" and ")}, a D39 case for a person to record` });
   }
   return { candidates, skipped, flags, rows };
 }

@@ -92,11 +92,18 @@ export function matchBrand({ urls, brand_slug, profile, candidates, skipped, fla
     report(candidate.evidence, "unquotable", { id: candidate.id, url: missing.url, quote: missing.quote });
     out.push(`unquotable: ${candidate.id}: ${JSON.stringify(missing.quote)} is not on ${missing.url}`);
   };
-  // A parser's conflict is settled once exception records carry the model (a D33 or D39 split already recorded).
-  const exceptionModels = new Set(records.filter((r) => exceptions.has(r.id)).map((r) => normalise(r.model)));
+  // A parser's conflict is settled once exception records quote every side of it: each page's row contains a quote
+  // an exception record cites from that page (a D33 or D39 split already recorded). What a record cites from a table
+  // page is a dated row or a whole sentence, so a row that appears later with another date contains none of them, and
+  // its conflict shows even for a model whose record is an exception for its notes alone. A flag without sides shows.
+  const exceptionQuotes = new Map();
+  for (const r of records.filter((record) => exceptions.has(record.id))) {
+    for (const item of r.evidence) if (item.quote && normalise(item.quote)) exceptionQuotes.set(item.url, [...(exceptionQuotes.get(item.url) ?? []), normalise(item.quote)]);
+  }
+  const settled = (flag) => Array.isArray(flag.sides) && flag.sides.length > 0 && flag.sides.every((side) => (exceptionQuotes.get(side.url) ?? []).some((quote) => normalise(side.quote).includes(quote)));
   for (const flag of flags) {
     if (typeof flag === "string") out.push(flag);
-    else if (!exceptionModels.has(normalise(flag.model))) out.push(flag.text);
+    else if (!settled(flag)) out.push(flag.text);
   }
 
   // Identical rows (a page may list a model twice) collapse into one candidate. Two different rows for one id are
@@ -262,6 +269,10 @@ export async function runCandidates(devicesDir, { brands = [], sources, parsers 
       restore.set(file, readFileSync(file, "utf8"));
       writeFileSync(file, recordYaml(rewritten(record, candidate)));
       written.push({ id: record.id, file, kind: "changed", before: row(record, quote), after: row(candidate, candidate.evidence[0].quote) });
+      // The PR's change table shows dates and conditions, not regions, so a rewrite that loses one says so (audit
+      // 2026-11-14, record-writers L2). A row the parser skipped, as for a date it could not read, counts as none.
+      const dropped = record.regions.filter((region) => !candidate.regions.includes(region));
+      if (dropped.length) flags.push(`changed: ${record.id}: the rewrite drops the region(s) ${dropped.join(", ")}, where the parsers read no row for ${record.model} this run (a skipped row counts as none): check the record against the pages (RUNBOOKS O9)`);
     }
   }
   for (const { newRows } of results) {

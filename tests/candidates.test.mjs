@@ -463,3 +463,64 @@ test("markup a browser shows in full does not hide the rows from the parsers", (
     assert.ok(htmlToText(stripHidden(before + table)).includes("Archer"), `parsers, ${before}`);
   }
 });
+
+// Audit 2026-11-14, record-writers L1: an exception kept for its notes alone silenced every later conflict for its model.
+test("a later row with another date is flagged even for a model whose record is an exception for its notes alone", async () => {
+  const us = PAGES[RING.US].replace(/<\/tbody>(?![\s\S]*<\/tbody>)/, "<tr><td>Alarm Keypad Z</td><td>31 December 2031</td></tr></tbody>");
+  const { dir, get } = setup({ ...PAGES, [RING.US]: us });
+  const sources = SOURCES.map((s) => (s.brand_slug === "ring" ? { ...s, parser_exceptions: [...s.parser_exceptions, "ring-alarm-keypad-z"] } : s));
+  const { flags } = await runCandidates(dir, { sources, today: TODAY, get, brands: ["ring"], check: true });
+  assert.ok(flags.some((f) => f.startsWith("conflict: Ring's pages give different dates for Alarm Keypad Z")), flags.join("\n"));
+});
+
+test("a D39 case recorded as one exception that quotes both pages' rows stays settled until a row changes", async () => {
+  const { dir, get, file } = setup();
+  writeFileSync(file("gl-inet", "gl-inet-gl-z100"), [
+    "id: gl-inet-gl-z100", "brand: GL.iNet", "brand_slug: gl-inet", 'model: "Ferret (GL-Z100)"', "aliases:", '  - "GL-Z100"', "category: router", "regions: [GLOBAL, UK]",
+    "support:", "  rule: fixed_date", '  end_date: "2028-06-08"', "  years: null", "  anchor_date: null", "  at_least: false",
+    '  conditions: "Status Maintenance: the model has reached end of life and GL.iNet lists a Supported Until date."', "evidence:",
+    `  - url: ${glInet.ENDED}`, '    quote: "GL-Z100 4.3.25 Native OpenWrt 22.03.4 Maintenance June 9, 2026 June 8, 2028"', '    retrieved: "2026-10-27"', "    regime: vendor_policy",
+    `  - url: ${glInet.PSTI}`, '    quote: "Ferret (GL-Z100) June 11, 2027 or later*"', '    retrieved: "2026-10-27"', "    regime: uk_psti",
+    `  - url: ${glInet.PSTI}`, '    quote: "*Actual Support Periods is 2 years after announcement of EOL"', '    retrieved: "2026-10-27"', "    regime: uk_psti",
+    "verification:", "  status: unverified", "",
+  ].join("\n"));
+  // Like Beryl (GL-MT1300): one record for both regions, with the firmware table's later date, settles the conflict.
+  const sources = SOURCES.map((s) => (s.brand_slug === "gl-inet" ? { ...s, parser_exceptions: [...(s.parser_exceptions ?? []), "gl-inet-gl-z100"] } : s));
+  const conflict = (flags) => flags.filter((f) => f.startsWith("conflict: GL.iNet's pages both list Ferret (GL-Z100)"));
+  const settled = await runCandidates(dir, { sources, today: TODAY, get, brands: ["gl-inet"], check: true });
+  assert.deepEqual(conflict(settled.flags), []);
+  // Without the exception the same conflict is flagged.
+  const plain = await runCandidates(dir, { sources: SOURCES, today: TODAY, get, brands: ["gl-inet"], check: true });
+  assert.equal(conflict(plain.flags).length, 1);
+  // Once the firmware table moves the date, the record no longer quotes that side, so the conflict shows again.
+  const moved = { ...PAGES, [glInet.ENDED]: PAGES[glInet.ENDED].replace("June 8, 2028", "June 8, 2029") };
+  assert.notEqual(moved[glInet.ENDED], PAGES[glInet.ENDED]);
+  const { get: getMoved } = setup(moved);
+  const again = await runCandidates(dir, { sources, today: TODAY, get: getMoved, brands: ["gl-inet"], check: true });
+  assert.equal(conflict(again.flags).length, 1);
+  // A second row for the model, with another date, on either page shows the conflict too, wherever the row sits.
+  const firmwareRow = `<tr><td>GL-Z100</td><td>4.3.26</td><td>Native OpenWrt</td><td>22.03.4</td><td class="td-status">Maintenance</td><td>June 9, 2026</td><td>June 8, 2030</td></tr>`;
+  const pstiRow = "<tr><td>Ferret (GL-Z100)</td><td>June 11, 2029 or later*</td></tr>";
+  for (const pages of [
+    { ...PAGES, [glInet.ENDED]: PAGES[glInet.ENDED].replace("</table>", `${firmwareRow}\n</table>`) },
+    { ...PAGES, [glInet.PSTI]: PAGES[glInet.PSTI].replace("</tbody>", `${pstiRow}\n</tbody>`) },
+  ]) {
+    const { get: getSecond } = setup(pages);
+    const second = await runCandidates(dir, { sources, today: TODAY, get: getSecond, brands: ["gl-inet"], check: true });
+    assert.equal(conflict(second.flags).length, 1, second.flags.join("\n"));
+    assert.match(conflict(second.flags)[0], / and /);
+  }
+});
+
+// Audit 2026-11-14, record-writers L2: the PR's change table shows dates and conditions, not regions. A rewrite that keeps
+// every region adds no such flag (the B4 test above lists its flags in full).
+test("a rewrite that drops a region the record had is flagged for a person, when it is written", async () => {
+  const pages = { ...PAGES, [RING.AU]: PAGES[RING.AU].replace("Ring Chime Z Pro (2nd Generation)", "Ring Chime Z Pro (2nd Generation) - Black") };
+  const { dir, get } = setup(pages);
+  const { flags } = await runCandidates(dir, { sources: SOURCES, today: TODAY, get, brands: ["ring"] });
+  assert.ok(flags.some((f) => f.startsWith("changed: ring-chime-z-pro-2nd-gen: the rewrite drops the region(s) AU")), flags.join("\n"));
+  // A rewrite the limit leaves for a later run is not flagged in this one.
+  const { dir: later, get: getLater } = setup(pages);
+  const limited = await runCandidates(later, { sources: SOURCES, today: TODAY, get: getLater, brands: ["ring"], limit: 0 });
+  assert.ok(!limited.flags.some((f) => f.includes("the rewrite drops")), limited.flags.join("\n"));
+});
