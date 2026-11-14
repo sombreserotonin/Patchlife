@@ -21,7 +21,17 @@ One fresh reviewer read the zone: a general-purpose agent, read-only, with no ne
 
 I verified every finding on its cited lines and re-ran the reviewer's reproductions. All seven failed as described.
 
-A second fresh reviewer checked #225 before merge. Its task was to report what tomorrow's scheduled refresh would do differently. It was run on fixture pages and real records, and it also looked at `stripHidden` on real-shaped HTML.
+A second fresh reviewer checked #225 before merge, asking only what the fix broke. Its verdict was RISK, low.
+- No legitimate case got worse.
+- On all 1,322 real records and every fixture, the run gives the same result as `main`:
+  - 1,318 records carry the id and model their parser derives, and the other 4 are parser exceptions;
+  - with every year moved on by one, both trees rewrite the same 1,296 records, byte for byte.
+
+It raised four points, all fixed before the merge:
+- `stripHidden` hid the rest of a page after `<!-->` or a custom element such as `<template-row>`;
+- the ASUS check was a substring test ("1th December" inside "31th December");
+- renamed and exception rows got a misleading flag;
+- two of the new checks were half-tested.
 
 While #225 was in review, CodeQL flagged the first form of `stripHidden`: the same multi-character sanitisation rule the owner dismissed on `htmlToText`, now reported at a new place. In response:
 - `htmlToText` went back to its exact form on `main`, so every page's text and hash are unchanged;
@@ -57,15 +67,19 @@ Fix (#225): a replacement, or a notes-only proposal, must have every quote on it
 ### F2, `scripts/candidates.mjs:124`, gate integrity
 `naming()` took any candidate sharing the record's id or a name, and `rewritten()` kept the old model and id. GL.iNet renaming "Velox (GL-Z200)" made a record the next run refused on `model`, stopping every brand.
 
-Fix (#225): only a candidate with the record's own id and model replaces it. A renamed row becomes the existing flags for a person.
+Fix (#225): only a candidate with the record's own id and model replaces it. A renamed row becomes one flag for a person that names the new model and id. A parser exception keeps its flag from `main`.
 
 ### F3, `scripts/table-rows.mjs:32`, input validation
 Rows were split on the raw page, comments and script content included, while `htmlToText` strips both. One commented-out row stopped every brand's refresh.
 
-Fix (#225): `candidates.mjs` gives the parsers each page through `stripHidden` (`scripts/verify-evidence.mjs`). It removes comments and script, style, noscript and template elements, and like a browser, an unclosed one runs to the end. Every fixture page reads the same through it.
+Fix (#225): `candidates.mjs` gives the parsers each page through `stripHidden` (`scripts/verify-evidence.mjs`), a single left-to-right scan.
+- It removes comments and script, style, noscript and template elements.
+- As in a browser, an unclosed one runs to the end of the page.
+- `<!-->`, `<!--->` and custom elements such as `<template-row>` hide nothing.
+- Every fixture page reads the same through it.
 
 ### F4, `scripts/parsers/asus.mjs:57`, published data
-The note filled in only the year. Fix (#225): a row whose date the profile's note does not describe is skipped, with the reason. All 56 ASUS records still parse.
+The note filled in only the year. Fix (#225): a row whose date does not stand whole in the profile's note is skipped, with the reason. All 56 ASUS records still parse.
 
 ### F5, `scripts/parsers/grandstream.mjs:22`, legitimate path blocked
 Fix (#225): only `YYYY-MM-DD` and `YYYY/M/D` are read. All 80 Grandstream records use one of the two.

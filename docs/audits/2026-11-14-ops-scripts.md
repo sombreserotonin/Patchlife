@@ -10,7 +10,9 @@ Commit read: e484c80.
 ## Delegation
 One fresh reviewer read the zone: a general-purpose agent, read-only, with no network. It worked from the shared brief described in `docs/audits/2026-11-14-merge-gate.md` and ran in the second wave.
 
-I verified every finding on its cited lines and re-ran the reviewer's reproductions. Before #230 merged, a second fresh reviewer checked it for false and missed alarms.
+I verified every finding on its cited lines and re-ran the reviewer's reproductions. Before #230 merged, a second fresh reviewer checked it for false and missed alarms, running the watchdog against a fake GitHub API for each state of a normal week.
+- It found the fix CLEAN.
+- It found one unlikely false alarm: a branch holding a merged PR and a newer open one would have been called left over. That was fixed, and its guards were added, before the merge.
 
 ## Verification
 | Finding | Zone | Verdict | Claimed | Verified | Reservations | Proof |
