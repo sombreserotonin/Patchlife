@@ -1,13 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { appendFileSync, cpSync, mkdtempSync, readFileSync } from "node:fs";
+import { appendFileSync, cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import YAML from "yaml";
 import { withdrawnNotes, withdrawRecord } from "../scripts/withdraw-record.mjs";
-import { validateDevices, validateSources } from "../scripts/validate-data.mjs";
+import { listYamlFiles, validateDevices, validateSources } from "../scripts/validate-data.mjs";
 
 const VALID = fileURLToPath(new URL("./fixtures/valid", import.meta.url));
 const SCRIPT = fileURLToPath(new URL("../scripts/withdraw-record.mjs", import.meta.url));
@@ -49,6 +49,14 @@ test("withdrawing a record leaves none_published, no quotes, unverified and the 
   assert.throws(() => withdrawRecord(dir, "acme-cam-1", "again", { today: TODAY }), /already none_published/);
 });
 
+test("a withdrawn record keeps its pages' retrieval dates as quoted strings, as records write dates", () => {
+  const dir = copy();
+  withdrawRecord(dir, "acme-cam-1", "the page now gives 30 June 2027", { today: TODAY });
+  const text = readFileSync(join(dir, "acme", "acme-cam-1.yaml"), "utf8");
+  assert.match(text, /\n    retrieved: "\d{4}-\d{2}-\d{2}"\n/);
+  assert.doesNotMatch(text, /retrieved: \d/);
+});
+
 test("an unknown id throws, and the notes keep the schema's limit", () => {
   assert.throws(() => withdrawRecord(copy(), "acme-cam-9", "gone", { today: TODAY }), /No record has the id "acme-cam-9"/);
   assert.equal(withdrawnNotes(null, TODAY, "a reason."), "Withdrawn pending review (2026-10-27): a reason.");
@@ -79,3 +87,40 @@ test("the CLI exits 2 with the usage line on bad arguments and 1 for an unknown 
   assert.match(unknown.stderr, /^No record has the id "nobody-cam-0"\n$/);
   assert.equal(dataStatus(), before, "the real data is untouched");
 });
+
+test("a withdrawn record of a brand whose categories come from its rows still validates (O8 on TP-Link and EZVIZ)", (t) => {
+  // Rule R7 maps these brands' categories from the quoted row, which a withdrawal removes. Live records change every
+  // night, so they are read on the real date, as npm run validate reads them, and any dated record of the brand will do.
+  const today = new Date().toISOString().slice(0, 10);
+  const repo = fileURLToPath(new URL("..", import.meta.url));
+  const sources = validateSources(join(repo, "data", "sources")).entries;
+  for (const brand of ["tp-link", "ezviz"]) {
+    const file = listYamlFiles(join(repo, "data", "devices", brand)).find((f) => YAML.parse(readFileSync(f, "utf8")).support.rule !== "none_published");
+    const id = basename(file, ".yaml");
+    const dir = mkdtempSync(join(tmpdir(), "patchlife-withdraw-"));
+    t.after(() => rmSync(dir, { recursive: true, force: true }));
+    cpSync(file, join(dir, brand, `${id}.yaml`));
+    assert.deepEqual(validateDevices(dir, { today, sources }).errors, [], `${id} before`);
+    withdrawRecord(dir, id, "the page now gives another date", { today });
+    assert.deepEqual(validateDevices(dir, { today, sources }).errors, [], `${id} withdrawn`);
+  }
+});
+
+test("a withdrawn record still meets R7 where the category needs no row: a model pattern or a listed exception", (t) => {
+  const repo = fileURLToPath(new URL("..", import.meta.url));
+  const sources = validateSources(join(repo, "data", "sources")).entries;
+  const today = new Date().toISOString().slice(0, 10);
+  // Ring places every model by a model pattern; EZVIZ lists some records as exceptions.
+  const exception = Object.keys(sources.find((s) => s.brand_slug === "ezviz").category_exceptions)[0];
+  for (const [brand, id] of [["ring", "ring-chime-2nd-gen"], ["ezviz", exception]]) {
+    const dir = mkdtempSync(join(tmpdir(), "patchlife-withdraw-"));
+    t.after(() => rmSync(dir, { recursive: true, force: true }));
+    cpSync(join(repo, "data", "devices", brand, `${id}.yaml`), join(dir, brand, `${id}.yaml`));
+    withdrawRecord(dir, id, "the page now gives another date", { today });
+    assert.deepEqual(validateDevices(dir, { today, sources }).errors, [], `${id} withdrawn`);
+    const file = join(dir, brand, `${id}.yaml`);
+    writeFileSync(file, readFileSync(file, "utf8").replace(/^category: .*$/m, "category: printer"));
+    assert.ok(validateDevices(dir, { today, sources }).errors.some((e) => e.message.startsWith("R7:")), `${id} with a wrong category`);
+  }
+});
+

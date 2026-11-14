@@ -7,16 +7,12 @@
 // to another page, dates only inside scripts, or content the verifier can't read), with one line saying why; 2 on
 // bad arguments. Reads with the polite fetcher, on a GitHub runner or your own machine.
 // Usage: node scripts/check-source.mjs <url>   (add --use-env-proxy behind an HTTP proxy, D16)
-import { resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { createFetcher } from "./polite-fetch.mjs";
 import { unquotedIn } from "./unquoted-dates.mjs";
-import { normalise, pageText, samePage } from "./verify-evidence.mjs";
+import { CHALLENGE, normalise, pageText, samePage } from "./verify-evidence.mjs";
 
 const SAMPLES = 5;
 const USAGE = "Usage: node --use-env-proxy scripts/check-source.mjs <url>";
-// What a bot challenge page says, on normalised text: a 200 holding one of these is a wall, not the page (D18).
-const CHALLENGE = /just a moment|checking your browser|verify(?:ing)? (?:that )?you are (?:a )?human|attention required|enable javascript and cookies to continue|pardon our interruption|complete the security check/;
 
 // Up to n items spread evenly over the list, so a table shows its start, middle and end.
 function spread(list, n) {
@@ -81,7 +77,7 @@ export function report(result) {
   return lines;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (import.meta.main) {
   const url = process.argv[2];
   if (process.argv.length !== 3 || !/^https?:\/\//.test(url)) {
     console.error(`Give one http(s) URL.\n${USAGE}`);

@@ -16,30 +16,37 @@ evidence:
     quote: "Google Nest Wifi Pro 10/27/2022 10/27/2027 Yes"
     retrieved: "2026-11-13"
     regime: vendor_policy
+    archive_url: https://web.archive.org/web/20261114064732/https://support.google.com/product-documentation/answer/10231940?hl=en
   - url: https://support.google.com/product-documentation/answer/10231940?hl=en
     quote: "Google Nest connected home devices will receive automatic security updates for at least 5 years from the date we start selling them on the US Google Store."
     retrieved: "2026-11-13"
     regime: vendor_policy
+    archive_url: https://web.archive.org/web/20261114064732/https://support.google.com/product-documentation/answer/10231940?hl=en
   - url: https://support.google.com/product-documentation/answer/10231940?hl=en
     quote: "Security updates will address critical issues known to Google Nest that are able to be resolved with a remote software update."
     retrieved: "2026-11-13"
     regime: vendor_policy
+    archive_url: https://web.archive.org/web/20261114064732/https://support.google.com/product-documentation/answer/10231940?hl=en
   - url: https://support.google.com/product-documentation/answer/14869041?hl=en
     quote: "Google Nest Wifi Pro (G6ZUC)"
     retrieved: "2026-11-13"
     regime: uk_psti
+    archive_url: https://web.archive.org/web/20261114064611/https://support.google.com/product-documentation/answer/14869041?hl=en
   - url: https://support.google.com/product-documentation/answer/14869041?hl=en
     quote: "Group 2: At least five years from when the device first became available on the Google Store in the US"
     retrieved: "2026-11-13"
     regime: uk_psti
+    archive_url: https://web.archive.org/web/20261114064611/https://support.google.com/product-documentation/answer/14869041?hl=en
   - url: https://support.google.com/product-documentation/answer/16882802?hl=en
     quote: "Google Nest Wifi Pro (G6ZUC)"
     retrieved: "2026-11-13"
     regime: au_smart_device_rules
+    archive_url: https://web.archive.org/web/20261114064652/https://support.google.com/product-documentation/answer/16882802?hl=en
   - url: https://support.google.com/product-documentation/answer/16882802?hl=en
     quote: "At least five years from when the device first became available on the Google Store in the US, ending no earlier than October 27, 2027"
     retrieved: "2026-11-13"
     regime: au_smart_device_rules
+    archive_url: https://web.archive.org/web/20261114064652/https://support.google.com/product-documentation/answer/16882802?hl=en
 verification:
   status: verified
   checked: "2026-11-13"
