@@ -1,12 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cpSync, existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { htmlToText, normalise, pageReport, pageText, pdfToText, quoteMatches, selectRecords, verifyDevices, verifyRecord } from "../scripts/verify-evidence.mjs";
+import { htmlToText, normalise, pageReport, pageText, pdfToText, quoteMatches, selectRecords, stripHidden, verifyDevices, verifyRecord } from "../scripts/verify-evidence.mjs";
 import { validateDevices, validateSources } from "../scripts/validate-data.mjs";
 
 // The registry the valid fixtures follow: the alias AC-1 of acme-cam-1 comes from its rename table (rule R1).
@@ -483,6 +483,20 @@ test("the CLI rejects a missing or too large option value with one line and exit
     const run = spawnSync(process.execPath, [script, ...args], { encoding: "utf8" });
     assert.equal(run.status, 2, run.stderr);
     assert.match(run.stderr, /^[^\n]*--due[^\n]*\n$/);
+  }
+});
+
+test("stripHidden removes comments and hidden elements, an unclosed one to the end, and changes no page's text", () => {
+  assert.equal(stripHidden("a<!-- b -->c<script>d</script>e<TEMPLATE><tr><td>f</td></tr></Template >g"), "ac e g");
+  assert.equal(stripHidden("a<!-- b"), "a");
+  assert.equal(stripHidden("a<!-- b --!>c<script>d</script >e<style>f</style x>g"), "ac e g");
+  assert.equal(stripHidden("a<noscript>b<p>c"), "a ");
+  assert.equal(stripHidden("<p>No hidden markup</p>"), "<p>No hidden markup</p>");
+  // Every fixture page reads the same through it.
+  const dir = fileURLToPath(new URL("./fixtures/parsers/", import.meta.url));
+  for (const name of readdirSync(dir).filter((f) => f.endsWith(".html"))) {
+    const html = readFileSync(join(dir, name), "utf8");
+    assert.equal(htmlToText(stripHidden(html)), htmlToText(html), name);
   }
 });
 

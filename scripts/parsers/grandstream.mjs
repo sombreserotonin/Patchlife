@@ -18,8 +18,9 @@ const PERIOD_COLUMN = "Defined Support Period";
 const TABLE = /<table\b[^>]*>[\s\S]*?<\/table\s*>/gi;
 const BUTTON = /<button\b[^>]*>([\s\S]*?)<\/button\s*>/gi;
 const NAME_BREAK = /<\/p>|<br\s*\/?>/i;
-// Year first, with - or /, alone or followed by the profile's at-least phrase in either case.
-const PERIOD = /^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:\s+(.+))?$/;
+// Year first, in the two forms the validator finds in a quote (2028-12-31, or 2031/1/23), alone or followed by the
+// profile's at-least phrase in either case. Any other form ("2027-6-30") would be written and then refused.
+const PERIOD = /^(\d{4})(?:-(\d{2})-(\d{2})|\/(\d{1,2})\/(\d{1,2}))(?:\s+(.+))?$/;
 // A model code: letters, then digits, as in GWN7674 or GWN7802P. "Lite", "Pro", "PL" and "V2" are not codes, so
 // "GWN7803 PL Pro" is one model, while two codes on one line could be two models and are never guessed at.
 const CODE = /^[A-Z]{2,}[A-Z-]*\d{2,}[A-Z0-9-]*$/i;
@@ -47,14 +48,15 @@ export function parse({ html, url = PAGE, profile, today = new Date().toISOStrin
         skip(`"${period}" in the support period cell is not a date`);
         continue;
       }
-      const endDate = isoDate(Number(date[1]), Number(date[2]), Number(date[3]));
+      const endDate = isoDate(Number(date[1]), Number(date[2] ?? date[4]), Number(date[3] ?? date[5]));
       if (!endDate) {
         skip(`"${period}" is not a calendar date`);
         continue;
       }
-      const atLeast = date[4] !== undefined && date[4].toLowerCase() === atLeastPhrase.toLowerCase();
-      if (date[4] !== undefined && !atLeast) {
-        skip(`"${date[4]}" after the date is not the profile's at-least phrase`);
+      const after = date[6];
+      const atLeast = after !== undefined && after.toLowerCase() === atLeastPhrase.toLowerCase();
+      if (after !== undefined && !atLeast) {
+        skip(`"${after}" after the date is not the profile's at-least phrase`);
         continue;
       }
       if (!(section in SECTIONS)) {
