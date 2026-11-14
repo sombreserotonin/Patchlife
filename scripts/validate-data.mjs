@@ -24,8 +24,9 @@ const NUMBER_WORDS = ["", "one", "two", "three", "four", "five", "six", "seven",
 
 // Invisible characters (soft hyphen, zero-width spaces and joiners, word joiner, BOM) are dropped before comparing.
 // The verifier finds quotes in page text with it, and the validator finds model names in quotes.
+const INVISIBLE = /[\u00ad\u200b-\u200d\u2060\ufeff]/g;
 export function normalise(text) {
-  return text.normalize("NFKC").replace(/[\u00ad\u200b-\u200d\u2060\ufeff]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+  return text.normalize("NFKC").replace(INVISIBLE, "").replace(/\s+/g, " ").trim().toLowerCase();
 }
 
 // True when the text writes this YYYY-MM-DD date in a common form: 31 December 2027, 31st Dec 2027,
@@ -81,7 +82,7 @@ export function versionsIn(text) {
 // True when the text writes this token as a whole word, with its own casing. R4 takes a hardware version exactly as
 // the row writes it, since TP-Link's page writes "v1" on two rows and "V1" on the rest (#108).
 export function writesToken(text, token) {
-  return text.normalize("NFKC").replace(/[\u00ad\u200b-\u200d\u2060\ufeff]/g, "").split(/\s+/).includes(token);
+  return text.normalize("NFKC").replace(INVISIBLE, "").split(/\s+/).includes(token);
 }
 
 // A footnote marker: asterisks, daggers or superscript digits, as a page attaches them to a row ("or later*").
@@ -112,6 +113,22 @@ export function plainScalarProblems(source) {
 }
 
 const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// A normalised name as a whole: not run into a letter, digit or hyphen on either side, so "cam 10" does not hold
+// "cam 1". One pattern per name, compiled once.
+const NAME_PATTERNS = new Map();
+function namePattern(wanted) {
+  if (!NAME_PATTERNS.has(wanted)) NAME_PATTERNS.set(wanted, new RegExp(`(?<![\\p{L}\\p{N}-])${escapeRegExp(wanted)}(?![\\p{L}\\p{N}-])`, "gu"));
+  const pattern = NAME_PATTERNS.get(wanted);
+  pattern.lastIndex = 0;
+  return pattern;
+}
+function holdsName(text, name) {
+  const wanted = normalise(name);
+  return wanted !== "" && namePattern(wanted).test(text);
+}
+// The signs a page may attach to a name, as it attaches a footnote marker: "Cam 1™", "Cam 1²".
+const SIGNS = /[™℠®]/g;
 
 // Characters no record field may hold: the C0 and C1 controls other than tab, line feed and carriage return, the
 // bidirectional embeddings, overrides and isolates, and the two non-characters XML forbids. A control character makes
@@ -151,9 +168,10 @@ export function listYamlFiles(dir) {
   return files.sort();
 }
 
-// sources is the source registry's entries (validateSources returns them). An entry's date_order sets how numeric
-// dates read in quotes from any evidence URL that starts with one of its URLs. An entry's profile fields (the source
-// schema describes them) set what rules R2, R3, R4, R6 and R7 check on its brand's records; R1, R5 and R8 need none.
+// sources is the source registry's entries (validateSources returns them). A record's brand must be its entry's brand.
+// An entry's date_order sets how numeric dates read in quotes from its brand's evidence URLs that start with one of its
+// URLs. An entry's profile fields (the source schema describes them) set what rules R2, R3, R4, R6 and R7 check on its
+// brand's records; R1 reads its rename table, and R5 and R8 need none.
 export function validateDevices(
   devicesDir,
   { today = new Date().toISOString().slice(0, 10), validate = loadValidator(), sources = [] } = {},
@@ -163,9 +181,13 @@ export function validateDevices(
   const seen = new Map();
   const named = new Map();
   const files = listYamlFiles(devicesDir);
-  const orders = sources.flatMap((entry) => (entry.date_order ? entry.urls.map((url) => [url, entry.date_order]) : []));
-  const orderFor = (url) => orders.find(([prefix]) => url.startsWith(prefix))?.[1];
   const profiles = new Map(sources.map((entry) => [entry.brand_slug, entry]));
+  // How a page writes numeric dates is its own brand's entry's date_order, for a URL that starts with one of its URLs.
+  // Another brand's entry never decides it, even on the same site.
+  const orderFor = (slug, url) => {
+    const entry = profiles.get(slug);
+    return entry?.date_order && entry.urls.some((prefix) => url.startsWith(prefix)) ? entry.date_order : undefined;
+  };
   // The sites each brand's registry entries name, from their pages and the pages their renames cite. A source link
   // anywhere else would send a reader to a site the registry never listed, however much its address looks the part.
   const sites = new Map();
@@ -228,6 +250,9 @@ export function validateDevices(
     const folder = basename(dirname(file));
     if (record.id !== stem) fail(`id "${record.id}" must match filename "${stem}"`);
     if (record.brand_slug !== folder) fail(`brand_slug "${record.brand_slug}" must match folder "${folder}"`);
+    // The site says "as published by <brand>", so the name is the registry's for the slug, as every parser writes it.
+    const registered = profiles.get(record.brand_slug)?.brand;
+    if (registered !== undefined && record.brand !== registered) fail(`brand "${record.brand}" must be the source registry's name for ${record.brand_slug}, "${registered}"`);
     if (!record.id.startsWith(`${record.brand_slug}-`)) fail(`id must start with "${record.brand_slug}-"`);
     if (seen.has(record.id)) fail(`duplicate id "${record.id}", also in ${seen.get(record.id)}`);
     else seen.set(record.id, rel);
@@ -243,7 +268,19 @@ export function validateDevices(
     }
 
     const quotes = record.evidence.map((ev) => ev.quote ?? "").join("\n");
-    const quoted = (date) => record.evidence.some((ev) => mentionsDate(ev.quote ?? "", date, orderFor(ev.url)));
+    const names = [record.model, ...(record.aliases ?? [])];
+    // A date is read with the record's own names, whole, and any footnote markers blanked out, so a model's number or
+    // a marker is never taken as part of a date: "Cam 3 December 2027" states December 2027, not 3 December,
+    // "30 June 2029²" states 30 June 2029, and in "Cam 31 December 2027" the name Cam 3 is not there to blank.
+    const dateText = (quote) => {
+      let text = normalise(quote.replace(MARKERS, " "));
+      for (const name of names) {
+        const wanted = normalise(name);
+        if (wanted) text = text.replace(namePattern(wanted), " ");
+      }
+      return text;
+    };
+    const quoted = (date) => record.evidence.some((ev) => mentionsDate(dateText(ev.quote ?? ""), date, orderFor(record.brand_slug, ev.url)));
     if (support.rule === "fixed_date" && !quoted(support.end_date)) fail(`end_date ${support.end_date} is not written in any evidence quote`);
     if (support.anchor_date && !quoted(support.anchor_date)) fail(`anchor_date ${support.anchor_date} is not written in any evidence quote`);
     if (support.years && !mentionsYears(quotes, support.years)) fail(`years ${support.years} is not stated in any evidence quote`);
@@ -255,16 +292,17 @@ export function validateDevices(
       if (day) fail(`end_date ${support.end_date} gives only the month, but a quote states ${day}: use the full date`);
     }
     for (const ev of record.evidence) {
-      if (orderFor(ev.url)) continue;
+      if (orderFor(record.brand_slug, ev.url)) continue;
       for (const date of ambiguousDates(ev.quote ?? "")) {
         fail(`quote from ${ev.url} writes "${date}", which reads as either day/month or month/day: list the URL in a source registry entry with a date_order`);
       }
     }
 
     // A quote must name the model, so the evidence is about this record. A none_published record has no date to quote.
-    const names = [record.model, ...(record.aliases ?? [])];
     const quoteTexts = record.evidence.map((ev) => normalise(ev.quote ?? ""));
-    const inQuote = (name) => normalise(name) !== "" && quoteTexts.some((text) => text.includes(normalise(name)));
+    // A footnote marker or a sign right after a name is not part of it ("Cam 1² 30 June 2029", "Cam 1™").
+    const nameTexts = record.evidence.map((ev) => normalise((ev.quote ?? "").replace(MARKERS, " ").replace(SIGNS, " ")));
+    const inQuote = (name) => nameTexts.some((text) => holdsName(text, name));
     if (support.rule !== "none_published" && !names.some(inQuote)) fail(`neither model "${record.model}" nor an alias appears in any evidence quote`);
 
     // A model or alias names one record per brand, except region-date splits of one model (D33).
@@ -284,7 +322,8 @@ export function validateDevices(
       if (ev.archive_url && !isCaptureOf(ev.archive_url, ev.url)) fail(`archive_url ${ev.archive_url} is not a Wayback capture of ${ev.url}`);
       if (hasCredentials(ev.url)) fail(`evidence URL ${ev.url} carries a user name or password before its host, so its link would look like another site's`);
       // With a registry to check against, every source link is on a site the brand's entries name.
-      if (sources.length && !sites.get(record.brand_slug)?.has(new URL(ev.url).origin)) {
+      if (!URL.canParse(ev.url)) fail(`evidence URL ${ev.url} is not an address a browser can open`);
+      else if (sources.length && !sites.get(record.brand_slug)?.has(new URL(ev.url).origin)) {
         fail(`evidence URL ${ev.url} is not on a site the source registry lists for ${record.brand_slug} (${[...(sites.get(record.brand_slug) ?? [])].join(", ") || "it has no entry"})`);
       }
     }
@@ -320,7 +359,8 @@ export function validateDevices(
     }
 
     // R4: conditions is one of the profile's sentences for a cited page, with any {version} written as the row writes it.
-    // A none_published record has no row, so R4 and R6 leave it alone.
+    // A none_published record has no row, so R4 and R6 leave it alone, and R7 reads only what needs no row: a withdrawn
+    // record (RUNBOOKS O8) keeps the category it was checked with, and its quotes are gone.
     if (profile.conditions && support.rule !== "none_published") {
       const allowed = urls.flatMap((url) => (profile.conditions[url] ?? []).map((sentence) => ({ url, sentence })));
       const conditions = support.conditions ?? null;
@@ -364,12 +404,15 @@ export function validateDevices(
       }
     }
 
-    // R7: the category follows the profile's map, or is a listed exception.
+    // R7: the category follows the profile's map, or is a listed exception. A none_published record has no row, so only
+    // the map's model patterns can place it, and one that none of them matches is not checked.
     const exception = profile.category_exceptions?.[record.id];
+    const withdrawn = support.rule === "none_published";
+    const map = (profile.category_map ?? []).filter((e) => !withdrawn || e.model);
     if (exception !== undefined) {
       if (record.category !== exception) fail(`R7: category "${record.category}" is not the profile's exception for this record (${exception})`);
-    } else if (profile.category_map) {
-      const entry = profile.category_map.find((e) => (e.model ? regexFor(e.model)?.test(record.model) : record.evidence.some((ev) => regexFor(e.row)?.test(ev.quote ?? ""))));
+    } else if (profile.category_map && (!withdrawn || map.some((e) => regexFor(e.model)?.test(record.model)))) {
+      const entry = map.find((e) => (e.model ? regexFor(e.model)?.test(record.model) : record.evidence.some((ev) => regexFor(e.row)?.test(ev.quote ?? ""))));
       if (!entry) fail(`R7: no category_map entry of the profile matches model "${record.model}" or its quotes, and category_exceptions does not list this record`);
       else if (entry.category !== record.category) fail(`R7: category "${record.category}" differs from the profile's ${entry.category} for ${entry.model ? "model" : "row"} pattern "${entry.model ?? entry.row}"`);
     }
@@ -394,6 +437,11 @@ export function validateSources(
 
   for (const name of files) {
     const fail = (message) => errors.push({ file: name, message });
+    // A link would be read through to a file outside data/ that the gate never judges, as for device records.
+    if (lstatSync(join(sourcesDir, name)).isSymbolicLink()) {
+      fail("a registry file must be a regular file, not a symbolic link");
+      continue;
+    }
 
     const text = readFileSync(join(sourcesDir, name), "utf8");
     let entries;
@@ -426,7 +474,10 @@ export function validateSources(
   }
 
   const hashFile = join(sourcesDir, "page-hashes.json");
-  if (existsSync(hashFile)) {
+  // lstat, so a link is refused even when it points nowhere.
+  const hashEntry = lstatSync(hashFile, { throwIfNoEntry: false });
+  if (hashEntry?.isSymbolicLink()) errors.push({ file: "page-hashes.json", message: "must be a regular file, not a symbolic link" });
+  else if (hashEntry) {
     const fail = (message) => errors.push({ file: "page-hashes.json", message });
     let hashes;
     try {
@@ -449,7 +500,10 @@ export function validateSources(
   return { files: files.length, sources, entries: valid, errors };
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+// import.meta.main is true only for the entry point, however it was reached (a symbolic link included). A Node too old
+// to set it would skip the checks and exit 0, so it stops here instead.
+if (import.meta.main === undefined) throw new Error("validate-data.mjs needs Node 22.18 or later (package.json engines)");
+if (import.meta.main) {
   const sources = validateSources(resolve(process.argv[3] ?? join(ROOT, "data/sources")));
   const devices = validateDevices(resolve(process.argv[2] ?? join(ROOT, "data/devices")), { sources: sources.entries });
   const errors = [...devices.errors, ...sources.errors];
