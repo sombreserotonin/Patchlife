@@ -239,7 +239,7 @@ test("at-least wording never overstates the minimum", (t) => {
   assert.match(soon, /Status Ending soon Status as at 21 Oct 2026\. 12 months or less of the guaranteed minimum left\./);
 
   const lastDay = text(build(t, { today: "2029-06-30" }).read("devices/acme-cam-1/index.html"));
-  assert.match(lastDay, /Time left Today is the last guaranteed day/);
+  assert.match(lastDay, /Time left 30 June 2029 is the last guaranteed day/);
 
   assert.match(text(build(t, { today: "2027-03-01" }).read("devices/acme-leap-5/index.html")), /Time left None guaranteed\. The minimum period has ended\./);
 });
@@ -279,7 +279,7 @@ test("scope and hardware conditions keep the plain at-least wording everywhere (
     assert.equal(passed.timeLeft, "None guaranteed. The minimum period has ended.", conditions);
     for (const view of [passed.words, passed.list, passed.search, passed.meta]) assert.ok(view.includes(P8_LEAP), `${conditions}: ${view}`);
     assert.equal(leapViews(t, conditions, "2026-10-21").note, "12 months or less of the guaranteed minimum left.", conditions);
-    assert.equal(leapViews(t, conditions, "2027-02-28").timeLeft, "Today is the last guaranteed day", conditions);
+    assert.equal(leapViews(t, conditions, "2027-02-28").timeLeft, "28 February 2027 is the last guaranteed day", conditions);
   }
 });
 
@@ -304,8 +304,8 @@ test("a condition that can extend the period (whichever is later) gets one hedge
   assert.equal(soon.timeLeft, "At least 4 months and 7 days", "the published minimum is still a floor for every buyer");
 
   const lastDay = leapViews(t, CONDITIONS.purchase, "2027-02-28");
-  assert.equal(lastDay.timeLeft, "Today is the published minimum date. Some buyers get longer: see Conditions.");
-  assert.ok(lastDay.page.includes("<dd>Today is the published minimum date."), "last day has no marker");
+  assert.equal(lastDay.timeLeft, "28 February 2027 is the published minimum date. Some buyers get longer: see Conditions.");
+  assert.ok(lastDay.page.includes("<dd>28 February 2027 is the published minimum date."), "last day has no marker");
 });
 
 test("status notes for a date without at least say when updates end", (t) => {
@@ -1091,7 +1091,7 @@ test("the stats page counts records by status, brand, category and verification 
   const page = site.read("stats/index.html");
   const words = text(page);
   assert.match(words, /Counts from the data as at 21 Oct 2026, when this site was last built\./);
-  assert.match(words, /Measures Verified records 6 Brands with verified records 1 Share of verified records with a computable status 83% \(5 of 6\) Stale records 0 Records in all 6 Oldest automated check 20 Oct 2026/);
+  assert.match(words, /Measures Verified records 6 Brands with verified records 1 Share of verified records with a computable status 83% \(5 of 6\) Stale records 0 Records in all 6 Oldest passed automated check 20 Oct 2026/);
   assert.match(words, /Records by status Supported 1 Ending soon 2 Ended or minimum passed 2 Unknown 1/);
   assert.match(words, /Records by brand Acme 6 Records by category Cameras 6 Records by verification state Verified 6 Not yet checked 0 Stale 0 Disputed 0/);
   assert.match(page, /<th scope="row"><a href="\/brands\/acme\/">Acme<\/a><\/th>/);
@@ -1124,4 +1124,28 @@ test("a search result shows the same status light as the lists and still reads a
   assert.match(dom.lines()[0], /^Acme Cam 1: Supported\. Security updates until at least 30 June 2029, /);
   // The list on a brand page marks the status the same way, so one style rule draws both.
   assert.match(build(t).read("brands/acme/index.html"), /<span class="status supported">Supported<\/span>/);
+});
+
+test("a model's ending-soon and ended events are separate entries in its brand feed (RFC 4287)", (t) => {
+  const [soon] = feedRecords(); // acme-soon-1 ends 2027-03-15: ending soon on TODAY, ended on 16 March 2027
+  const before = entriesOf(build(t, { records: [soon] }).read("feeds/brands/acme.xml"));
+  const after = entriesOf(build(t, { records: [soon], today: "2027-03-16" }).read("feeds/brands/acme.xml"));
+  assert.equal(before[0].id, "https://patchlife.tech/devices/acme-soon-1/");
+  assert.equal(after[0].id, "https://patchlife.tech/devices/acme-soon-1/#ended");
+});
+
+test("a month-only end date does not say 12 months or less are left before its quote supports it (D38)", (t) => {
+  const month = feedRecords()[2]; // acme-month-3, end_date "2027-04": ending soon from 1 April 2026
+  const words = text(build(t, { records: [month], today: "2026-04-01" }).read("devices/acme-month-3/index.html"));
+  assert.match(words, /Status Ending soon/);
+  assert.match(words, /The published end month starts within 12 months\./);
+  assert.doesNotMatch(words, /12 months or less of security updates left/, "April 2027 may run to 30 April 2027");
+});
+
+test("a build stopped part-way can be rebuilt over", (t) => {
+  const outDir = tempDir(t);
+  // Stands in for a stop after the first pages: a record with no evidence sorts last and throws in its page.
+  const broken = { ...structuredClone(byId(fixtures(), "acme-cam-1")), id: "acme-zzz-9", model: "Zzz 9", evidence: [], verification: { status: "unverified" } };
+  assert.throws(() => buildSite({ records: [...fixtures(), broken], outDir, today: TODAY }));
+  assert.equal(unsafeOutDirReason(outDir, { cwd: tmpdir(), root: ROOT, devicesDir: VALID }), null);
 });

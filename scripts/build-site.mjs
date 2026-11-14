@@ -196,8 +196,14 @@ function indexEntry(record, status) {
 // For an "at least" date the status describes the guaranteed minimum, not when updates stop (D23). When a condition can
 // extend the period (conditionsExtend), the published date is only the minimum for some buyers, so the notes say so.
 const SOME_LONGER = "Some buyers get longer: see Conditions.";
-function statusNote({ status, at_least: atLeast, conditions_extend: extend }) {
+// A month-only date (D38) is ending soon from the month's first day, while the period may run to its last, so its note
+// says when the month starts rather than how much is left.
+function statusNote({ status, at_least: atLeast, conditions_extend: extend, end_date: end }) {
   if (status === "supported") return atLeast ? "More than 12 months of the guaranteed minimum left." : "More than 12 months of security updates left.";
+  if (status === "ending_soon" && end && isMonthOnly(end)) {
+    const note = atLeast ? "The month of the published minimum starts within 12 months." : "The published end month starts within 12 months.";
+    return extend ? `${note} ${SOME_LONGER}` : note;
+  }
   if (status === "ending_soon" && atLeast) {
     return extend ? `12 months or less until the published minimum date. ${SOME_LONGER}` : "12 months or less of the guaranteed minimum left.";
   }
@@ -225,8 +231,9 @@ function timeLeftText(record, entry, today) {
   if (entry.status === "ended") return "None. Security updates have ended.";
   if (isMonthOnly(end)) return `${atLeast ? "At least until" : "Until"} ${longDate(end)}. ${record.brand} gives the month, not the day.`;
   const left = timeLeft(today, end);
-  if (!left && atLeast) return extend ? `Today is the published minimum date. ${SOME_LONGER}` : "Today is the last guaranteed day";
-  if (!left) return "Today is the last day";
+  // The build's today is a UTC date, which a reader in Australia can see on the following morning, so the day is named.
+  if (!left && atLeast) return extend ? `${longDate(end)} is the published minimum date. ${SOME_LONGER}` : `${longDate(end)} is the last guaranteed day`;
+  if (!left) return `${longDate(end)} is the last day`;
   return atLeast ? `At least ${left}` : left;
 }
 
@@ -678,7 +685,7 @@ const STATUS_FEEDS = [
   {
     path: "/feeds/ending-soon.xml",
     title: "Patchlife: security updates ending within 12 months",
-    subtitle: "Models whose published security update period ends within the next 12 months. Each entry is dated the day its last 12 months began.",
+    subtitle: "Models whose published security update period ends within the next 12 months. Each entry is dated 12 months before its published end date, or before the first day of a published month.",
     statuses: ["ending_soon"],
   },
   {
@@ -702,6 +709,9 @@ function feedEntries(ctx, items, statuses) {
     .map(({ record, entry, status }) => ({
       title: `${displayName(record.brand, record.model)}: ${statusLabel(entry)}`,
       url: absolute(ctx, `/devices/${record.id}/`),
+      // An entry's identity in a reader: the page for its ending-soon event, and a fragment for the later one, so the
+      // two events of one model are two entries (RFC 4287 4.2.6).
+      id: absolute(ctx, `/devices/${record.id}/`) + (status === "ending_soon" ? "" : `#${status}`),
       updated: statusSince(record, status),
       summary: summaryText(entry),
     }))
@@ -724,7 +734,7 @@ function atomFeed(ctx, feed, entries) {
 ${entries.map(
   (entry) => html`<entry>
 <title>${entry.title}</title>
-<id>${entry.url}</id>
+<id>${entry.id}</id>
 <link rel="alternate" type="text/html" href="${entry.url}"/>
 <updated>${stamp(entry.updated)}</updated>
 <summary>${entry.summary}</summary>
@@ -776,7 +786,7 @@ ${table("Measures", [
   ["Share of verified records with a computable status", `${report.computablePercent}% (${report.computable} of ${report.verification.verified})`],
   ["Stale records", report.verification.stale],
   ["Records in all", report.records],
-  ["Oldest automated check", report.oldestChecked ? shortTime(report.oldestChecked) : "none"],
+  ["Oldest passed automated check", report.oldestChecked ? shortTime(report.oldestChecked) : "none"],
 ])}
 ${table("Records by status", Object.entries(report.status).map(([key, count]) => [STATUS_WORDS[key] ?? key, count]))}
 ${table("Records by brand", Object.entries(report.brands).map(([slug, count]) => [brandName[slug] ?? slug, count, `/brands/${slug}/`]))}
@@ -956,6 +966,13 @@ export function buildSite({ records, outDir, basePath = "", siteUrl = DEFAULT_SI
     pages.push(path);
   };
 
+  // JSON feed (SPEC 4): every response carries the licence, the attribution line and the build date. It is written
+  // first, as the mark isEarlierBuild looks for, so a build stopped part-way can still be rebuilt over.
+  const licence = { license: "ODbL-1.0", license_url: ODBL_URL, attribution, notice_url: NOTICE_URL, build_date: today };
+  const feedDevice = ({ record, status }) => ({ ...record, status, url: absolute(ctx, `/devices/${record.id}/`) });
+  write("/api/v1/devices.json", JSON.stringify({ ...licence, count: items.length, devices: items.map(feedDevice) }));
+  for (const item of items) write(`/api/v1/devices/${item.record.id}.json`, JSON.stringify({ ...licence, device: feedDevice(item) }));
+
   writePage("/", homePage(ctx, { items, brands, categories, coverage }));
   for (const item of items) writePage(`/devices/${item.record.id}/`, modelPage(ctx, item));
   for (const brand of brands) {
@@ -993,12 +1010,6 @@ export function buildSite({ records, outDir, basePath = "", siteUrl = DEFAULT_SI
     const feed = brandFeed(brand);
     write(feed.path, atomFeed(ctx, feed, feedEntries(ctx, brand.items, feed.statuses)));
   }
-
-  // JSON feed (SPEC 4): every response carries the licence, the attribution line and the build date.
-  const licence = { license: "ODbL-1.0", license_url: ODBL_URL, attribution, notice_url: NOTICE_URL, build_date: today };
-  const feedDevice = ({ record, status }) => ({ ...record, status, url: absolute(ctx, `/devices/${record.id}/`) });
-  write("/api/v1/devices.json", JSON.stringify({ ...licence, count: items.length, devices: items.map(feedDevice) }));
-  for (const item of items) write(`/api/v1/devices/${item.record.id}.json`, JSON.stringify({ ...licence, device: feedDevice(item) }));
 
   write("/search-index.json", JSON.stringify({ license: "ODbL-1.0", attribution, build_date: today, devices: items.map((item) => item.entry) }));
   copyFileSync(join(ROOT, "site/search.js"), join(outDir, "search.js"));
