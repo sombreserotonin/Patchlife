@@ -2,7 +2,7 @@
 // source): 3 records or 5% of the PR's records, whichever is larger, at most 10, ranked by a hash of the PR number and
 // each id as scripts/watchdog.mjs ranks the weekly spot check, so the same PR always gives the same sample and nobody
 // chooses which records get checked. Prints one line per record: id, brand and model, end date (or the rule when
-// there is none) and the cited page with the quote highlighted (a text fragment link). With no ids it takes the
+// there is none) and each cited page with its quotes highlighted (text fragment links). With no ids it takes the
 // records under data/devices/ changed since the branch left main (the working tree against the merge base of
 // origin/main and HEAD), so run it on the PR's branch with origin fetched. Reads only local files. Exits 2 on bad
 // arguments.
@@ -14,7 +14,7 @@ import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import YAML from "yaml";
 import { listYamlFiles } from "./validate-data.mjs";
-import { highlightLink } from "./watchdog.mjs";
+import { highlightLinks } from "./watchdog.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DEVICE = /^data\/devices\/[^/]+\/([^/]+)\.yaml$/;
@@ -51,17 +51,15 @@ export function changedSinceBranch(mainRef = "origin/main", cwd = ROOT) {
   return changedIds(git("diff", "--name-only", base, "--", "data/devices").split("\n"));
 }
 
-// One tab-separated line per id: id, brand and model, end date or rule, and the first quoted item's page with its
-// quote highlighted (the first item's plain URL when no item has a quote). An id with no file, such as a record the
-// PR removes, says so.
+// One tab-separated line per id: id, brand and model, end date or rule, and a link to each cited page with every
+// quote cited from it highlighted, separated by spaces (a page cited with no quote is linked plain). An id with no
+// file, such as a record the PR removes, says so.
 export function sampleLines(devicesDir, ids) {
   const files = new Map(listYamlFiles(devicesDir).map((file) => [basename(file, ".yaml"), file]));
   return ids.map((id) => {
     if (!files.has(id)) return `${id}\tno record with this id`;
     const record = YAML.parse(readFileSync(files.get(id), "utf8"));
-    const quoted = record.evidence.find((item) => item.quote);
-    const link = quoted ? highlightLink(quoted.url, quoted.quote) : record.evidence[0].url;
-    return `${id}\t${record.brand} ${record.model}\t${record.support.end_date ?? record.support.rule}\t${link}`;
+    return `${id}\t${record.brand} ${record.model}\t${record.support.end_date ?? record.support.rule}\t${highlightLinks(record.evidence).join(" ")}`;
   });
 }
 

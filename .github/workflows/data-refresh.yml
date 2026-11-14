@@ -61,6 +61,7 @@ jobs:
         # when a new branch is to be made, or the open PR's branch when it is being refreshed.
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          BOT: ${{ steps.app-token.outputs.app-slug }}[bot]
         run: |
           if ! [[ "$LIMIT" =~ ^[0-9]{1,5}$ ]]; then echo "::error::limit must be a whole number, not \"$LIMIT\""; exit 1; fi
           for brand in $BRANDS; do
@@ -82,6 +83,14 @@ jobs:
             exit 1
           fi
           if [ -n "$open" ]; then
+            echo "main=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+            # The parser step puts the refreshed brands' records back as main has them, so it must know which device
+            # files a person edited on the branch: those that commits by anyone but the bot changed, merges aside.
+            gh api "repos/$REPO/pulls/${open%% *}/commits?per_page=100" --paginate --jq '.[] | select(.author.login != env.BOT and (.parents | length) == 1) | .sha' > "$RUNNER_TEMP/hand-commits.txt"
+            : > "$RUNNER_TEMP/hand-edited.txt"
+            while read -r sha; do
+              gh api "repos/$REPO/commits/$sha" --paginate --jq '.files[] | .filename, (.previous_filename // empty)' >> "$RUNNER_TEMP/hand-edited.txt"
+            done < "$RUNNER_TEMP/hand-commits.txt"
             git fetch origin "${open#* }"
             git switch "${open#* }"
             echo "number=${open%% *}" >> "$GITHUB_OUTPUT"
@@ -99,7 +108,33 @@ jobs:
         if: steps.open-pr.outputs.skip != 'yes'
         # Exit 1 is the parser gate or the min_rows gate, a page that could not be read, or a registry that does not
         # validate: nothing was written, and the run goes red as the alarm.
+        env:
+          OPEN_BRANCH: ${{ steps.open-pr.outputs.branch }}
+          MAIN_SHA: ${{ steps.open-pr.outputs.main }}
         run: |
+          if [ -n "$OPEN_BRANCH" ]; then
+            # RUNBOOKS O9: a refresh redoes the weekly run for its brands, from main's records and the branch's
+            # profiles, so a row this PR wrote under an old name is written again from the fixed profile instead of
+            # being read as a published record (audit 2026-11-14, workflows M4). A record a person changed on the
+            # branch that differs from main's copy would be undone, so it stops the refresh instead.
+            brands=$BRANDS
+            if [ -z "$brands" ]; then brands=$(node --input-type=module -e 'const { PARSERS } = await import("./scripts/candidates.mjs"); console.log(Object.keys(PARSERS).join(" "))'); fi
+            if [ -z "$brands" ]; then echo "::error::Could not list the brands with a parser"; exit 1; fi
+            kept=""
+            for brand in $brands; do
+              while IFS= read -r file; do
+                [ "$(git rev-parse -q --verify "HEAD:$file" || true)" = "$(git rev-parse -q --verify "$MAIN_SHA:$file" || true)" ] || kept="$kept $file"
+              done < <(grep "^data/devices/$brand/" "$RUNNER_TEMP/hand-edited.txt" | sort -u)
+            done
+            if [ -n "$kept" ]; then
+              echo "::error::Edited by hand on the PR's branch, so the refresh would undo them:$kept. Put each back as main has it (delete one the PR added), refresh, then make the edit again (RUNBOOKS O9)."
+              exit 1
+            fi
+            for brand in $brands; do
+              git rm -rq --ignore-unmatch -- "data/devices/$brand"
+              if git cat-file -e "$MAIN_SHA:data/devices/$brand" 2>/dev/null; then git checkout -q "$MAIN_SHA" -- "data/devices/$brand"; fi
+            done
+          fi
           set +e
           # The log's copy is cleaned, here and in the next step, as in data-gate.yml: text from a maker's page must
           # not read as a workflow command. The file, and the summary made from it, keep the text as it was.
@@ -115,8 +150,14 @@ jobs:
         if: steps.open-pr.outputs.skip != 'yes'
         # Exit 1 means a written record failed or is stale, which the PR shows. page-hashes.json is restored so this PR
         # never conflicts with the nightly re-verification, which owns that file.
+        env:
+          OPEN_BRANCH: ${{ steps.open-pr.outputs.branch }}
         run: |
           ids=$(jq -r '.written[].id' "$RUNNER_TEMP/report.json" | tr '\n' ' ')
+          if [ -z "${ids// }" ] && [ -n "$OPEN_BRANCH" ] && [ -n "$(git status --porcelain -- data)" ]; then
+            echo "No row to write: the refresh takes the PR's earlier rows for its brands back out." | tee -a "$GITHUB_STEP_SUMMARY" "$RUNNER_TEMP/verify.txt"
+            exit 0
+          fi
           if [ -z "${ids// }" ]; then
             echo "Nothing to propose: no changed row and no new row within the limit." | tee -a "$GITHUB_STEP_SUMMARY"
             echo "nothing=yes" >> "$GITHUB_ENV"
@@ -170,8 +211,9 @@ jobs:
           report="$RUNNER_TEMP/report.json"
           written=$(jq -r '.written | length' "$report")
           {
-            # A refresh replaces the body with its own rows, so it says so: the earlier runs' rows are still in the PR.
-            if [ -n "$OPEN_BRANCH" ]; then echo "**This body lists only the rows of the refresh run on $date.** The rows of the PR's earlier runs are in its earlier commits and in this description's edit history: review every record under Files changed (RUNBOOKS O9)."; echo; fi
+            # A refresh replaces the body with its own rows, so it says so: rows of brands it did not parse are still
+            # in the PR from earlier runs.
+            if [ -n "$OPEN_BRANCH" ]; then echo "**This body lists only the rows of the refresh run on $date**, which put the records of ${BRANDS:-every brand with a parser} back as main has them and parsed again. Rows the PR's earlier runs wrote for other brands are in its earlier commits and in this description's edit history: review every record under Files changed (RUNBOOKS O9)."; echo; fi
             echo "Weekly data refresh of $date (docs/MIGRATION.md P3): $written record(s) proposed by \`scripts/candidates.mjs\`, changed rows first. Review it with RUNBOOKS O9, add \`audited\`, then squash and merge; or dispatch the workflow with \`refresh_open_pr\` after fixing a profile."
             echo
             echo "| Record | Change | Before | After |"
@@ -208,11 +250,13 @@ jobs:
           # The spot-check sample is seeded by the PR number, so it is added once the number exists.
           {
             echo
-            echo "**Spot check (RUNBOOKS O5 step 2), \`node scripts/audit-sample.mjs $number\`:**"
-            echo '```'
-            node scripts/audit-sample.mjs "$number" $(jq -r '.written[].id' "$report") | head -n 40
-            echo '```'
-            echo
+            if [ "$written" -gt 0 ]; then
+              echo "**Spot check (RUNBOOKS O5 step 2), \`node scripts/audit-sample.mjs $number\`:**"
+              echo '```'
+              node scripts/audit-sample.mjs "$number" $(jq -r '.written[].id' "$report") | head -n 40
+              echo '```'
+              echo
+            fi
             echo "**Dates on the parsed pages that no record quotes yet** (\`scripts/unquoted-dates.mjs\`, first 60 lines):"
             echo '```'
             head -n 60 "$RUNNER_TEMP/unquoted.txt"

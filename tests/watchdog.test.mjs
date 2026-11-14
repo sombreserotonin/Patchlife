@@ -8,7 +8,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildSite, loadRecords } from "../scripts/build-site.mjs";
 import { USER_AGENT } from "../scripts/polite-fetch.mjs";
-import { PUSH_STEP, UNCHECKED_TITLE, checkState, forLog, gatherState, gitStaleSince, highlightLink, issueBody, pickSample, publish, siteDate, summaryText } from "../scripts/watchdog.mjs";
+import { PUSH_STEP, UNCHECKED_TITLE, checkState, forLog, gatherState, gitStaleSince, highlightLink, highlightLinks, issueBody, pickSample, publish, siteDate, summaryText } from "../scripts/watchdog.mjs";
 
 const SCRIPT = fileURLToPath(new URL("../scripts/watchdog.mjs", import.meta.url));
 const FIXTURES = fileURLToPath(new URL("./fixtures/", import.meta.url));
@@ -499,6 +499,23 @@ test("a highlight link escapes the text directive's separators and Markdown's br
   assert.equal(highlightLink("https://a.test/p#top", "Cam 1"), "https://a.test/p#top:~:text=Cam%201");
 });
 
+// Audit 2026-11-14, ops-scripts L6: only the first quote was linked, so the "at least" sentence and the other regions'
+// rows were never shown.
+test("highlight links: one per cited page, in evidence order, each with every quote cited from that page", () => {
+  assert.equal(highlightLink("https://a.test/p", "Cam 1 2030", "until at least"), "https://a.test/p#:~:text=Cam%201%202030&text=until%20at%20least");
+  assert.deepEqual(highlightLinks([
+    { url: "https://a.test/uk", quote: "Cam 1 31 December 2030" },
+    { url: "https://a.test/uk", quote: "until at least four years" },
+    { url: "https://a.test/us", quote: "Cam 1 31 December 2031" },
+    { url: "https://a.test/uk", quote: "until at least four years" },
+    { url: "https://a.test/eol" },
+  ]), [
+    "https://a.test/uk#:~:text=Cam%201%2031%20December%202030&text=until%20at%20least%20four%20years",
+    "https://a.test/us#:~:text=Cam%201%2031%20December%202031",
+    "https://a.test/eol",
+  ]);
+});
+
 const MEASURES = [
   "Verified records                695",
   "Brands with verified records    5",
@@ -525,6 +542,7 @@ test("the weekly summary is a fixed template", () => {
   };
   const sample = [
     { id: "ezviz-cs-bc1", brand: "EZVIZ", model: "CS-BC1-B3(4MP,W1)", evidence: [{ url: "https://support.ezviz.com/eol", quote: "CS-BC1-B3(4MP,W1) Europe 2029/12/31" }] },
+    // A record that cites two pages gets a link to each.
     { id: "acme-cam-1", brand: "Acme", model: "Cam_1 [Pro]", evidence: [{ url: "https://example.com/acme", quote: "Acme Cam 1 30 June 2029" }, { url: "https://example.com/b", quote: "other" }] },
   ];
   assert.equal(
@@ -550,7 +568,7 @@ test("the weekly summary is a fixed template", () => {
       "",
       "Spot check: compare each record with the highlighted words on the maker's page.",
       "- [EZVIZ CS-BC1-B3(4MP,W1)](https://patchlife.tech/devices/ezviz-cs-bc1/): [maker's page](https://support.ezviz.com/eol#:~:text=CS%2DBC1%2DB3%284MP%2CW1%29%20Europe%202029%2F12%2F31)",
-      "- [Acme Cam\\_1 \\[Pro\\]](https://patchlife.tech/devices/acme-cam-1/): [maker's page](https://example.com/acme#:~:text=Acme%20Cam%201%2030%20June%202029)",
+      "- [Acme Cam\\_1 \\[Pro\\]](https://patchlife.tech/devices/acme-cam-1/): [maker's page](https://example.com/acme#:~:text=Acme%20Cam%201%2030%20June%202029), [page 2](https://example.com/b#:~:text=other)",
     ].join("\n"),
   );
   assert.match(summaryText({ ...state, pulls: [] }, MEASURES, sample), /^PRs for you to merge \(`needs-human-merge`\): none\.$/m);
