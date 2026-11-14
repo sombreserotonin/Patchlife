@@ -149,7 +149,7 @@ jobs:
           # be such a change, and a missing patch counts as a change: GitHub leaves the patch out of a large diff, and
           # the `+` keeps that line through the grep.
           if [ -n "$protected" ] && ! printf '%s\n' "$protected" | grep -qvE '^data/sources/[^/]+\.yaml$'; then
-            other=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[] | select(.filename | test("^data/sources/[^/]+\\.yaml$")) | if .status == "modified" then .patch // "+no patch" else "+\(.status)" end' | grep -E '^[-+]' | grep -vE '^[-+]  last_checked: ' || true)
+            other=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[] | select([.filename, .previous_filename // empty] | any(test("^data/sources/[^/]+\\.yaml$"))) | if .status == "modified" then .patch // "+no patch" else "+\(.status)" end' | grep -E '^[-+]' | grep -vE '^[-+]  last_checked: ' || true)
             [ -z "$other" ] && protected=""
           fi
           # GitHub lists at most 3000 files of a PR, so a larger one may hold protected files this job never sees.

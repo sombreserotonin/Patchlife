@@ -83,6 +83,10 @@ test("protected-paths labels a protected file moved out of its path, a new regis
   assert.ok(labelled(label(t, [{ filename: "docs/codeql.yml", previous_filename: ".github/workflows/codeql.yml", status: "renamed" }])), "a workflow renamed out of .github/");
   assert.ok(labelled(label(t, [{ filename: "data/sources/another.yaml", status: "added", patch: "+- brand: Acme" }])), "a second registry file");
   assert.ok(labelled(label(t, [{ filename: "data/sources/registry.yaml", previous_filename: "data/sources/seed.yaml", status: "renamed" }])), "the registry renamed");
+  for (const filename of ["data/seed.yaml", "data/sources/seed.yml", "data/sources/old/seed.yaml", "docs/seed.yaml"]) {
+    assert.ok(labelled(label(t, [{ filename, previous_filename: "data/sources/seed.yaml", status: "renamed" }])), `the registry moved to ${filename}`);
+  }
+  assert.ok(labelled(label(t, [{ filename: "data/sources/seed.yaml", status: "modified" }])), "a registry change with no patch");
   for (const filename of ["scripts/polite-fetch.mjs", "site/search.js", ".npmrc"]) {
     assert.ok(labelled(label(t, [{ filename, status: "modified", patch: "+x" }])), filename);
   }
@@ -90,7 +94,7 @@ test("protected-paths labels a protected file moved out of its path, a new regis
 
 test("protected-paths leaves the routine PRs unlabelled, a registry revisit included", { skip: NO_JQ }, (t) => {
   const reverify = [{ filename: "data/devices/acme/acme-cam-1.yaml", status: "modified", patch: '-    checked: "2026-10-02"\n+    checked: "2026-11-14"' }, { filename: "data/sources/page-hashes.json", status: "modified", patch: "+x" }];
-  const revisit = [{ filename: "data/sources/seed.yaml", status: "modified", patch: '@@ -21 +21 @@\n-  last_checked: "2026-11-09"\n+  last_checked: "2026-11-14"' }];
+  const revisit = [{ filename: "data/sources/seed.yaml", status: "modified", patch: '@@ -19,7 +19,7 @@ - brand: Ring\n   brand_slug: ring\n-  last_checked: "2026-11-09"\n+  last_checked: "2026-11-14"\n   note: x' }];
   const measures = [{ filename: "docs/MEASURES.md", status: "modified", patch: "+x" }];
   for (const files of [reverify, revisit, measures]) {
     const result = label(t, files);
@@ -308,4 +312,44 @@ test("the CodeQL summary fails when it can't read the scan's output, and lists w
   const none = runStep(t, list, { files: { "sarif-results/a.sarif": JSON.stringify({ runs: [{ results: [] }] }) }, env: { LANGUAGE: "actions" } });
   assert.equal(none.status, 0, none.output);
   assert.match(none.read("summary.md"), /No findings\./);
+});
+
+test("data-gate's verdict is yes only for exit 0 with the closing line", (t) => {
+  const gate = workflow("data-gate.yml").jobs["data-gate"].steps.find((s) => s.id === "gate").run;
+  const git = 'case "$1" in worktree) mkdir -p "$4" ;; merge-base) echo base ;; esac';
+  for (const [out, status, verdict] of [["Only verification changed", 0, "yes"], ["", 0, "no"], ["1 change(s) outside verification", 1, "no"], ["Only verification changed", 1, "no"]]) {
+    const result = runStep(t, gate, { stubs: { npm: "true", git, node: `printf '%s\\n' '${out}'; exit ${status}` }, env: { HEAD_SHA: "a".repeat(40), GITHUB_WORKSPACE: "/nowhere" } });
+    assert.equal(result.status, 0, result.output);
+    assert.equal(result.read("output.txt"), `verified=${verdict}\n`, `${JSON.stringify(out)}, exit ${status}`);
+  }
+});
+
+test("the weekly refresh writes the unquoted dates where its push reads them, a crash on the first line", (t) => {
+  const list = step(REFRESH, "refresh", "List the dates no record quotes yet");
+  const push = step(REFRESH, "refresh", "Push and open the PR");
+  assert.equal(list.if, push.if, "the list and the push run together");
+  const file = push.run.match(/head -n 60 "\$RUNNER_TEMP\/([^"]+)"/)[1];
+  const files = { "report.json": JSON.stringify({ pages: [{ url: "https://a.test/p" }] }) };
+  const changed = 'if [ "$1" = status ]; then echo " M data/devices/x.yaml"; fi';
+  const crashed = runStep(t, list.run, { stubs: { git: changed, node: 'echo "dates for $2"; exit 3' }, files });
+  assert.equal(crashed.status, 0, crashed.output);
+  assert.equal(crashed.read(file), "unquoted-dates.mjs exited 3, so this list may be incomplete\ndates for https://a.test/p\n");
+  const clean = runStep(t, list.run, { stubs: { git: changed, node: 'echo "dates for $2"' }, files });
+  assert.equal(clean.read(file), "dates for https://a.test/p\n");
+  const unchanged = runStep(t, list.run, { stubs: { git: "true", node: "echo fetched" }, files });
+  assert.equal(unchanged.status, 0);
+  assert.equal(unchanged.read(file), "", "no page is fetched when no record changed");
+});
+
+test("owner tools caps a long repoint title at 256 characters", (t) => {
+  const push = step("owner-tools.yml", "owner-tools", "Push and open the PR").run;
+  const url = `https://example.com/${"a".repeat(200)}`;
+  const result = runStep(t, push, {
+    stubs: { git: 'if [ "$1" = status ]; then echo " M data/devices/x.yaml"; fi', gh: `case "$*" in "api users/"*) echo 1 ;; *) printf '%s\\0' "$@" > "$RUNNER_TEMP/args" ;; esac` },
+    files: { "repoint.txt": "x\n" },
+    env: { ACTION: "repoint", URL: url, NEW_URL: `${url}/new`, GH_TOKEN: "t", APP_SLUG: "b", LANG: "C.UTF-8", GITHUB_RUN_ID: "9", GITHUB_SERVER_URL: "https://github.com", GITHUB_REPOSITORY: "o/r", REPO: "o/r" },
+  });
+  assert.equal(result.status, 0, result.output);
+  const title = result.read("args").split("\0").find((a) => a.startsWith("title=")).slice("title=".length);
+  assert.equal([...title].length, 256);
 });

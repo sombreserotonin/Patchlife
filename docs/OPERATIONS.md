@@ -60,7 +60,7 @@ Open https://github.com/sombreserotonin/Patchlife/actions/workflows/housekeeping
 | `Merge the routine PRs` | The merge bot stopped. Lines like `#N: skipped (<reason>)` are normal: they say why a PR waits for you. The watchdog still ran | The last line of the step. `Missing environment variable(s)` or `BOT_LOGIN must be the App's login`: the workflow file changed. `HTTP 4xx` or `5xx`: a GitHub call failed; re-run once. `GitHub did not confirm the merge, so <branch> stays`: the branch moved while merging; the next run tries again |
 | `Watchdog` | It found problems and ended with `N problem(s)`. This is the normal alarm | The `watchdog` issue (next section). `Set GH_TOKEN and GITHUB_REPOSITORY first` or `Unknown argument` means the workflow file changed |
 | `Open the monthly measures PR` | The push or the PR creation failed on the 1st | Re-run the workflow; it opens no second PR while `claude/measures-<yyyy-mm>` exists. If that branch exists with no PR, open the PR from https://github.com/sombreserotonin/Patchlife/branches |
-| The checkout or `Run npm ci` | A GitHub or npm outage | https://www.githubstatus.com, then re-run later |
+| The checkout or `Run npm ci` (`Run npm ci --ignore-scripts` in the jobs that hold the App's token) | A GitHub or npm outage | https://www.githubstatus.com, then re-run later |
 
 ### The `watchdog` issue
 

@@ -140,11 +140,15 @@ jobs:
       - name: List the dates no record quotes yet
         if: steps.open-pr.outputs.skip != 'yes' && env.nothing != 'yes'
         # For the PR body. It fetches the parsed pages again, so it runs here, in a step without the App's token, and
-        # never stops the PR: a crash is written into the list.
+        # never stops the PR: a crash is said on the list's first line, which the body's 60-line cut keeps.
         run: |
           if [ -z "$(git status --porcelain -- data)" ]; then exit 0; fi
-          node scripts/unquoted-dates.mjs $(jq -r '[.pages[].url] | unique | .[]' "$RUNNER_TEMP/report.json") > "$RUNNER_TEMP/unquoted.txt" 2>&1 \
-            || echo "unquoted-dates.mjs exited $?" >> "$RUNNER_TEMP/unquoted.txt"
+          status=0
+          node scripts/unquoted-dates.mjs $(jq -r '[.pages[].url] | unique | .[]' "$RUNNER_TEMP/report.json") > "$RUNNER_TEMP/unquoted.txt" 2>&1 || status=$?
+          if [ "$status" -ne 0 ]; then
+            { echo "unquoted-dates.mjs exited $status, so this list may be incomplete"; cat "$RUNNER_TEMP/unquoted.txt"; } > "$RUNNER_TEMP/unquoted.tmp"
+            mv "$RUNNER_TEMP/unquoted.tmp" "$RUNNER_TEMP/unquoted.txt"
+          fi
       - name: Push and open the PR
         if: steps.open-pr.outputs.skip != 'yes' && env.nothing != 'yes'
         # A new branch and PR, or a new commit on the open PR's branch (never a force push). The body holds the change
@@ -176,7 +180,7 @@ jobs:
             echo
             # The flags quote makers' pages, so they go in a fence, one per line, as in the blocks below: GitHub
             # links, notifies and closes nothing there. Every flag starts with a fixed word, so none can end the fence.
-            flags=$(jq -r '.flags[]? | gsub("\\s+"; " ")' "$report")
+            flags=$(jq -r '.flags[]? | tostring | gsub("\\s+"; " ")' "$report")
             if [ -n "$flags" ]; then echo "**Flags for a person:**"; echo '```'; printf '%s\n' "$flags"; echo '```'; echo; fi
             echo "Per page:"
             echo '```'
