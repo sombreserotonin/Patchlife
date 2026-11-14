@@ -139,6 +139,17 @@ test("a model's own number or a footnote marker is never read as part of a date"
   assert.deepEqual(acmeErrors(t, { model: "Cam 3", end_date: "2027-12-31", quotes: ["Acme Cam 3 31 December 2027"] }), []);
   // A superscript marker after the year, quoted with its footnote (R5), leaves the date as written.
   assert.deepEqual(acmeErrors(t, { end_date: "2029-06-30", quotes: ["Acme Cam 1 30 June 2029²", "² UK buyers only"] }), []);
+  // Only the whole name is blanked: in "Cam 31 December 2027" there is no Cam 3 to take away, so no 1 December.
+  assert.ok(acmeErrors(t, { model: "Cam 3", end_date: "2027-12-01", quotes: ["Acme Cam 3 is listed below.", "Cam 31 December 2027"] }).includes("end_date 2027-12-01 is not written in any evidence quote"));
+  // A name written with other spacing is still blanked.
+  assert.deepEqual(acmeErrors(t, { model: "Cam 3", end_date: "2027-12", quotes: ["Acme Cam  3 December 2027"] }), []);
+});
+
+test("a footnote marker or a sign after a model name does not hide the name", (t) => {
+  assert.deepEqual(acmeErrors(t, { end_date: "2029-06-30", quotes: ["Acme Cam 1² 30 June 2029", "² UK buyers only"] }), []);
+  assert.deepEqual(acmeErrors(t, { end_date: "2029-06-30", quotes: ["Acme Cam 1™ 30 June 2029"] }), []);
+  // A digit is still part of a name: Cam 12 is not Cam 1.
+  assert.ok(acmeErrors(t, { end_date: "2029-06-30", quotes: ["Acme Cam 12 30 June 2029"] }).some((m) => m.startsWith("neither model")));
 });
 
 test("a quote names a model or an alias only as a whole name, so a Cam 10 row does not vouch for Cam 1", (t) => {

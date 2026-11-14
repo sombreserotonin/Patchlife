@@ -101,7 +101,8 @@ export function verificationOnlyProblems(ref = "HEAD", cwd = process.cwd()) {
 }
 
 // import.meta.main is true only for the entry point, however it was reached (a symbolic link included), so the check
-// never silently does nothing.
+// never silently does nothing. A Node too old to set it stops here instead of passing.
+if (import.meta.main === undefined) throw new Error("verification-only.mjs needs Node 22.18 or later (package.json engines)");
 if (import.meta.main) {
   const problems = verificationOnlyProblems(process.argv[2]);
   for (const problem of problems) console.error(problem);

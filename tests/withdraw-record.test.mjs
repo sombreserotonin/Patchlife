@@ -1,13 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { appendFileSync, cpSync, mkdtempSync, readFileSync } from "node:fs";
+import { appendFileSync, cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import YAML from "yaml";
 import { withdrawnNotes, withdrawRecord } from "../scripts/withdraw-record.mjs";
-import { validateDevices, validateSources } from "../scripts/validate-data.mjs";
+import { listYamlFiles, validateDevices, validateSources } from "../scripts/validate-data.mjs";
 
 const VALID = fileURLToPath(new URL("./fixtures/valid", import.meta.url));
 const SCRIPT = fileURLToPath(new URL("../scripts/withdraw-record.mjs", import.meta.url));
@@ -80,16 +80,39 @@ test("the CLI exits 2 with the usage line on bad arguments and 1 for an unknown 
   assert.equal(dataStatus(), before, "the real data is untouched");
 });
 
-test("a withdrawn record of a brand whose categories come from its rows still validates (O8 on TP-Link and EZVIZ)", () => {
-  // Rule R7 maps these brands' categories from the quoted row, which a withdrawal removes; it leaves the record alone.
+test("a withdrawn record of a brand whose categories come from its rows still validates (O8 on TP-Link and EZVIZ)", (t) => {
+  // Rule R7 maps these brands' categories from the quoted row, which a withdrawal removes. Live records change every
+  // night, so they are read on the real date, as npm run validate reads them, and any dated record of the brand will do.
+  const today = new Date().toISOString().slice(0, 10);
   const repo = fileURLToPath(new URL("..", import.meta.url));
   const sources = validateSources(join(repo, "data", "sources")).entries;
-  for (const [brand, id] of [["tp-link", "tp-link-ap7650-v1"], ["ezviz", "ezviz-cs-a1-32w"]]) {
+  for (const brand of ["tp-link", "ezviz"]) {
+    const file = listYamlFiles(join(repo, "data", "devices", brand)).find((f) => YAML.parse(readFileSync(f, "utf8")).support.rule !== "none_published");
+    const id = basename(file, ".yaml");
     const dir = mkdtempSync(join(tmpdir(), "patchlife-withdraw-"));
+    t.after(() => rmSync(dir, { recursive: true, force: true }));
+    cpSync(file, join(dir, brand, `${id}.yaml`));
+    assert.deepEqual(validateDevices(dir, { today, sources }).errors, [], `${id} before`);
+    withdrawRecord(dir, id, "the page now gives another date", { today });
+    assert.deepEqual(validateDevices(dir, { today, sources }).errors, [], `${id} withdrawn`);
+  }
+});
+
+test("a withdrawn record still meets R7 where the category needs no row: a model pattern or a listed exception", (t) => {
+  const repo = fileURLToPath(new URL("..", import.meta.url));
+  const sources = validateSources(join(repo, "data", "sources")).entries;
+  const today = new Date().toISOString().slice(0, 10);
+  // Ring places every model by a model pattern; EZVIZ lists some records as exceptions.
+  const exception = Object.keys(sources.find((s) => s.brand_slug === "ezviz").category_exceptions)[0];
+  for (const [brand, id] of [["ring", "ring-chime-2nd-gen"], ["ezviz", exception]]) {
+    const dir = mkdtempSync(join(tmpdir(), "patchlife-withdraw-"));
+    t.after(() => rmSync(dir, { recursive: true, force: true }));
     cpSync(join(repo, "data", "devices", brand, `${id}.yaml`), join(dir, brand, `${id}.yaml`));
-    assert.deepEqual(validateDevices(dir, { today: TODAY, sources }).errors, [], `${id} before`);
-    withdrawRecord(dir, id, "the page now gives another date", { today: TODAY });
-    assert.deepEqual(validateDevices(dir, { today: TODAY, sources }).errors, [], `${id} withdrawn`);
+    withdrawRecord(dir, id, "the page now gives another date", { today });
+    assert.deepEqual(validateDevices(dir, { today, sources }).errors, [], `${id} withdrawn`);
+    const file = join(dir, brand, `${id}.yaml`);
+    writeFileSync(file, readFileSync(file, "utf8").replace(/^category: .*$/m, "category: printer"));
+    assert.ok(validateDevices(dir, { today, sources }).errors.some((e) => e.message.startsWith("R7:")), `${id} with a wrong category`);
   }
 });
 
