@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { USER_AGENT, createFetcher, robotsAllows } from "../scripts/polite-fetch.mjs";
+import { USER_AGENT, createFetcher, robotsAllows, ruleMatches } from "../scripts/polite-fetch.mjs";
 
 const reply = (body, status = 200, headers = {}) => () => new Response(body, { status, headers: { "content-type": "text/html", ...headers } });
 
@@ -192,4 +192,25 @@ test("an error status throws with the status", async () => {
 test("an error status after a redirect throws with the final URL", async () => {
   const { get } = setup({ "https://a.test/old": reply("", 301, { location: "/gone" }) });
   await assert.rejects(get("https://a.test/old"), (err) => err.status === 404 && err.url === "https://a.test/gone" && err.message === "HTTP 404 for https://a.test/gone");
+});
+
+test("robots: a rule with many wildcards is matched at once, as RFC 9309 reads it", () => {
+  const path = "/en/support/product-security-and-end-of-life-statement/" + "a".repeat(40);
+  const started = Date.now();
+  assert.equal(robotsAllows("User-agent: *\nDisallow: /*******X\n", path), true);
+  assert.equal(robotsAllows(`User-agent: *\nDisallow: /${"*a".repeat(60)}X\n`, path), true);
+  assert.ok(Date.now() - started < 1000, `${Date.now() - started} ms`);
+  for (const [rule, yes, no] of [["/a*b", "/axxb/c", "/ac"], ["/a*b$", "/axxb", "/axxbc"], ["*.pdf$", "/x/y.pdf", "/x/y.pdf?z"], ["/a$b", "/a$b", "/ab"], ["/", "/anything", ""]]) {
+    assert.equal(ruleMatches(rule, yes), true, `${rule} ${yes}`);
+    assert.equal(ruleMatches(rule, no), false, `${rule} ${no}`);
+  }
+});
+
+test("a body over the limit is refused, not held in memory", async () => {
+  let t = 0;
+  const fetch = async (url) => new Response(url.endsWith("/robots.txt") ? "" : "x".repeat(2048), { status: 200, headers: { "content-type": "text/html" } });
+  const get = createFetcher({ fetch, now: () => t, sleep: async (ms) => { t += ms; }, maxBodyBytes: 1024 });
+  await assert.rejects(get("https://a.test/big"), /the page at https:\/\/a\.test\/big is over 1024 bytes/);
+  const small = createFetcher({ fetch, now: () => t, sleep: async (ms) => { t += ms; }, maxBodyBytes: 4096 });
+  assert.equal((await small("https://a.test/big")).text.length, 2048);
 });

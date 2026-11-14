@@ -5,8 +5,6 @@
 // reverify.yml stops while any claude/reverify-* branch exists. Exits 2 without its settings, 1 when a GitHub call fails.
 // Usage: node scripts/merge-bot.mjs [--dry-run]   (env: GH_TOKEN, GITHUB_REPOSITORY as owner/name, and BOT_LOGIN, the
 // App's login such as patchlife-bot[bot])
-import { resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { USER_AGENT } from "./polite-fetch.mjs";
 
@@ -166,7 +164,7 @@ export function githubApi(token, fetch = globalThis.fetch) {
   };
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (import.meta.main) {
   let options;
   try {
     // Strict, so a mistyped --dry-run stops the run instead of merging.
@@ -184,6 +182,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     process.exit(2);
   }
   // Control characters are escaped, so a file name in a PR can't start a line the runner reads as a workflow command.
+  // Only the App's own PRs' text reaches the log (a fork's PR stops at a fixed reason), so D62's cleaning of "::" and
+  // "##[" is not needed here; control characters are still shown escaped.
   const printable = (text) => text.replace(/[\x00-\x1f\x7f]/g, (c) => `\\x${c.charCodeAt(0).toString(16).padStart(2, "0")}`);
   try {
     await mergeBot({ ...options, onResult: ({ number, action, reason }) => console.log(printable(action === "skipped" ? `#${number}: skipped (${reason})` : `#${number}: ${action}`)) });
