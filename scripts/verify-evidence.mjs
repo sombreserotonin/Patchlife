@@ -64,7 +64,8 @@ export function stripHidden(html) {
   let at = 0;
   HIDDEN_START.lastIndex = 0;
   for (let start = HIDDEN_START.exec(html); start; start = HIDDEN_START.exec(html)) {
-    const end = start[1] ? new RegExp(`</${start[1]}\\s*>`, "gi") : /-->/g;
+    // A comment ends at "-->" or "--!>", an element at its end tag, attributes and all, as the HTML standard reads them.
+    const end = start[1] ? new RegExp(`</${start[1]}(?=[\\s/>])[^>]*>`, "gi") : /--!?>/g;
     end.lastIndex = start.index + start[0].length;
     const close = end.exec(html);
     out += html.slice(at, start.index) + (start[1] ? " " : "");

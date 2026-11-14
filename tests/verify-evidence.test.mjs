@@ -489,6 +489,7 @@ test("the CLI rejects a missing or too large option value with one line and exit
 test("stripHidden removes comments and hidden elements, an unclosed one to the end, and changes no page's text", () => {
   assert.equal(stripHidden("a<!-- b -->c<script>d</script>e<TEMPLATE><tr><td>f</td></tr></Template >g"), "ac e g");
   assert.equal(stripHidden("a<!-- b"), "a");
+  assert.equal(stripHidden("a<!-- b --!>c<script>d</script >e<style>f</style x>g"), "ac e g");
   assert.equal(stripHidden("a<noscript>b<p>c"), "a ");
   assert.equal(stripHidden("<p>No hidden markup</p>"), "<p>No hidden markup</p>");
   // Every fixture page reads the same through it.
