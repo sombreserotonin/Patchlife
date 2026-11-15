@@ -6,7 +6,7 @@
 > - **The weekly refresh has no `DATA_REFRESH` switch.** A session can't set a repository variable, so the schedule always acts; disabling the workflow pauses it.
 > - **The two scheduled tasks were retired through their prompts,** not switched off: each run reads a retirement notice and does nothing. Neither a session nor a task's own run could switch a task off, so the owner deleted both the same day ([`OPERATIONS.md`](OPERATIONS.md), "What is left for you").
 > - **Done after the cut-over, the same day:** the three issues the cut-over left open. The data leads (#199) and the source queue (#194) added Grandstream as an eighth maker and 91 records in all, and the hardening points (#202) were settled in code (D61, D62, and OPERATIONS, "Cut-over").
-> - **Not done:** the owner's settings from "Your actions in Stage 1", items 4 and 5, and the business side (#99, D45).
+> - **Not done:** the owner's settings from "Your actions in Stage 1", items 4 and 5. The business side is closed (D64).
 >
 > The text below is the plan as it stood, kept as the record.
 
@@ -34,7 +34,7 @@ This is the plan as at 22 Oct 2026. It was revised the same day after a feasibil
   - Most feature building: maintenance mode is the default. The recommended cuts are:
     - `?q=` search instead of a store extension (M5);
     - Atom feeds instead of email alerts (M7);
-    - the business side (M4's demand test, and M6's paid feed, API and reports) waits in Planned until this setup is up and working (D45; see "Planned: the business side").
+    - the business side (M4's demand test, and M6's paid feed, API and reports) was shelved (D45) and is now closed (D64; see "The business side: closed").
 - **Timeline.**
   - 27 Oct: you answered decisions 1, 3, 4 and 5 on #102 (D46); 2 was settled on 22 Oct (the VPS stays). #101 is already merged, so nothing moves to Node 26 when it becomes LTS on 28 Oct.
   - 23 Oct to 4 Nov: build the replacements in parallel lanes, using the Max time you have already paid for. It ends on 19 Nov (D46), which sets every date below.
@@ -48,7 +48,7 @@ This is the plan as at 22 Oct 2026. It was revised the same day after a feasibil
 Checked with `git` and the GitHub API at 03:25 UTC:
 - **#100 merged at 03:01 UTC.** It added the first version of this file, D44 (no AI model and no subscription, with this file as the plan) and the "superseded" note in COSTS. #98 merged at 02:07 UTC, so `reverify.yml` now archives up to 5 cited pages a night (D43).
 - **#101 (P1) merged at 03:23 UTC.** The four working workflows are pinned to Node 24, and `.github/dependabot.yml` sends monthly grouped PRs. The Lighthouse change is in P2.
-- **The business side is in Planned (D45).** You shelved M4 (the `/business` page, the waitlist and its privacy additions) and M6 (the paid feed, API keys, reports and supplier checks) until this setup is up and working. #99 keeps the drafts, labelled `planned`.
+- **The business side is closed (D64).** You shelved M4 (the `/business` page, the waitlist and its privacy additions) and M6 (the paid feed, API keys, reports and supplier checks) on 22 Oct (D45), and closed them on 15 Nov: Patchlife stays free and non-commercial. #99 is closed.
 - **#102 (`needs-human`) asks for decisions 1 to 5.** This revision changes two of them and adds 12 to 15:
   - 2 is settled: the VPS stays, since you pay for it for other projects;
   - 4 now means maintenance mode by default and no bookmarklet; D45 settles its business part;
@@ -331,11 +331,11 @@ All of it lands by 4 Nov, because Max ends on 19 Nov (D46) and the shadow fortni
 - A fix the parser doesn't reproduce stops the next run. So fixes go into the profile, or its exceptions list, never only into a record.
 
 **Tier C: features (only after Tiers A and B merge)**
-- **C1:** a "report a wrong date" link on each device page, prefilled through `template=wrong-date.yml`. Done 27 Oct (#134). (The `/business` page is in Planned, D45.)
+- **C1:** a "report a wrong date" link on each device page, prefilled through `template=wrong-date.yml`. Done 27 Oct (#134). (The `/business` page is closed, D64.)
 - **C2 (done 27 Oct, #136):**
   - M7 Atom feeds: `/feeds/ending-soon.xml`, `/feeds/ended.xml` and one per brand, dated using the rules in `scripts/status.mjs`;
   - a `/stats/` page built from `data-report.mjs`.
-- **C3:** moved to Planned with the business side (D45): the free `/fleet/` checker and hand-made paid reports.
+- **C3:** closed with the business side (D45, D64): the free `/fleet/` checker and hand-made paid reports.
 - **C4:** M5: `?q=` handling in the existing `site/search.js`. No bookmarklet. Done 27 Oct (#132).
 - **C5: docs.**
   - SPEC sections 5 to 7, PLAN and ROADMAP cut to the new scope.
@@ -492,9 +492,9 @@ Sessions open the PRs below by 18 Nov, while Max is still active. On 19 Nov you 
 | Area | Cut to | Why |
 |---|---|---|
 | Feature work in general | Maintenance mode by default | Once no model builds anything, your time is the limit |
-| M4 business page and waitlist | Planned (D45): after Stage 4, from the drafts in #99 | You shelved the business side until this setup is up and working |
+| M4 business page and waitlist | Closed (D64) | There is no business side: Patchlife is free and non-commercial |
 | M5 store extension | `?q=` search in the existing `site/search.js` | No store accounts (H10), no store-review churn, nothing extra to maintain |
-| M6 API keys, webhook, Unraid service, supplier SKU check | Planned (D45), with the free fleet checker that would have stood in for them | As above. When it resumes, a billing server with secrets and uptime is still the riskiest thing to run alone, and Pages bars commercial services [13] (D40). Stripe charges per transaction: from 1 Oct 2026, domestic online cards cost 1.65% + A$0.30 [31] |
+| M6 API keys, webhook, Unraid service, supplier SKU check | Closed (D64), with the free fleet checker that would have stood in for them | As above |
 | M7 email alerts | Atom feeds and `/stats/` | No email provider, no subscriber list, no personal data |
 | Nightly source onboarding | A weekly refresh of the five sources, plus at most one new source a month, added by you | Nothing will read new pages for you |
 | Issue triage bot, cross-check parser, local model tooling, bookmarklet | Not built | No issue volume yet; double maintenance; the goal is no AI; search covers what the bookmarklet would do |
@@ -554,22 +554,18 @@ Incidents add 5 to 15 minutes a week on average (*estimate*).
   - recreate the routines (O6). Whether claude.ai keeps routines and environments after you cancel is unverified, so assume it doesn't.
 - **Without a subscription:** see decision 6.
 
-## Planned: the business side (D45)
+## The business side: closed (D64)
 
-You shelved the business side on 22 Oct 2026, to come back to once this setup is up and working. It is planned, not cancelled.
-- **What it covers:** M4's demand test (the `/business` page, the Tally waitlist and the privacy page additions) and M6 (the paid feed, API keys, reports, supplier checks, and the free fleet checker that would have stood in for them).
-- **When:** after Stage 4's exit check, so the business work starts on a setup that already runs without AI.
-- **Where it starts:** #99 and the drafts on `claude/m4-drafts` (`docs/drafts/m4-business-waitlist.md`). Keep that branch. The legal steps come first: H9b before the waitlist collects emails, H9c before charging.
-- **Hosting:** M6 runs on Unraid, published through your Pangolin VPS (D40). You already pay for the VPS for other projects, so this adds no cost (decision 2).
-- **Who builds it:** decision 15.
-- **Until then:** the site collects no personal data and sells nothing, so the privacy page stays as it is.
+You shelved the business side on 22 Oct 2026 (D45) and closed it on 15 Nov 2026 (D64). Patchlife stays a free, non-commercial public resource with open data, and none of it will be built.
+- **What it covered:** M4's demand test (the `/business` page, the Tally waitlist and the privacy page additions) and M6 (the paid feed, API keys, reports, supplier checks, and the free fleet checker that would have stood in for them).
+- **What is left of it:** nothing. #99 is closed, and the drafts branch `claude/m4-drafts` is deleted; D64 gives its last commit. The site collects no personal data and sells nothing, and its privacy page says so.
 
 ## Open decisions
 
 1. **Create the GitHub App `patchlife-bot`?** Settled on 27 Oct: yes (D46), with the steps in #126. Without it, every bot PR waits for your click.
 2. **The Pangolin VPS.** Settled on 22 Oct: it stays. You pay for it for other projects, so Patchlife adds no cost to it. When the business side resumes, M6 runs on Unraid published through it (D40). Cloudflare Tunnel from Unraid remains the fallback; it is available on all plans [20].
 3. **Max renewal.** Settled on 27 Oct: you won't renew, and the subscription ends on 19 Nov 2026 (D46). The stages are cut to fit: build to 4 Nov, shadow 5 to 18 Nov, Stage 3's PRs by 18 Nov, your removals on 19 Nov. Whatever isn't built by then waits for a later plan month or a contractor (decision 15).
-4. **Scope cuts and maintenance mode.** Settled on 27 Oct: accepted (D46). The business side is in Planned (D45), and the rest of the table above applies, with maintenance mode as the default.
+4. **Scope cuts and maintenance mode.** Settled on 27 Oct: accepted (D46). The business side was shelved (D45) and is now closed (D64), and the rest of the table above applies, with maintenance mode as the default.
 5. **Clear the backlog before cancelling?** Settled on 27 Oct: you left it to me, and I took the recommendation (D46). Yes, for TP-Link AU, EZVIZ and Google, in 60-row batches with A8 audits, from when B4 merges (about 3 Nov) until 18 Nov, the day before Max ends; the nightly data task's revisit PRs count toward it until the shadow starts. Whatever is left then goes to the weekly 60-row PR: TP-Link AU alone would take about 14 weeks that way (*estimate*).
 6. **Break-glass.** Recommended: none by default. If a breakage beats you, the options are:
    - paste the log into a local model on the RX 9070 XT. This needs no account or secret. llama.cpp's server binds to 127.0.0.1 by default [28]; whether the card works with its Vulkan build is unverified;
@@ -587,7 +583,7 @@ You shelved the business side on 22 Oct 2026, to come back to once this setup is
     - Use a contract that assigns copyright to you, which keeps D10's relicensing option.
     - They work from a fork, and you merge.
     - A$2,000 to 8,000 for SPEC section 6's API is an unverified *estimate*; get 2 or 3 quotes.
-12. **M3 and the Measures.** PLAN wants 6 or more brands at M3 (and at M4's start, now in Planned), and 5 or more daily-build heartbeats a week. Kyocera became the sixth brand on 22 Oct (#111), so the brand target holds; the heartbeat still goes away. Recommended:
+12. **M3 and the Measures.** PLAN wants 6 or more brands at M3 (and at M4's start, which is closed, D64), and 5 or more daily-build heartbeats a week. Kyocera became the sixth brand on 22 Oct (#111), so the brand target holds; the heartbeat still goes away. Recommended:
     - redefine M3 part 1 on the new jobs (Stage 2's exit check);
     - replace the heartbeat row with "clean watchdog days";
     - set the brand target to 5, unless a sixth brand is added before cut-over.
@@ -597,7 +593,7 @@ You shelved the business side on 22 Oct 2026, to come back to once this setup is
     - Firecrawl, if it is a paid account (unverified);
     - Unraid: some licences include a year of updates and then an optional yearly fee [34] (unverified).
 14. **Copy changes.** The About page, the "being reviewed" lines, README, BRIEF and CRAWLER say that Claude runs Patchlife, or that someone is reviewing a record. Recommended: approve new wording in Stage 3's copy PR.
-15. **Building the business side later.** Once Stage 4's exit check passes, M4 and M6 need someone to write code: you, a contractor (decision 11), or a month of a plan for build sessions, cancelled again after. Recommended: decide then. The drafts in #99 are the starting point.
+15. **Building the business side later.** Closed (D64): there is no business side to build. As written on 22 Oct: once Stage 4's exit check passes, M4 and M6 need someone to write code: you, a contractor (decision 11), or a month of a plan for build sessions, cancelled again after. Recommended: decide then. The drafts in #99 are the starting point.
 
 ## Sources
 

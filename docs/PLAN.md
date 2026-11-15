@@ -1,6 +1,6 @@
 # Plan
 
-> **Status, 13 November 2026.** This is the plan as written on 21 October 2026, kept as the record of the owner's decisions and the Measures. M1 to M3, M5 and M7 are done, and no AI session runs Patchlife any more ([`MIGRATION.md`](MIGRATION.md), D59): how it runs now is in [`OPERATIONS.md`](OPERATIONS.md). Still current: "Decisions" (P1 is overtaken: there is no nightly `Crawl` task), M4 to M6 as shelved plans (D45), "Legal checklist", "Risks" and "Measures". History only: "Where we are", "How the work runs", "Running it unattended" and the "Action plan", which describe the weeks when AI sessions did the work. `ROADMAP.md` and `TASKS.md` are frozen in [`.agent/`](../.agent/).
+> **Status, 13 November 2026.** This is the plan as written on 21 October 2026, kept as the record of the owner's decisions and the Measures. M1 to M3, M5 and M7 are done, and no AI session runs Patchlife any more ([`MIGRATION.md`](MIGRATION.md), D59): how it runs now is in [`OPERATIONS.md`](OPERATIONS.md). Still current: "Decisions" (P1 is overtaken: there is no nightly `Crawl` task), M4 to M6 as shelved plans (D45), "Legal checklist", "Risks" and "Measures". History only: "Where we are", "How the work runs", "Running it unattended" and the "Action plan", which describe the weeks when AI sessions did the work. `ROADMAP.md` and `TASKS.md` are frozen in [`.agent/`](../.agent/). The business side, M4 and M6, is closed (D64, 15 Nov 2026): Patchlife stays free and non-commercial.
 
 _As at Wednesday 21 October 2026. Dates are Sydney dates unless they say UTC. Review this at every milestone close and at least monthly. Milestone exit checks are in [`ROADMAP.md`](../.agent/progress/ROADMAP.md), the next tasks are in [`TASKS.md`](../.agent/progress/TASKS.md), and the procedures are in [`RUNBOOKS.md`](RUNBOOKS.md)._
 
@@ -14,7 +14,7 @@ _As at Wednesday 21 October 2026. Dates are Sydney dates unless they say UTC. Re
   4. Run a four-week demand test.
   5. Build whatever the test supports: business features first if businesses want them, the browser extension if consumers do.
 
-  Steps 4 and 5's business side (M4 and M6) is in Planned until the no-AI setup is up and working (D45, MIGRATION.md).
+  Steps 4 and 5's business side (M4 and M6) is closed (D64, 15 Nov 2026): Patchlife is free and non-commercial.
 - **Next 30 days.**
   - Close M1 (a fourth brand plus the exit check).
   - Settle the decisions below.
@@ -120,7 +120,7 @@ Targets are estimates. Each milestone closes only when its exit checks in ROADMA
   - a deliberately broken fixture source is caught.
 
 ### M4 Demand check (four weeks)
-**Planned, not active (D45, 22 Oct 2026):** the owner shelved the business side until the no-AI setup is up and working (MIGRATION.md, "Planned: the business side"). The start conditions and gates below stay as written for when it resumes; the H9b drafts are in #99.
+**Closed (D64, 15 Nov 2026):** there is no business side, so this demand check will not run. The start conditions and gates below are kept as the record of the plan; #99 is closed.
 
 **Start only when all of these hold** (estimates):
 - the site is on `patchlife.tech`;
@@ -157,7 +157,7 @@ Targets are estimates. Each milestone closes only when its exit checks in ROADMA
 - **Our offer:** the data stays free under ODbL, so a paid tier would sell alerts, fleet matching, change history and reliability, not access.
 
 ### M5 Browser extension and M6 Business features
-Order set by M4. Scope as in SPEC 5 and 6. M6 is in Planned with M4 (D45); M5 is `?q=` search links, not an extension (D46).
+Order set by M4. Scope as in SPEC 5 and 6. M6 is closed with M4 (D64); M5 is `?q=` search links, not an extension (D46).
 - **Before charging money (H9c, H10):** ABN, GST once turnover reaches A$75,000, Stripe, terms and refund policy reviewed for unfair contract terms, a data licence, overseas tax.
 - **Matching:** search and the extension must prefer the longest exact match. The audits found old models whose names are prefixes of new ones (for example "Nest Cam Indoor" from 2015 inside "Nest Cam Indoor (wired, 3rd gen)").
 - **Hosting (D40):** GitHub Pages bars sites built mainly for commercial transactions or SaaS, so the paid feed, API keys and reports run elsewhere, on a subdomain. First choice: the owner's Unraid server published through the owner's Pangolin VPS (WireGuard tunnel, no open ports at home), which costs nothing extra; edge compute (SPEC 6) is the fallback if uptime needs it. The public site stays on GitHub Pages: free, served from a CDN and no maintenance. Self-hosting it would trade uptime and speed for features it doesn't need yet.

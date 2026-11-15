@@ -24,7 +24,7 @@ Actions schedules are in UTC. The Sydney column is for daylight time (UTC+11, fr
 - `claude/reverify-<date>-<run id>`: the bot's re-verification branch. One at a time: while one exists, the next re-verify run stops at its guard. The bot merges it and deletes it. A branch whose PR was closed unmerged waits for you to delete it.
 - `claude/measures-<yyyy-mm>`: the monthly measures branch; the bot merges it.
 - `claude/data-auto-*`: the weekly candidate PR; you review and merge it (RUNBOOKS O9).
-- Labels: `audited` (your review is done; only a label you add counts, and every push removes it), `needs-human` (an issue waiting on you; the watchdog flags it after 7 days), `needs-human-merge` (CI's label on protected-path PRs; never remove it), `watchdog` (the watchdog's own issue), `data-correction` and `add-model` (the public issue forms), and `planned` (shelved work, D45).
+- Labels: `audited` (your review is done; only a label you add counts, and every push removes it), `needs-human` (an issue waiting on you; the watchdog flags it after 7 days), `needs-human-merge` (CI's label on protected-path PRs; never remove it), `watchdog` (the watchdog's own issue), `data-correction` and `add-model` (the public issue forms), and `planned` (shelved work, D45; none is left since the business side closed, D64).
 - Issue #27 (https://github.com/sombreserotonin/Patchlife/issues/27): the Sunday summary goes here, as a comment by `patchlife-bot[bot]`. Anyone can comment on the issue, so read the bot's comments only. Older comments are the retired daily build's one-line results.
 
 ## Settings that matter
@@ -89,6 +89,15 @@ One open issue labelled `watchdog` (https://github.com/sombreserotonin/Patchlife
 ### The Sunday summary
 
 Posted on https://github.com/sombreserotonin/Patchlife/issues/27 by the Sunday (UTC) Housekeeping run, which lands on Monday morning in Sydney (08:23 in daylight time, later when GitHub runs the schedule late). It holds: the `needs-human-merge` PRs waiting for you; the open issues by label; the first four lines of `node scripts/data-report.mjs`, which are PLAN's Measures; and five random records, each with a link to the maker's page that highlights the quote, for your spot check (RUNBOOKS O5). It is posted whether or not the watchdog found problems, so a missing summary means the run did not reach the watchdog step: a disabled or dropped schedule, or a failed token step. Runs have started up to six hours late, so treat the summary as missing only if it is not there by early afternoon Sydney time, then follow RUNBOOKS O4.
+
+### Standing flags (15 November 2026)
+
+The weekly refresh's summary lists `flag:` lines for what the parsers can't settle alone. Four stand every week, and none needs anything from you; each was looked at when the data leads closed (#199, last comment):
+- **`ambiguous: asus gives two rows for asus-rt-axe7800`** and **`... for asus-tuf-ax3000-v2`:** ASUS lists each model in two groups with different dates (31 December 2025 and 2026). A date is never chosen for a maker, so neither model has a record until ASUS lists one date; then the row comes in as a new one by itself.
+- **`google: the regulatory page links an Australian statement the profile does not list: .../answer/16904890`:** the Nest x Yale Lock statement, which redirects to Google's help home page, so there is nothing to quote. If it ever opens, add it to the Google profile as #217 did for the others (RUNBOOKS O11, step 6).
+- **`google: the UK statement lists 19 product(s) the profile's renames table does not map`:** eight are Pixel phones and a tablet, which the Nest table doesn't hold. The other eleven are Nest and Google home products whose UK region could be added with one `renames` row each in the Google profile (RUNBOOKS O11, step 6), where the name matches one table row beyond doubt. That would add a region to existing records, not fix a wrong one.
+
+Any other flag is new: settle it as RUNBOOKS O9 step 3 says.
 
 ### The dead-man's switch (MIGRATION decision 7, optional)
 
@@ -161,10 +170,10 @@ Nothing the project depends on. On 13 November the session did everything it cou
 5. **claude.ai.** Remove the connectors (Firecrawl, D35) and disconnect GitHub. Delete the `Crawl` environment if it is still listed. Cancel Firecrawl if it is a paid account (unverified).
 6. **The plan.** Let Max end on 19 November; it is set not to renew. Check that no renewal is pending, and later that the next statement shows no Anthropic charge.
 7. **Tidy-ups on GitHub.** Delete the unused `DATA_REFRESH` variable at https://github.com/sombreserotonin/Patchlife/settings/variables/actions. The leftover branches are gone (step 9), and so is the `claude` label.
-8. **Settings still open from MIGRATION's Stage 1 list.** Dependabot security updates are done: you switched them on, 13 November (the "Code security" row above). Still open: Actions failure emails (the "Notifications" row), a ruleset for the bot's branches, and the backups on your Unraid server ("Backups", above).
-9. **The code scanning alerts and the leftover branches. Done.** A session may neither dismiss an alert nor delete a branch, so a one-off run was prepared on a branch of its own, and you started it on 14 November (run 43531845487). It dismissed the ten reviewed alerts as "Won't fix" and deleted the 47 leftover branches under `claude/`, its own last; `claude/m4-drafts` and `main` are the two branches left. Of the 46 older branches, 41 had a merged pull request, and the other five were two throwaways, a session note, the superseded #190 and the withdraw test #201. The run's log names each deleted branch's commit, so one can be put back with `git push origin <commit>:refs/heads/<name>` for as long as GitHub keeps the commit.
+8. **Settings still open from MIGRATION's Stage 1 list.** Dependabot security updates are done: you switched them on, 13 November (the "Code security" row above). Still open: Actions failure emails (the "Notifications" row) and the backups on your Unraid server ("Backups", above). The ruleset for the bot's branches is settled as not needed (15 November): you and the App are the only writers, and you push to the weekly PR's branch yourself when you fix a profile (RUNBOOKS O9), so it would protect nothing.
+9. **The code scanning alerts and the leftover branches. Done.** A session may neither dismiss an alert nor delete a branch, so a one-off run was prepared on a branch of its own, and you started it on 14 November (run 43531845487). It dismissed the ten reviewed alerts as "Won't fix" and deleted the 47 leftover branches under `claude/`, its own last; `claude/m4-drafts` and `main` were the two branches left, and `claude/m4-drafts` went with the business side on 15 November (D64). Of the 46 older branches, 41 had a merged pull request, and the other five were two throwaways, a session note, the superseded #190 and the withdraw test #201. The run's log names each deleted branch's commit, so one can be put back with `git push origin <commit>:refs/heads/<name>` for as long as GitHub keeps the commit.
 
-One issue of open work is left: the business side (#99, D45), which needs accounts and legal text only you can provide. The data leads (#199), the makers with no records (#194) and the hardening left over from the security reads (#202) were closed on 13 November; the last comment on each says what was done and what stays out.
+No issue of open work is left: the business side is closed (D64, #99). The data leads (#199), the makers with no records (#194) and the hardening left over from the security reads (#202) were closed on 13 November; the last comment on each says what was done and what stays out.
 
 ### The watch (to mid-January 2027)
 

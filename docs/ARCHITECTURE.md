@@ -3,7 +3,7 @@
 ## Decided
 - Node LTS, plain ESM JavaScript, `node:test`. No build step for tooling.
 - Data lives as YAML files in git. The repo is the database and the audit trail.
-- Static-first: the site and free feed are static files on a CDN. Servers only for paid features (M6).
+- Static only: the site, the feeds and the JSON API are static files on a CDN. There are no servers, as there are no paid features (D64).
 
 ## Decided later (recorded in [`DECISIONS.md`](DECISIONS.md))
 - Static site generator and hosting (M2). Decided 21 Oct 2026 (P2, D28): a plain Node ESM build script (`scripts/build-site.mjs`, no new dependency) and GitHub Pages deployed from Actions (no account, token or secret), with a hand-written search over a JSON index and Lighthouse for the exit checks. Paid services (M6) are hosted off Pages, on the owner's Unraid server behind the owner's Pangolin VPS (D40). Astro and Eleventy were checked on 21 Oct 2026 and rejected as more than the build needs (260 and 114 packages, against none for the build script). The `lighthouse` dev dependency for the exit checks adds 114 packages of its own, used only in CI.

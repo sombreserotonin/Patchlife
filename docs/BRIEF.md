@@ -23,6 +23,8 @@ Smart devices stop receiving security updates long before they stop working, and
 One answer per model: the end date (or the rule in plain words), time left from today, and the quoted source with the date it was checked.
 
 ## Revenue, in order of expected value
+**Closed (D64, 15 Nov 2026):** Patchlife is free and non-commercial, so none of this is pursued. It is kept as the record of the October plan.
+
 1. Paid feed or API and CSV reports for MSPs and IT teams.
 2. Supplier SKU checks.
 3. Affiliate links to longer-supported alternatives on consumer pages and in the extension. This is the traffic engine, not the business.

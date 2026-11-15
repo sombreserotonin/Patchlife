@@ -666,7 +666,7 @@ function privacyPage(ctx) {
 <li><strong>Corrections.</strong> Reporting a correction uses a GitHub issue, which needs a GitHub account and is public.</li>
 <li><strong>Questions.</strong> Email <a href="mailto:${CONTACT_EMAIL}">${CONTACT_EMAIL}</a>, or open an issue at <a href="${REPO_URL}/issues">github.com/sombreserotonin/Patchlife/issues</a>.</li>
 </ul>
-<p>If this ever changes, for example when a waitlist collects email addresses, this page will say so before it happens.</p>`,
+<p>If this ever changes, this page will say so before it happens.</p>`,
   });
 }
 
