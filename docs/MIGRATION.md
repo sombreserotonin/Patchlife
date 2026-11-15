@@ -558,7 +558,7 @@ Incidents add 5 to 15 minutes a week on average (*estimate*).
 
 You shelved the business side on 22 Oct 2026 (D45) and closed it on 15 Nov 2026 (D64). Patchlife stays a free, non-commercial public resource with open data, and none of it will be built.
 - **What it covered:** M4's demand test (the `/business` page, the Tally waitlist and the privacy page additions) and M6 (the paid feed, API keys, reports, supplier checks, and the free fleet checker that would have stood in for them).
-- **What is left of it:** nothing. #99 is closed, and the drafts branch `claude/m4-drafts` is deleted; D64 gives its last commit. The site collects no personal data and sells nothing, and its privacy page says so.
+- **What is left of it:** the drafts branch `claude/m4-drafts`, for you to delete (OPERATIONS, "What is left for you"); D64 gives its last commit. #99 is closed. The site collects no personal data and sells nothing, and its privacy page says so.
 
 ## Open decisions
 
