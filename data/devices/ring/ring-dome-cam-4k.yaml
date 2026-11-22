@@ -1,0 +1,28 @@
+id: ring-dome-cam-4k
+brand: Ring
+brand_slug: ring
+model: Dome Cam 4K
+aliases:
+  - Ring Dome Cam 4K
+category: camera
+regions: [US]
+support:
+  rule: fixed_date
+  end_date: "2031-12-31"
+  years: null
+  anchor_date: null
+  at_least: true
+  conditions: If bought new on ring.com, or on amazon.com where Amazon is the seller, at least four years from purchase or this date, whichever is later.
+evidence:
+  - url: https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "Dome Cam 4K 31 December 2031"
+    retrieved: "2026-11-22"
+    regime: vendor_policy
+  - url: https://ring.com/support/articles/ri2p1/Information-on-Ring-Devices-Software-Security-Updates
+    quote: "We'll support your device with software security updates until at least four years from when you bought it new on amazon.com where Amazon is the seller or on ring.com (or, in each case, until the date stated below if later)."
+    retrieved: "2026-11-22"
+    regime: vendor_policy
+verification:
+  status: verified
+  checked: "2026-11-22"
+  text_sha256: dfabc5142b0fd7c7d606779686763f18ed917961f1e44f00e04e9b6766137b68
